@@ -1,0 +1,27 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Churrascaria - Espetinhos</title>
+</head>
+<body>
+    <h1>Cardápio de Espetinhos</h1>
+    <form action="carrinho.php" method="POST">
+        <ul>
+            <li>
+                <h3>Espetinho de Carne</h3>
+                <p>Preço: R$ 5.00</p>
+                <input type="number" name="espetinho[carne]" min="0">
+            </li>
+            <li>
+                <h3>Espetinho de Frango</h3>
+                <p>Preço: R$ 4.00</p>
+                <input type="number" name="espetinho[frango]" min="0">
+            </li>
+            <!-- Adicione mais espetinhos aqui -->
+        </ul>
+        <input type="submit" value="Adicionar ao Carrinho">
+    </form>
+</body>
+</html>

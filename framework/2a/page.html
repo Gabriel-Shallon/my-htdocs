@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gestão de Produtos</title>
+</head>
+<body>
+    <h1>Gestão de Produtos</h1>
+
+    <!-- Formulário para adicionar um produto -->
+    <h2>Adicionar Produto</h2>
+    <form action="page.php" method="post">
+        <label for="descricao">Descrição:</label>
+        <input type="text" name="descricao" required>
+        <label for="estoque">Estoque:</label>
+        <input type="number" name="estoque" required>
+        <label for="preco_custo">Preço de Custo:</label>
+        <input type="text" name="preco_custo" required>
+        <label for="preco_venda">Preço de Venda:</label>
+        <input type="text" name="preco_venda" required>
+        <label for="codigo_barras">Código de Barras:</label>
+        <input type="text" name="codigo_barras">
+        <label for="origem">Origem:</label>
+        <select name="origem" required>
+            <option value="n">Nacional</option>
+            <option value="s">Importado</option>
+        </select>
+        <input type="hidden" name="acao" value="adicionar">
+        <input type="submit" value="Adicionar Produto">
+    </form>
+
+    <!-- Formulário para atualizar um produto -->
+    <h2>Atualizar Produto</h2>
+    <form action="processar.php" method="post">
+        <label for="id_atualizar">ID do Produto:</label>
+        <input type="number" name="id_atualizar" required>
+        <label for="estoque_atualizar">Novo Estoque:</label>
+        <input type="number" name="estoque_atualizar" required>
+        <input type="hidden" name="acao" value="atualizar">
+        <input type="submit" value="Atualizar Estoque">
+    </form>
+
+    <!-- Formulário para remover um produto -->
+    <h2>Remover Produto</h2>
+    <form action="processar.php" method="post">
+        <label for="id_remover">ID do Produto:</label>
+        <input type="number" name="id_remover" required>
+        <input type="hidden" name="acao" value="remover">
+        <input type="submit" value="Remover Produto">
+    </form>
+</body>
+</html>
+
+
+

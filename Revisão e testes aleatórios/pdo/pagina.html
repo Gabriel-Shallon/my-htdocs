@@ -1,0 +1,23 @@
+<!DOCTYPE html>
+<html>
+<head>
+   <title>Ouvidoria</title>
+</head>
+<body>
+   <h1>Registrar Ocorrência</h1>
+   <form action="insert.php" method="POST">
+      <label for="tipo">Tipo:</label>
+      <input type="text" name="tipo" id="tipo" required><br>
+      
+      <label for="descricao">Descrição:</label><br>
+      <textarea name="descricao" id="descricao" rows="4" cols="50" required></textarea><br>
+      
+      <input type="submit" value="Registrar">
+   </form>
+   
+   <h1>Ocorrências Registradas</h1>
+   <?php
+      include 'select.php';
+   ?>
+</body>
+</html>
