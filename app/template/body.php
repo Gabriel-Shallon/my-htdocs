@@ -1,74 +1,13 @@
 <!-- layout_border start -->
 <div class="container-fluid">
          <div class="layout_border">
-            <!-- banner section start --> 
-            <div class="banner_section layout_padding">
-               <div class="container-fluid">
-                  <div id="main_slider" class="carousel slide" data-ride="carousel">
-                     <div class="carousel-inner">
-                        <div class="carousel-item active">
-                           <div class="row">
-                              <div class="col-sm-6">
-                                 <div class="banner_taital_main">
-                                    <h1 class="banner_taital">Fresh Vagetable Shop</h1>
-                                    <p class="banner_text">Many variations of passages of Lorem Ipsum available, but the majority have suffered</p>
-                                    <div class="btn_main">
-                                       <div class="started_text"><a href="#">Buy Now</a></div>
-                                       <div class="started_text active"><a href="#">Contact Us</a></div>
-                                    </div>
-                                 </div>
-                              </div>
-                              <div class="col-sm-6">
-                                 <div class="banner_img"><img src="images/banner-img.png"></div>
-                              </div>
-                           </div>
-                        </div>
-                        <div class="carousel-item">
-                           <div class="row">
-                              <div class="col-sm-6">
-                                 <div class="banner_taital_main">
-                                    <h1 class="banner_taital">Fresh Vagetable Shop</h1>
-                                    <p class="banner_text">Many variations of passages of Lorem Ipsum available, but the majority have suffered</p>
-                                    <div class="btn_main">
-                                       <div class="started_text"><a href="#">Buy Now</a></div>
-                                       <div class="started_text active"><a href="#">Contact Us</a></div>
-                                    </div>
-                                 </div>
-                              </div>
-                              <div class="col-sm-6">
-                                 <div class="banner_img"><img src="images/banner-img.png"></div>
-                              </div>
-                           </div>
-                        </div>
-                        <div class="carousel-item">
-                           <div class="row">
-                              <div class="col-sm-6">
-                                 <div class="banner_taital_main">
-                                    <h1 class="banner_taital">Fresh Vagetable Shop</h1>
-                                    <p class="banner_text">Many variations of passages of Lorem Ipsum available, but the majority have suffered</p>
-                                    <div class="btn_main">
-                                       <div class="started_text"><a href="#">Buy Now</a></div>
-                                       <div class="started_text active"><a href="#">Contact Us</a></div>
-                                    </div>
-                                 </div>
-                              </div>
-                              <div class="col-sm-6">
-                                 <div class="banner_img"><img src="images/banner-img.png"></div>
-                              </div>
-                           </div>
-                        </div>
-                     </div>
-                     <a class="carousel-control-prev" href="#main_slider" role="button" data-slide="prev">
-                     <img src="images/arrow-left.png">
-                     </a>
-                     <a class="carousel-control-next" href="#main_slider" role="button" data-slide="next">
-                     <img src="images/arrow-right.png">
-                     </a>
-                  </div>
-               </div>
-            </div>
-            <!-- banner section end -->
-            <!-- about section start -->
+            
+         
+         <?php require_once 'carousel.php'; ?>
+         
+         
+         
+         <!-- about section start -->
             <div class="about_section layout_padding">
                <div class="container">
                   <div class="row">
