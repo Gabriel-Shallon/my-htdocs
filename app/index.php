@@ -1,8 +1,8 @@
 <?php
 
-      require_once 'header.php';
-      require_once 'body.php';
-      require_once 'sidebar-footer.php';
-      require_once 'footer.php';
-      
+      require_once 'template/header.php';
+      require_once 'template/body.php';
+      require_once 'template/sidebar-footer.php';
+      require_once 'template/footer.php';
+
 ?>
