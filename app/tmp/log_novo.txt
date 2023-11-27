@@ -1,0 +1,125 @@
+2023-11-06 13:14:35 :: Exibindo um produto
+2023-11-06 13:14:35 :: SELECT max(id) FROM produto;
+2023-11-06 13:14:35 :: INSERT INTO produto (descricao,quantidade,preco,marca,id)VALUES ('Tênis','1','299','Adidas',1);
+2023-11-06 13:36:23 :: Exibindo um produto
+2023-11-06 13:36:23 :: SELECT max(id) FROM produto;
+2023-11-06 13:36:23 :: INSERT INTO produto (descricao,quantidade,preco,marca,id)VALUES ('Sapato','10','150','Ferracini',2);
+2023-11-06 13:46:37 :: Exibindo um produto
+2023-11-06 13:46:37 :: SELECT max(id) FROM produto;
+2023-11-06 13:46:37 :: INSERT INTO produto (descricao,quantidade,preco,marca,id)VALUES ('Tenis','10','299','Adidas',1);
+2023-11-06 13:55:44 :: Exibindo um produto
+2023-11-06 13:55:44 :: SELECT max(id) FROM produto;
+2023-11-06 13:55:44 :: INSERT INTO produto (descricao,quantidade,preco,marca,id)VALUES ('Tenis','11','299.00','Adidas',2);
+2023-11-06 13:56:16 :: Exibindo um produto
+2023-11-06 13:56:16 :: SELECT max(id) FROM produto;
+2023-11-06 13:56:16 :: INSERT INTO produto (descricao,quantidade,preco,marca,id)VALUES ('Tenis','11','299.00','Adidas',2);
+2023-11-06 13:57:25 :: Exibindo um produto
+2023-11-06 13:57:25 :: SELECT * FROM produto WHERE id = 0
+2023-11-06 13:57:25 :: SELECT max(id) FROM produto;
+2023-11-06 13:57:25 :: INSERT INTO produto (descricao,quantidade,preco,marca,id)VALUES ('Tenis','11','299.00','Adidas',2);
+2023-11-06 13:57:53 :: Exibindo um produto
+2023-11-06 13:57:53 :: SELECT * FROM produto WHERE id = 0
+2023-11-06 13:57:53 :: SELECT * FROM produto WHERE id = 0
+2023-11-06 13:57:53 :: INSERT INTO produto (id,descricao,quantidade,preco,marca)VALUES ('Tenis','Tenis','15','299.00','Adidas');
+2023-11-06 13:58:48 :: Exibindo um produto
+2023-11-06 13:58:48 :: SELECT max(id) FROM produto;
+2023-11-06 13:58:48 :: INSERT INTO produto (descricao,quantidade,preco,marca,id)VALUES ('Tenis','10','299','Adidas',1);
+2023-11-06 13:58:52 :: Exibindo um produto
+2023-11-06 13:58:52 :: SELECT * FROM produto WHERE id = 0
+2023-11-06 13:58:52 :: SELECT * FROM produto WHERE id = 0
+2023-11-06 13:58:52 :: INSERT INTO produto (id,descricao,quantidade,preco,marca)VALUES ('Tenis','Tenis','101','299.00','Adidas');
+2023-11-06 13:59:26 :: Exibindo um produto
+2023-11-06 13:59:26 :: SELECT max(id) FROM produto;
+2023-11-06 13:59:26 :: INSERT INTO produto (id)VALUES (2);
+2023-11-06 13:59:57 :: Exibindo um produto
+2023-11-06 13:59:57 :: SELECT max(id) FROM produto;
+2023-11-06 13:59:57 :: INSERT INTO produto (descricao,quantidade,preco,marca,id)VALUES ('Tenis','10','100','adidas',3);
+2023-11-06 14:00:18 :: Exibindo um produto
+2023-11-06 14:00:18 :: SELECT * FROM produto WHERE id = 0
+2023-11-06 14:00:18 :: SELECT max(id) FROM produto;
+2023-11-06 14:00:18 :: INSERT INTO produto (descricao,quantidade,preco,marca,id)VALUES ('Tenis','10','299.00','Adidas',4);
+2023-11-06 14:01:08 :: Exibindo um produto
+2023-11-06 14:01:08 :: SELECT max(id) FROM produto;
+2023-11-06 14:01:08 :: INSERT INTO produto (descricao,quantidade,preco,marca,id)VALUES ('Tenis','100','299','Adidas',1);
+2023-11-06 14:01:16 :: Exibindo um produto
+2023-11-06 14:01:16 :: SELECT * FROM produto WHERE id = 1
+2023-11-06 14:01:16 :: SELECT * FROM produto WHERE id = 1
+2023-11-06 14:01:16 :: UPDATE produto SET descricao = 'Tenis', quantidade = '1000', preco = '299.00', marca = 'Adidas' WHERE id =1
+2023-11-06 14:02:23 :: Exibindo um produto
+2023-11-06 14:02:23 :: SELECT * FROM produto WHERE id = 1
+2023-11-06 14:02:23 :: SELECT * FROM produto WHERE id = 1
+2023-11-06 14:02:23 :: UPDATE produto SET descricao = 'Tenis Falcon', quantidade = '1000', preco = '299.00', marca = 'Adidas' WHERE id =1
+2023-11-06 14:02:35 :: Exibindo um produto
+2023-11-06 14:02:35 :: SELECT max(id) FROM produto;
+2023-11-06 14:02:35 :: INSERT INTO produto (descricao,quantidade,preco,marca,id)VALUES ('Tenis Advantage','101','100','Adidas',2);
+2023-11-06 14:02:42 :: Exibindo um produto
+2023-11-06 14:02:42 :: SELECT * FROM produto WHERE id = 2
+2023-11-06 14:02:42 :: SELECT * FROM produto WHERE id = 2
+2023-11-06 14:02:42 :: UPDATE produto SET descricao = 'Tenis Advantage', quantidade = '1012', preco = '100.00', marca = 'Adidas' WHERE id =2
+2023-11-06 14:58:57 :: Exibindo um produto
+2023-11-06 14:58:57 :: SELECT max(id) FROM produto;
+2023-11-06 14:58:57 :: INSERT INTO produto (descricao,quantidade,preco,marca,id)VALUES ('Tênis Advantage','100','399','Adidas',1);
+2023-11-06 14:59:06 :: Exibindo um produto
+2023-11-06 14:59:06 :: SELECT * FROM produto WHERE id = 1
+2023-11-06 14:59:06 :: SELECT * FROM produto WHERE id = 1
+2023-11-06 14:59:06 :: UPDATE produto SET descricao = 'Tênis Advantage', quantidade = '100000', preco = '399.00', marca = 'Adidas' WHERE id =1
+2023-11-06 15:36:18 :: Exibindo um produto
+2023-11-06 15:36:18 :: SELECT max(id) FROM produto;
+2023-11-06 15:36:18 :: INSERT INTO produto (descricao,quantidade,preco,marca,id)VALUES ('Tênis Running','10','399','Adidas',1);
+2023-11-06 15:39:40 :: Adicionando um produto
+2023-11-06 15:57:54 :: Adicionando um produto
+2023-11-06 15:58:08 :: Adicionando um produto
+2023-11-06 15:58:08 :: SELECT max(id) FROM produto;
+2023-11-06 15:58:08 :: INSERT INTO produto (descricao,quantidade,preco,marca,id)VALUES ('Sapato','100','350','Ferracini',2);
+2023-11-06 15:58:36 :: Adicionando um produto
+2023-11-06 15:58:36 :: SELECT max(id) FROM produto;
+2023-11-06 15:58:36 :: INSERT INTO produto (descricao,quantidade,preco,marca,id)VALUES ('Camiseta','100','80','Umbro',3);
+2023-11-06 16:41:00 :: Adicionando um produto
+2023-11-06 16:41:00 :: SELECT max(id) FROM produto;
+2023-11-06 16:41:00 :: INSERT INTO produto (descricao,quantidade,preco,marca,id)VALUES ('pato','100','350.00','Ferracini',4);
+2023-11-06 16:41:19 :: Adicionando um produto
+2023-11-06 16:41:19 :: SELECT max(id) FROM produto;
+2023-11-06 16:41:19 :: INSERT INTO produto (descricao,quantidade,preco,marca,id)VALUES ('Sap','12','350.00','Ferracini',5);
+2023-11-06 16:41:35 :: Adicionando um produto
+2023-11-06 16:41:35 :: SELECT max(id) FROM produto;
+2023-11-06 16:41:35 :: INSERT INTO produto (descricao,quantidade,preco,marca,id)VALUES ('Sapaaa','122','350.00','Ferracini',6);
+2023-11-06 16:41:51 :: Adicionando um produto
+2023-11-06 16:41:51 :: SELECT max(id) FROM produto;
+2023-11-06 16:41:51 :: INSERT INTO produto (descricao,quantidade,preco,marca,id)VALUES ('Sap','12','350.00','Ferracini',6);
+2023-11-06 16:42:57 :: Adicionando um produto
+2023-11-06 16:42:57 :: SELECT max(id) FROM produto;
+2023-11-06 16:42:57 :: INSERT INTO produto (descricao,quantidade,preco,marca,id)VALUES ('CAFÉ COM LEITE DE MACACO','100','350.00','Ferraci',7);
+2023-11-07 15:20:54 :: Adicionando um produto
+2023-11-07 15:20:54 :: SELECT max(id) FROM produto;
+2023-11-07 15:20:54 :: INSERT INTO produto (descricao,quantidade,preco,marca,id)VALUES ('Tenis','100','299','Adidas',1);
+2023-11-07 15:21:06 :: Adicionando um produto
+2023-11-07 15:21:06 :: SELECT max(id) FROM produto;
+2023-11-07 15:21:06 :: INSERT INTO produto (descricao,quantidade,preco,marca,id)VALUES ('Tenis','100000','299.00','Adidas',2);
+2023-11-07 15:36:44 :: Adicionando um produto
+2023-11-07 15:36:44 :: SELECT max(id) FROM produto;
+2023-11-07 15:36:44 :: INSERT INTO produto (descricao,quantidade,preco,marca,id)VALUES ('Barra de sabão','30','5','Adriano',1);
+2023-11-07 15:41:00 :: Adicionando um produto
+2023-11-07 15:41:00 :: SELECT max(id) FROM produto;
+2023-11-07 15:41:00 :: INSERT INTO produto (descricao,quantidade,preco,marca,id)VALUES ('Computador','40','7500','Acer',3);
+2023-11-07 15:45:17 :: Adicionando um produto
+2023-11-07 15:45:17 :: SELECT max(id) FROM produto;
+2023-11-07 15:45:17 :: INSERT INTO produto (descricao,quantidade,preco,marca,id)VALUES ('dwdwd','dwdw','dwedewd','ewdew',4);
+2023-11-07 16:27:32 :: Adicionando um produto
+2023-11-07 16:27:32 :: SELECT max(id) FROM produto;
+2023-11-07 16:27:32 :: INSERT INTO produto (descricao,quantidade,preco,marca,id)VALUES ('Barra de sabão','300','5.00','Adriano',2);
+2023-11-07 16:28:06 :: Adicionando um produto
+2023-11-07 16:28:06 :: SELECT * FROM produto WHERE id = 2
+2023-11-07 16:28:06 :: SELECT * FROM produto WHERE id = 2
+2023-11-07 16:28:06 :: UPDATE produto SET descricao = 'Barra de sabão', quantidade = '3000', preco = '5.00', marca = 'Adriano' WHERE id =2
+2023-11-07 16:28:11 :: Adicionando um produto
+2023-11-07 16:28:11 :: SELECT * FROM produto WHERE id = 1
+2023-11-07 16:28:11 :: SELECT * FROM produto WHERE id = 1
+2023-11-07 16:28:11 :: UPDATE produto SET descricao = 'Barra de sabão', quantidade = '45', preco = '5.00', marca = 'Adriano' WHERE id =1
+2023-11-07 16:28:23 :: Adicionando um produto
+2023-11-07 16:28:23 :: SELECT * FROM produto WHERE id = 1
+2023-11-07 16:28:23 :: SELECT * FROM produto WHERE id = 1
+2023-11-07 16:28:23 :: UPDATE produto SET descricao = 'Barra de sabão', quantidade = '45', preco = '5.00', marca = 'Ypê' WHERE id =1
+2023-11-07 16:28:35 :: Adicionando um produto
+2023-11-07 16:28:35 :: SELECT * FROM produto WHERE id = 2
+2023-11-07 16:28:35 :: SELECT * FROM produto WHERE id = 2
+2023-11-07 16:28:35 :: UPDATE produto SET descricao = 'Detergente', quantidade = '3000', preco = '3.59', marca = 'Minuano' WHERE id =2

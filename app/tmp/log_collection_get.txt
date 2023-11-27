@@ -1,0 +1,7 @@
+
+2023-10-30 16:12:41 :: SELECT * FROM produto WHERE (estoque > 10 and origem = 'N')
+2023-10-30 16:12:41 :: SELECT count(*) FROM produto WHERE (estoque > 10 and origem = 'N')
+2023-10-30 16:14:05 :: SELECT * FROM produto WHERE (estoque > 0 and origem = 'N')
+2023-10-30 16:14:05 :: SELECT count(*) FROM produto WHERE (estoque > 0 and origem = 'N')
+2023-10-30 17:14:45 :: SELECT * FROM produto WHERE (estoque > 0 and origem = 'N')
+2023-10-30 17:14:45 :: SELECT count(*) FROM produto WHERE (estoque > 0 and origem = 'N')

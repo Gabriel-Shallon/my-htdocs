@@ -1,0 +1,17 @@
+2023-10-30 14:07:52 :: SELECT * FROM produto WHERE (preco_venda <= 35 and origem = 'N')
+2023-10-30 14:07:52 :: SELECT * FROM produto WHERE id = 2
+2023-10-30 14:07:52 :: UPDATE produto SET descricao = 'Suco de Laranja', estoque = 80, preco_custo = '15.00', preco_venda = 26, codigo_barras = '12121212', origem = 'N' WHERE id =2
+2023-10-30 14:07:52 :: SELECT * FROM produto WHERE id = 4
+2023-10-30 14:07:52 :: UPDATE produto SET descricao = 'Suco de Melão', estoque = 50, preco_custo = '8.00', preco_venda = 15.6, codigo_barras = '123123123', origem = 'N' WHERE id =4
+2023-10-30 14:07:52 :: SELECT * FROM produto WHERE id = 5
+2023-10-30 14:07:52 :: UPDATE produto SET descricao = 'Suco de Melão', estoque = 50, preco_custo = '8.00', preco_venda = 15.6, codigo_barras = '123123123', origem = 'N' WHERE id =5
+2023-10-30 14:07:52 :: SELECT * FROM produto WHERE id = 6
+2023-10-30 14:07:52 :: UPDATE produto SET descricao = 'Suco de Melão', estoque = 50, preco_custo = '8.00', preco_venda = 15.6, codigo_barras = '123123123', origem = 'N' WHERE id =6
+2023-10-30 14:07:52 :: SELECT * FROM produto WHERE id = 7
+2023-10-30 14:07:52 :: UPDATE produto SET descricao = 'Suco de melancia', estoque = 10, preco_custo = '6.00', preco_venda = 19.5, codigo_barras = '123123123', origem = 'N' WHERE id =7
+2023-10-30 14:07:52 :: SELECT * FROM produto WHERE id = 8
+2023-10-30 14:07:52 :: UPDATE produto SET descricao = 'Suco de melancia', estoque = 10, preco_custo = '6.00', preco_venda = 19.5, codigo_barras = '123123123', origem = 'N' WHERE id =8
+2023-10-30 14:07:52 :: SELECT * FROM produto WHERE id = 9
+2023-10-30 14:07:52 :: UPDATE produto SET descricao = 'Suco de melancia', estoque = 10, preco_custo = '6.00', preco_venda = 19.5, codigo_barras = '123123123', origem = 'N' WHERE id =9
+2023-10-30 14:07:52 :: SELECT * FROM produto WHERE id = 10
+2023-10-30 14:07:52 :: UPDATE produto SET descricao = 'Suco de Acerola', estoque = 30, preco_custo = '15.00', preco_venda = 26, codigo_barras = '12121212', origem = 'N' WHERE id =10

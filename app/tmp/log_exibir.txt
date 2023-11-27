@@ -1,0 +1,818 @@
+2023-11-06 13:29:15 :: Exibindo um produto
+2023-11-06 13:29:15 :: SELECT * FROM produto WHERE id = 0
+2023-11-06 13:29:40 :: Exibindo um produto
+2023-11-06 13:29:40 :: SELECT * FROM produto
+2023-11-06 13:33:50 :: Exibindo um produto
+2023-11-06 13:33:50 :: SELECT * FROM produto
+2023-11-06 13:34:34 :: Exibindo um produto
+2023-11-06 13:34:34 :: SELECT * FROM produto
+2023-11-06 13:34:45 :: Exibindo um produto
+2023-11-06 13:34:45 :: SELECT * FROM produto
+2023-11-06 13:35:15 :: Exibindo um produto
+2023-11-06 13:35:15 :: SELECT * FROM produto
+2023-11-06 13:36:04 :: Exibindo um produto
+2023-11-06 13:36:04 :: SELECT * FROM produto
+2023-11-06 13:37:00 :: Exibindo um produto
+2023-11-06 13:37:00 :: SELECT * FROM produto
+2023-11-06 13:38:00 :: Exibindo um produto
+2023-11-06 13:38:00 :: SELECT * FROM produto
+2023-11-06 13:39:15 :: Exibindo um produto
+2023-11-06 13:39:15 :: SELECT * FROM produto
+2023-11-06 13:39:17 :: Exibindo um produto
+2023-11-06 13:39:17 :: SELECT * FROM produto WHERE id = 1
+2023-11-06 13:39:17 :: DELETE FROM produto WHERE id = 1
+2023-11-06 13:39:35 :: Exibindo um produto
+2023-11-06 13:39:35 :: SELECT * FROM produto
+2023-11-06 13:39:36 :: Exibindo um produto
+2023-11-06 13:39:36 :: SELECT * FROM produto WHERE id = 2
+2023-11-06 13:39:36 :: DELETE FROM produto WHERE id = 2
+2023-11-06 13:39:36 :: Exibindo um produto
+2023-11-06 13:39:36 :: SELECT * FROM produto
+2023-11-06 13:43:00 :: Exibindo um produto
+2023-11-06 13:43:00 :: SELECT * FROM produto WHERE id = 2
+2023-11-06 13:43:00 :: Exibindo um produto
+2023-11-06 13:43:00 :: SELECT * FROM produto
+2023-11-06 13:43:18 :: Exibindo um produto
+2023-11-06 13:43:18 :: SELECT * FROM produto WHERE id = 2
+2023-11-06 13:43:18 :: Exibindo um produto
+2023-11-06 13:43:18 :: SELECT * FROM produto
+2023-11-06 13:43:20 :: Exibindo um produto
+2023-11-06 13:43:20 :: SELECT * FROM produto WHERE id = 2
+2023-11-06 13:43:20 :: Exibindo um produto
+2023-11-06 13:43:20 :: SELECT * FROM produto
+2023-11-06 13:43:59 :: Exibindo um produto
+2023-11-06 13:43:59 :: SELECT * FROM produto WHERE id = 2
+2023-11-06 13:43:59 :: Exibindo um produto
+2023-11-06 13:43:59 :: SELECT * FROM produto
+2023-11-06 13:44:30 :: Exibindo um produto
+2023-11-06 13:44:30 :: SELECT * FROM produto WHERE id = 2
+2023-11-06 13:44:30 :: Exibindo um produto
+2023-11-06 13:44:30 :: SELECT * FROM produto
+2023-11-06 13:44:48 :: Exibindo um produto
+2023-11-06 13:44:48 :: SELECT * FROM produto WHERE id = 2
+2023-11-06 13:44:48 :: Exibindo um produto
+2023-11-06 13:44:48 :: SELECT * FROM produto
+2023-11-06 13:44:58 :: Exibindo um produto
+2023-11-06 13:44:58 :: SELECT * FROM produto WHERE id = 2
+2023-11-06 13:44:58 :: Exibindo um produto
+2023-11-06 13:44:58 :: SELECT * FROM produto
+2023-11-06 13:45:39 :: Exibindo um produto
+2023-11-06 13:45:39 :: SELECT * FROM produto
+2023-11-06 13:45:39 :: Exibindo um produto
+2023-11-06 13:45:39 :: SELECT * FROM produto
+2023-11-06 13:45:41 :: Exibindo um produto
+2023-11-06 13:45:41 :: SELECT * FROM produto
+2023-11-06 13:45:41 :: Exibindo um produto
+2023-11-06 13:45:41 :: SELECT * FROM produto
+2023-11-06 13:45:53 :: Exibindo um produto
+2023-11-06 13:45:53 :: SELECT * FROM produto
+2023-11-06 13:45:53 :: Exibindo um produto
+2023-11-06 13:45:53 :: SELECT * FROM produto
+2023-11-06 13:46:26 :: Exibindo um produto
+2023-11-06 13:46:26 :: SELECT * FROM produto
+2023-11-06 13:46:26 :: Exibindo um produto
+2023-11-06 13:46:26 :: SELECT * FROM produto
+2023-11-06 13:46:37 :: Exibindo um produto
+2023-11-06 13:46:37 :: SELECT * FROM produto
+2023-11-06 13:46:37 :: Exibindo um produto
+2023-11-06 13:46:37 :: SELECT * FROM produto
+2023-11-06 13:47:07 :: Exibindo um produto
+2023-11-06 13:47:07 :: SELECT * FROM produto
+2023-11-06 13:47:07 :: Exibindo um produto
+2023-11-06 13:47:07 :: SELECT * FROM produto
+2023-11-06 13:47:21 :: Exibindo um produto
+2023-11-06 13:47:21 :: SELECT * FROM produto
+2023-11-06 13:47:21 :: Exibindo um produto
+2023-11-06 13:47:21 :: SELECT * FROM produto
+2023-11-06 13:47:37 :: Exibindo um produto
+2023-11-06 13:47:37 :: SELECT * FROM produto
+2023-11-06 13:47:37 :: Exibindo um produto
+2023-11-06 13:47:37 :: SELECT * FROM produto
+2023-11-06 13:47:38 :: Exibindo um produto
+2023-11-06 13:47:38 :: SELECT * FROM produto
+2023-11-06 13:47:38 :: Exibindo um produto
+2023-11-06 13:47:38 :: SELECT * FROM produto
+2023-11-06 13:47:54 :: Exibindo um produto
+2023-11-06 13:47:54 :: SELECT * FROM produto
+2023-11-06 13:47:54 :: Exibindo um produto
+2023-11-06 13:47:54 :: SELECT * FROM produto
+2023-11-06 13:47:56 :: Exibindo um produto
+2023-11-06 13:47:56 :: SELECT * FROM produto WHERE id = 1
+2023-11-06 13:48:13 :: Exibindo um produto
+2023-11-06 13:48:13 :: SELECT * FROM produto WHERE id = 1
+2023-11-06 13:48:15 :: Exibindo um produto
+2023-11-06 13:48:15 :: SELECT * FROM produto
+2023-11-06 13:48:15 :: Exibindo um produto
+2023-11-06 13:48:15 :: SELECT * FROM produto
+2023-11-06 13:48:16 :: Exibindo um produto
+2023-11-06 13:48:16 :: SELECT * FROM produto
+2023-11-06 13:48:16 :: Exibindo um produto
+2023-11-06 13:48:16 :: SELECT * FROM produto
+2023-11-06 13:48:18 :: Exibindo um produto
+2023-11-06 13:48:18 :: SELECT * FROM produto WHERE id = 1
+2023-11-06 13:48:30 :: Exibindo um produto
+2023-11-06 13:48:30 :: SELECT * FROM produto
+2023-11-06 13:48:30 :: Exibindo um produto
+2023-11-06 13:48:30 :: SELECT * FROM produto
+2023-11-06 13:48:31 :: Exibindo um produto
+2023-11-06 13:48:31 :: SELECT * FROM produto
+2023-11-06 13:48:31 :: Exibindo um produto
+2023-11-06 13:48:31 :: SELECT * FROM produto
+2023-11-06 13:48:31 :: Exibindo um produto
+2023-11-06 13:48:31 :: SELECT * FROM produto
+2023-11-06 13:48:31 :: Exibindo um produto
+2023-11-06 13:48:31 :: SELECT * FROM produto
+2023-11-06 13:48:31 :: Exibindo um produto
+2023-11-06 13:48:31 :: SELECT * FROM produto
+2023-11-06 13:48:31 :: Exibindo um produto
+2023-11-06 13:48:31 :: SELECT * FROM produto
+2023-11-06 13:48:31 :: Exibindo um produto
+2023-11-06 13:48:31 :: SELECT * FROM produto
+2023-11-06 13:48:31 :: Exibindo um produto
+2023-11-06 13:48:31 :: SELECT * FROM produto
+2023-11-06 13:48:57 :: Exibindo um produto
+2023-11-06 13:48:57 :: SELECT * FROM produto
+2023-11-06 13:48:57 :: Exibindo um produto
+2023-11-06 13:48:57 :: SELECT * FROM produto
+2023-11-06 13:48:57 :: Exibindo um produto
+2023-11-06 13:48:57 :: SELECT * FROM produto
+2023-11-06 13:48:57 :: Exibindo um produto
+2023-11-06 13:48:57 :: SELECT * FROM produto
+2023-11-06 13:48:58 :: Exibindo um produto
+2023-11-06 13:48:58 :: SELECT * FROM produto
+2023-11-06 13:48:58 :: Exibindo um produto
+2023-11-06 13:48:58 :: SELECT * FROM produto
+2023-11-06 13:48:58 :: Exibindo um produto
+2023-11-06 13:48:58 :: SELECT * FROM produto
+2023-11-06 13:48:58 :: Exibindo um produto
+2023-11-06 13:48:58 :: SELECT * FROM produto
+2023-11-06 13:48:58 :: Exibindo um produto
+2023-11-06 13:48:58 :: SELECT * FROM produto
+2023-11-06 13:48:58 :: Exibindo um produto
+2023-11-06 13:48:58 :: SELECT * FROM produto
+2023-11-06 13:48:58 :: Exibindo um produto
+2023-11-06 13:48:58 :: SELECT * FROM produto
+2023-11-06 13:48:58 :: Exibindo um produto
+2023-11-06 13:48:58 :: SELECT * FROM produto
+2023-11-06 13:48:58 :: Exibindo um produto
+2023-11-06 13:48:58 :: SELECT * FROM produto
+2023-11-06 13:48:58 :: Exibindo um produto
+2023-11-06 13:48:58 :: SELECT * FROM produto
+2023-11-06 13:49:00 :: Exibindo um produto
+2023-11-06 13:49:00 :: SELECT * FROM produto
+2023-11-06 13:49:00 :: Exibindo um produto
+2023-11-06 13:49:00 :: SELECT * FROM produto
+2023-11-06 13:49:04 :: Exibindo um produto
+2023-11-06 13:49:04 :: SELECT * FROM produto WHERE id = 1
+2023-11-06 13:49:04 :: Exibindo um produto
+2023-11-06 13:49:04 :: SELECT * FROM produto
+2023-11-06 13:50:35 :: Exibindo um produto
+2023-11-06 13:50:35 :: SELECT * FROM produto WHERE id = 1
+2023-11-06 13:50:35 :: Exibindo um produto
+2023-11-06 13:50:35 :: SELECT * FROM produto WHERE id = 1
+2023-11-06 13:50:35 :: Exibindo um produto
+2023-11-06 13:50:35 :: SELECT * FROM produto
+2023-11-06 13:51:08 :: Exibindo um produto
+2023-11-06 13:51:08 :: Exibindo um produto
+2023-11-06 13:51:08 :: SELECT * FROM produto
+2023-11-06 13:51:12 :: Exibindo um produto
+2023-11-06 13:51:12 :: SELECT * FROM produto WHERE id = 1
+2023-11-06 13:51:12 :: Exibindo um produto
+2023-11-06 13:51:12 :: SELECT * FROM produto
+2023-11-06 13:51:16 :: Exibindo um produto
+2023-11-06 13:51:16 :: Exibindo um produto
+2023-11-06 13:51:16 :: SELECT * FROM produto
+2023-11-06 13:51:26 :: Exibindo um produto
+2023-11-06 13:51:26 :: Exibindo um produto
+2023-11-06 13:51:26 :: SELECT * FROM produto
+2023-11-06 13:52:25 :: Exibindo um produto
+2023-11-06 13:52:25 :: SELECT * FROM produto WHERE id = 1
+2023-11-06 13:52:25 :: Exibindo um produto
+2023-11-06 13:52:25 :: SELECT * FROM produto
+2023-11-06 13:53:43 :: Exibindo um produto
+2023-11-06 13:53:43 :: SELECT * FROM produto WHERE id = 1
+2023-11-06 13:53:43 :: Exibindo um produto
+2023-11-06 13:53:43 :: SELECT * FROM produto
+2023-11-06 13:53:55 :: Exibindo um produto
+2023-11-06 13:53:55 :: SELECT * FROM produto WHERE id = 1
+2023-11-06 13:53:55 :: Exibindo um produto
+2023-11-06 13:53:55 :: SELECT * FROM produto
+2023-11-06 13:54:33 :: Exibindo um produto
+2023-11-06 13:54:33 :: SELECT * FROM produto WHERE id = 1
+2023-11-06 13:54:33 :: Exibindo um produto
+2023-11-06 13:54:33 :: SELECT * FROM produto
+2023-11-06 13:54:38 :: Exibindo um produto
+2023-11-06 13:54:38 :: SELECT * FROM produto WHERE id = 1
+2023-11-06 13:54:38 :: Exibindo um produto
+2023-11-06 13:54:38 :: SELECT * FROM produto
+2023-11-06 13:54:48 :: Exibindo um produto
+2023-11-06 13:54:48 :: SELECT * FROM produto WHERE id = 1
+2023-11-06 13:54:48 :: Exibindo um produto
+2023-11-06 13:54:48 :: SELECT * FROM produto
+2023-11-06 13:54:48 :: Exibindo um produto
+2023-11-06 13:54:48 :: SELECT * FROM produto WHERE id = 1
+2023-11-06 13:54:48 :: Exibindo um produto
+2023-11-06 13:54:48 :: SELECT * FROM produto
+2023-11-06 13:54:48 :: Exibindo um produto
+2023-11-06 13:54:48 :: SELECT * FROM produto WHERE id = 1
+2023-11-06 13:54:48 :: Exibindo um produto
+2023-11-06 13:54:48 :: SELECT * FROM produto
+2023-11-06 13:54:49 :: Exibindo um produto
+2023-11-06 13:54:49 :: SELECT * FROM produto WHERE id = 1
+2023-11-06 13:54:49 :: Exibindo um produto
+2023-11-06 13:54:49 :: SELECT * FROM produto
+2023-11-06 13:55:19 :: Exibindo um produto
+2023-11-06 13:55:19 :: SELECT * FROM produto WHERE id = 1
+2023-11-06 13:55:19 :: Exibindo um produto
+2023-11-06 13:55:19 :: SELECT * FROM produto
+2023-11-06 13:55:40 :: Exibindo um produto
+2023-11-06 13:55:40 :: SELECT * FROM produto WHERE id = 1
+2023-11-06 13:55:40 :: Exibindo um produto
+2023-11-06 13:55:40 :: SELECT * FROM produto
+2023-11-06 13:55:44 :: Exibindo um produto
+2023-11-06 13:55:44 :: Exibindo um produto
+2023-11-06 13:55:44 :: SELECT * FROM produto
+2023-11-06 13:56:08 :: Exibindo um produto
+2023-11-06 13:56:08 :: Exibindo um produto
+2023-11-06 13:56:08 :: SELECT * FROM produto
+2023-11-06 13:56:12 :: Exibindo um produto
+2023-11-06 13:56:12 :: SELECT * FROM produto WHERE id = 2
+2023-11-06 13:56:12 :: DELETE FROM produto WHERE id = 2
+2023-11-06 13:56:12 :: Exibindo um produto
+2023-11-06 13:56:12 :: Exibindo um produto
+2023-11-06 13:56:12 :: SELECT * FROM produto
+2023-11-06 13:56:14 :: Exibindo um produto
+2023-11-06 13:56:14 :: SELECT * FROM produto WHERE id = 1
+2023-11-06 13:56:14 :: Exibindo um produto
+2023-11-06 13:56:14 :: SELECT * FROM produto
+2023-11-06 13:56:16 :: Exibindo um produto
+2023-11-06 13:56:16 :: Exibindo um produto
+2023-11-06 13:56:16 :: SELECT * FROM produto
+2023-11-06 13:57:20 :: Exibindo um produto
+2023-11-06 13:57:20 :: Exibindo um produto
+2023-11-06 13:57:20 :: SELECT * FROM produto
+2023-11-06 13:57:21 :: Exibindo um produto
+2023-11-06 13:57:21 :: Exibindo um produto
+2023-11-06 13:57:21 :: SELECT * FROM produto
+2023-11-06 13:57:22 :: Exibindo um produto
+2023-11-06 13:57:22 :: SELECT * FROM produto WHERE id = 2
+2023-11-06 13:57:22 :: DELETE FROM produto WHERE id = 2
+2023-11-06 13:57:22 :: Exibindo um produto
+2023-11-06 13:57:22 :: Exibindo um produto
+2023-11-06 13:57:22 :: SELECT * FROM produto
+2023-11-06 13:57:23 :: Exibindo um produto
+2023-11-06 13:57:23 :: SELECT * FROM produto WHERE id = 1
+2023-11-06 13:57:23 :: Exibindo um produto
+2023-11-06 13:57:23 :: SELECT * FROM produto
+2023-11-06 13:57:25 :: Exibindo um produto
+2023-11-06 13:57:25 :: Exibindo um produto
+2023-11-06 13:57:25 :: SELECT * FROM produto
+2023-11-06 13:57:49 :: Exibindo um produto
+2023-11-06 13:57:49 :: Exibindo um produto
+2023-11-06 13:57:49 :: SELECT * FROM produto
+2023-11-06 13:57:49 :: Exibindo um produto
+2023-11-06 13:57:49 :: Exibindo um produto
+2023-11-06 13:57:49 :: SELECT * FROM produto
+2023-11-06 13:57:50 :: Exibindo um produto
+2023-11-06 13:57:50 :: Exibindo um produto
+2023-11-06 13:57:50 :: SELECT * FROM produto
+2023-11-06 13:57:50 :: Exibindo um produto
+2023-11-06 13:57:50 :: Exibindo um produto
+2023-11-06 13:57:50 :: SELECT * FROM produto
+2023-11-06 13:57:50 :: Exibindo um produto
+2023-11-06 13:57:50 :: Exibindo um produto
+2023-11-06 13:57:50 :: SELECT * FROM produto
+2023-11-06 13:57:51 :: Exibindo um produto
+2023-11-06 13:57:51 :: SELECT * FROM produto WHERE id = 2
+2023-11-06 13:57:51 :: Exibindo um produto
+2023-11-06 13:57:51 :: SELECT * FROM produto
+2023-11-06 13:57:53 :: Exibindo um produto
+2023-11-06 13:57:53 :: Exibindo um produto
+2023-11-06 13:57:53 :: SELECT * FROM produto
+2023-11-06 13:58:20 :: Exibindo um produto
+2023-11-06 13:58:20 :: SELECT * FROM produto WHERE id = 1
+2023-11-06 13:58:20 :: DELETE FROM produto WHERE id = 1
+2023-11-06 13:58:20 :: Exibindo um produto
+2023-11-06 13:58:20 :: Exibindo um produto
+2023-11-06 13:58:20 :: SELECT * FROM produto
+2023-11-06 13:58:20 :: Exibindo um produto
+2023-11-06 13:58:20 :: SELECT * FROM produto WHERE id = 2
+2023-11-06 13:58:20 :: DELETE FROM produto WHERE id = 2
+2023-11-06 13:58:20 :: Exibindo um produto
+2023-11-06 13:58:20 :: Exibindo um produto
+2023-11-06 13:58:20 :: SELECT * FROM produto
+2023-11-06 13:58:21 :: Exibindo um produto
+2023-11-06 13:58:21 :: SELECT * FROM produto
+2023-11-06 13:58:21 :: Exibindo um produto
+2023-11-06 13:58:21 :: Exibindo um produto
+2023-11-06 13:58:21 :: SELECT * FROM produto
+2023-11-06 13:58:21 :: Exibindo um produto
+2023-11-06 13:58:21 :: SELECT * FROM produto
+2023-11-06 13:58:22 :: Exibindo um produto
+2023-11-06 13:58:22 :: Exibindo um produto
+2023-11-06 13:58:22 :: SELECT * FROM produto
+2023-11-06 13:58:23 :: Exibindo um produto
+2023-11-06 13:58:23 :: Exibindo um produto
+2023-11-06 13:58:23 :: SELECT * FROM produto
+2023-11-06 13:58:36 :: Exibindo um produto
+2023-11-06 13:58:36 :: Exibindo um produto
+2023-11-06 13:58:36 :: SELECT * FROM produto
+2023-11-06 13:58:48 :: Exibindo um produto
+2023-11-06 13:58:48 :: Exibindo um produto
+2023-11-06 13:58:48 :: SELECT * FROM produto
+2023-11-06 13:58:49 :: Exibindo um produto
+2023-11-06 13:58:49 :: SELECT * FROM produto WHERE id = 1
+2023-11-06 13:58:49 :: Exibindo um produto
+2023-11-06 13:58:49 :: SELECT * FROM produto
+2023-11-06 13:58:52 :: Exibindo um produto
+2023-11-06 13:58:52 :: Exibindo um produto
+2023-11-06 13:58:52 :: SELECT * FROM produto
+2023-11-06 13:59:46 :: Exibindo um produto
+2023-11-06 13:59:46 :: Exibindo um produto
+2023-11-06 13:59:46 :: SELECT * FROM produto
+2023-11-06 14:00:11 :: Exibindo um produto
+2023-11-06 14:00:11 :: Exibindo um produto
+2023-11-06 14:00:11 :: SELECT * FROM produto
+2023-11-06 14:00:14 :: Exibindo um produto
+2023-11-06 14:00:14 :: SELECT * FROM produto WHERE id = 1
+2023-11-06 14:00:14 :: Exibindo um produto
+2023-11-06 14:00:14 :: SELECT * FROM produto
+2023-11-06 14:00:17 :: Exibindo um produto
+2023-11-06 14:00:17 :: SELECT * FROM produto WHERE id = 1
+2023-11-06 14:00:17 :: Exibindo um produto
+2023-11-06 14:00:17 :: SELECT * FROM produto
+2023-11-06 14:00:57 :: Exibindo um produto
+2023-11-06 14:00:57 :: Exibindo um produto
+2023-11-06 14:00:57 :: SELECT * FROM produto
+2023-11-06 14:01:11 :: Exibindo um produto
+2023-11-06 14:01:11 :: Exibindo um produto
+2023-11-06 14:01:11 :: SELECT * FROM produto
+2023-11-06 14:01:13 :: Exibindo um produto
+2023-11-06 14:01:13 :: SELECT * FROM produto WHERE id = 1
+2023-11-06 14:01:13 :: Exibindo um produto
+2023-11-06 14:01:13 :: SELECT * FROM produto
+2023-11-06 14:01:23 :: Exibindo um produto
+2023-11-06 14:01:23 :: SELECT * FROM produto WHERE id = 1
+2023-11-06 14:01:23 :: Exibindo um produto
+2023-11-06 14:01:23 :: SELECT * FROM produto
+2023-11-06 14:01:32 :: Exibindo um produto
+2023-11-06 14:01:32 :: SELECT * FROM produto WHERE id = 1
+2023-11-06 14:01:32 :: Exibindo um produto
+2023-11-06 14:01:32 :: SELECT * FROM produto
+2023-11-06 14:01:34 :: Exibindo um produto
+2023-11-06 14:01:34 :: SELECT * FROM produto WHERE id = 1
+2023-11-06 14:01:34 :: Exibindo um produto
+2023-11-06 14:01:34 :: SELECT * FROM produto
+2023-11-06 14:02:23 :: Exibindo um produto
+2023-11-06 14:02:23 :: Exibindo um produto
+2023-11-06 14:02:23 :: SELECT * FROM produto
+2023-11-06 14:02:35 :: Exibindo um produto
+2023-11-06 14:02:35 :: Exibindo um produto
+2023-11-06 14:02:35 :: SELECT * FROM produto
+2023-11-06 14:02:38 :: Exibindo um produto
+2023-11-06 14:02:38 :: SELECT * FROM produto WHERE id = 1
+2023-11-06 14:02:38 :: DELETE FROM produto WHERE id = 1
+2023-11-06 14:02:38 :: Exibindo um produto
+2023-11-06 14:02:38 :: Exibindo um produto
+2023-11-06 14:02:38 :: SELECT * FROM produto
+2023-11-06 14:02:39 :: Exibindo um produto
+2023-11-06 14:02:39 :: SELECT * FROM produto WHERE id = 2
+2023-11-06 14:02:39 :: Exibindo um produto
+2023-11-06 14:02:39 :: SELECT * FROM produto
+2023-11-06 14:02:42 :: Exibindo um produto
+2023-11-06 14:02:42 :: Exibindo um produto
+2023-11-06 14:02:42 :: SELECT * FROM produto
+2023-11-06 14:02:47 :: Exibindo um produto
+2023-11-06 14:02:47 :: SELECT * FROM produto WHERE id = 2
+2023-11-06 14:02:47 :: Exibindo um produto
+2023-11-06 14:02:47 :: SELECT * FROM produto
+2023-11-06 14:56:08 :: Exibindo um produto
+2023-11-06 14:56:08 :: SELECT * FROM produto WHERE id = 2
+2023-11-06 14:56:08 :: DELETE FROM produto WHERE id = 2
+2023-11-06 14:56:08 :: Exibindo um produto
+2023-11-06 14:56:08 :: Exibindo um produto
+2023-11-06 14:56:08 :: SELECT * FROM produto
+2023-11-06 14:56:09 :: Exibindo um produto
+2023-11-06 14:56:09 :: Exibindo um produto
+2023-11-06 14:56:09 :: SELECT * FROM produto
+2023-11-06 14:58:57 :: Exibindo um produto
+2023-11-06 14:58:57 :: Exibindo um produto
+2023-11-06 14:58:57 :: SELECT * FROM produto
+2023-11-06 14:59:01 :: Exibindo um produto
+2023-11-06 14:59:01 :: SELECT * FROM produto WHERE id = 1
+2023-11-06 14:59:01 :: Exibindo um produto
+2023-11-06 14:59:01 :: SELECT * FROM produto
+2023-11-06 14:59:06 :: Exibindo um produto
+2023-11-06 14:59:06 :: Exibindo um produto
+2023-11-06 14:59:06 :: SELECT * FROM produto
+2023-11-06 14:59:09 :: Exibindo um produto
+2023-11-06 14:59:09 :: SELECT * FROM produto WHERE id = 1
+2023-11-06 14:59:09 :: DELETE FROM produto WHERE id = 1
+2023-11-06 14:59:09 :: Exibindo um produto
+2023-11-06 14:59:09 :: Exibindo um produto
+2023-11-06 14:59:09 :: SELECT * FROM produto
+2023-11-06 15:36:18 :: Exibindo um produto
+2023-11-06 15:36:18 :: Exibindo um produto
+2023-11-06 15:36:18 :: SELECT * FROM produto
+2023-11-06 15:46:01 :: Exibindo um produto
+2023-11-06 15:46:01 :: Exibindo um produto
+2023-11-06 15:46:01 :: SELECT * FROM produto
+2023-11-06 15:58:08 :: Exibindo um produto
+2023-11-06 15:58:08 :: Exibindo um produto
+2023-11-06 15:58:08 :: SELECT * FROM produto
+2023-11-06 15:58:36 :: Exibindo um produto
+2023-11-06 15:58:36 :: Exibindo um produto
+2023-11-06 15:58:36 :: SELECT * FROM produto
+2023-11-06 16:05:19 :: Exibindo um produto
+2023-11-06 16:05:19 :: SELECT * FROM produto WHERE id = 1
+2023-11-06 16:05:19 :: DELETE FROM produto WHERE id = 1
+2023-11-06 16:05:19 :: Exibindo um produto
+2023-11-06 16:05:19 :: Exibindo um produto
+2023-11-06 16:05:19 :: SELECT * FROM produto
+2023-11-06 16:06:49 :: Exibindo um produto
+2023-11-06 16:06:49 :: Exibindo um produto
+2023-11-06 16:06:49 :: SELECT * FROM produto
+2023-11-06 16:06:50 :: Exibindo um produto
+2023-11-06 16:06:50 :: Exibindo um produto
+2023-11-06 16:06:50 :: SELECT * FROM produto
+2023-11-06 16:06:52 :: Exibindo um produto
+2023-11-06 16:06:52 :: Exibindo um produto
+2023-11-06 16:06:52 :: SELECT * FROM produto
+2023-11-06 16:06:53 :: Exibindo um produto
+2023-11-06 16:06:53 :: Exibindo um produto
+2023-11-06 16:06:53 :: SELECT * FROM produto
+2023-11-06 16:07:06 :: Exibindo um produto
+2023-11-06 16:07:06 :: SELECT * FROM produto WHERE id = 3
+2023-11-06 16:07:06 :: Exibindo um produto
+2023-11-06 16:07:06 :: SELECT * FROM produto
+2023-11-06 16:07:12 :: Exibindo um produto
+2023-11-06 16:07:12 :: SELECT * FROM produto WHERE id = 2
+2023-11-06 16:07:12 :: Exibindo um produto
+2023-11-06 16:07:12 :: SELECT * FROM produto
+2023-11-06 16:07:15 :: Exibindo um produto
+2023-11-06 16:07:15 :: SELECT * FROM produto WHERE id = 4
+2023-11-06 16:07:15 :: Exibindo um produto
+2023-11-06 16:07:15 :: SELECT * FROM produto
+2023-11-06 16:07:47 :: Exibindo um produto
+2023-11-06 16:07:47 :: SELECT * FROM produto WHERE id = 3
+2023-11-06 16:07:47 :: Exibindo um produto
+2023-11-06 16:07:47 :: SELECT * FROM produto
+2023-11-06 16:07:54 :: Exibindo um produto
+2023-11-06 16:07:54 :: SELECT * FROM produto WHERE id = 3
+2023-11-06 16:07:54 :: Exibindo um produto
+2023-11-06 16:07:54 :: SELECT * FROM produto
+2023-11-06 16:07:55 :: Exibindo um produto
+2023-11-06 16:07:55 :: SELECT * FROM produto WHERE id = 2
+2023-11-06 16:07:55 :: Exibindo um produto
+2023-11-06 16:07:55 :: SELECT * FROM produto
+2023-11-06 16:07:57 :: Exibindo um produto
+2023-11-06 16:07:57 :: SELECT * FROM produto WHERE id = 3
+2023-11-06 16:07:57 :: Exibindo um produto
+2023-11-06 16:07:57 :: SELECT * FROM produto
+2023-11-06 16:07:57 :: Exibindo um produto
+2023-11-06 16:07:57 :: SELECT * FROM produto WHERE id = 2
+2023-11-06 16:07:57 :: Exibindo um produto
+2023-11-06 16:07:57 :: SELECT * FROM produto
+2023-11-06 16:07:58 :: Exibindo um produto
+2023-11-06 16:07:58 :: SELECT * FROM produto WHERE id = 3
+2023-11-06 16:07:58 :: Exibindo um produto
+2023-11-06 16:07:58 :: SELECT * FROM produto
+2023-11-06 16:07:58 :: Exibindo um produto
+2023-11-06 16:07:58 :: SELECT * FROM produto WHERE id = 2
+2023-11-06 16:07:58 :: Exibindo um produto
+2023-11-06 16:07:58 :: SELECT * FROM produto
+2023-11-06 16:07:59 :: Exibindo um produto
+2023-11-06 16:07:59 :: SELECT * FROM produto WHERE id = 3
+2023-11-06 16:07:59 :: Exibindo um produto
+2023-11-06 16:07:59 :: SELECT * FROM produto
+2023-11-06 16:07:59 :: Exibindo um produto
+2023-11-06 16:07:59 :: SELECT * FROM produto WHERE id = 2
+2023-11-06 16:07:59 :: Exibindo um produto
+2023-11-06 16:07:59 :: SELECT * FROM produto
+2023-11-06 16:08:00 :: Exibindo um produto
+2023-11-06 16:08:00 :: SELECT * FROM produto WHERE id = 3
+2023-11-06 16:08:00 :: Exibindo um produto
+2023-11-06 16:08:00 :: SELECT * FROM produto
+2023-11-06 16:08:00 :: Exibindo um produto
+2023-11-06 16:08:00 :: SELECT * FROM produto WHERE id = 2
+2023-11-06 16:08:00 :: Exibindo um produto
+2023-11-06 16:08:00 :: SELECT * FROM produto
+2023-11-06 16:08:48 :: Exibindo um produto
+2023-11-06 16:08:48 :: SELECT * FROM produto WHERE id = 2
+2023-11-06 16:08:48 :: Exibindo um produto
+2023-11-06 16:08:48 :: SELECT * FROM produto
+2023-11-06 16:09:09 :: Exibindo um produto
+2023-11-06 16:09:09 :: Exibindo um produto
+2023-11-06 16:09:09 :: SELECT * FROM produto
+2023-11-06 16:41:00 :: Exibindo um produto
+2023-11-06 16:41:00 :: Exibindo um produto
+2023-11-06 16:41:00 :: SELECT * FROM produto
+2023-11-06 16:41:06 :: Exibindo um produto
+2023-11-06 16:41:06 :: SELECT * FROM produto WHERE id = 2
+2023-11-06 16:41:06 :: Exibindo um produto
+2023-11-06 16:41:06 :: SELECT * FROM produto
+2023-11-06 16:41:19 :: Exibindo um produto
+2023-11-06 16:41:19 :: Exibindo um produto
+2023-11-06 16:41:19 :: SELECT * FROM produto
+2023-11-06 16:41:27 :: Exibindo um produto
+2023-11-06 16:41:27 :: SELECT * FROM produto WHERE id = 5
+2023-11-06 16:41:27 :: Exibindo um produto
+2023-11-06 16:41:27 :: SELECT * FROM produto
+2023-11-06 16:41:35 :: Exibindo um produto
+2023-11-06 16:41:35 :: Exibindo um produto
+2023-11-06 16:41:35 :: SELECT * FROM produto
+2023-11-06 16:41:46 :: Exibindo um produto
+2023-11-06 16:41:46 :: SELECT * FROM produto WHERE id = 6
+2023-11-06 16:41:46 :: DELETE FROM produto WHERE id = 6
+2023-11-06 16:41:46 :: Exibindo um produto
+2023-11-06 16:41:46 :: Exibindo um produto
+2023-11-06 16:41:46 :: SELECT * FROM produto
+2023-11-06 16:41:50 :: Exibindo um produto
+2023-11-06 16:41:50 :: SELECT * FROM produto WHERE id = 5
+2023-11-06 16:41:50 :: Exibindo um produto
+2023-11-06 16:41:50 :: SELECT * FROM produto
+2023-11-06 16:41:51 :: Exibindo um produto
+2023-11-06 16:41:51 :: Exibindo um produto
+2023-11-06 16:41:51 :: SELECT * FROM produto
+2023-11-06 16:41:53 :: Exibindo um produto
+2023-11-06 16:41:53 :: SELECT * FROM produto WHERE id = 6
+2023-11-06 16:41:53 :: Exibindo um produto
+2023-11-06 16:41:53 :: SELECT * FROM produto
+2023-11-06 16:42:57 :: Exibindo um produto
+2023-11-06 16:42:57 :: Exibindo um produto
+2023-11-06 16:42:57 :: SELECT * FROM produto
+2023-11-07 15:20:32 :: Exibindo um produto
+2023-11-07 15:20:32 :: Exibindo um produto
+2023-11-07 15:20:32 :: SELECT * FROM produto
+2023-11-07 15:20:41 :: Exibindo um produto
+2023-11-07 15:20:41 :: SELECT * FROM produto WHERE id = 7
+2023-11-07 15:20:41 :: DELETE FROM produto WHERE id = 7
+2023-11-07 15:20:41 :: Exibindo um produto
+2023-11-07 15:20:41 :: Exibindo um produto
+2023-11-07 15:20:41 :: SELECT * FROM produto
+2023-11-07 15:20:41 :: Exibindo um produto
+2023-11-07 15:20:41 :: SELECT * FROM produto WHERE id = 6
+2023-11-07 15:20:41 :: DELETE FROM produto WHERE id = 6
+2023-11-07 15:20:42 :: Exibindo um produto
+2023-11-07 15:20:42 :: Exibindo um produto
+2023-11-07 15:20:42 :: SELECT * FROM produto
+2023-11-07 15:20:43 :: Exibindo um produto
+2023-11-07 15:20:43 :: SELECT * FROM produto WHERE id = 4
+2023-11-07 15:20:43 :: DELETE FROM produto WHERE id = 4
+2023-11-07 15:20:43 :: Exibindo um produto
+2023-11-07 15:20:43 :: Exibindo um produto
+2023-11-07 15:20:43 :: SELECT * FROM produto
+2023-11-07 15:20:43 :: Exibindo um produto
+2023-11-07 15:20:43 :: SELECT * FROM produto WHERE id = 5
+2023-11-07 15:20:43 :: DELETE FROM produto WHERE id = 5
+2023-11-07 15:20:43 :: Exibindo um produto
+2023-11-07 15:20:43 :: Exibindo um produto
+2023-11-07 15:20:43 :: SELECT * FROM produto
+2023-11-07 15:20:44 :: Exibindo um produto
+2023-11-07 15:20:44 :: SELECT * FROM produto WHERE id = 3
+2023-11-07 15:20:44 :: DELETE FROM produto WHERE id = 3
+2023-11-07 15:20:44 :: Exibindo um produto
+2023-11-07 15:20:44 :: Exibindo um produto
+2023-11-07 15:20:44 :: SELECT * FROM produto
+2023-11-07 15:20:44 :: Exibindo um produto
+2023-11-07 15:20:44 :: SELECT * FROM produto WHERE id = 2
+2023-11-07 15:20:44 :: DELETE FROM produto WHERE id = 2
+2023-11-07 15:20:44 :: Exibindo um produto
+2023-11-07 15:20:44 :: Exibindo um produto
+2023-11-07 15:20:44 :: SELECT * FROM produto
+2023-11-07 15:20:54 :: Exibindo um produto
+2023-11-07 15:20:54 :: Exibindo um produto
+2023-11-07 15:20:54 :: SELECT * FROM produto
+2023-11-07 15:20:56 :: Exibindo um produto
+2023-11-07 15:20:56 :: SELECT * FROM produto WHERE id = 1
+2023-11-07 15:20:56 :: Exibindo um produto
+2023-11-07 15:20:56 :: SELECT * FROM produto
+2023-11-07 15:21:06 :: Exibindo um produto
+2023-11-07 15:21:06 :: Exibindo um produto
+2023-11-07 15:21:06 :: SELECT * FROM produto
+2023-11-07 15:21:27 :: Exibindo um produto
+2023-11-07 15:21:27 :: SELECT * FROM produto WHERE id = 1
+2023-11-07 15:21:27 :: DELETE FROM produto WHERE id = 1
+2023-11-07 15:21:27 :: Exibindo um produto
+2023-11-07 15:21:27 :: Exibindo um produto
+2023-11-07 15:21:27 :: SELECT * FROM produto
+2023-11-07 15:21:27 :: Exibindo um produto
+2023-11-07 15:21:27 :: SELECT * FROM produto WHERE id = 2
+2023-11-07 15:21:27 :: DELETE FROM produto WHERE id = 2
+2023-11-07 15:21:27 :: Exibindo um produto
+2023-11-07 15:21:27 :: Exibindo um produto
+2023-11-07 15:21:27 :: SELECT * FROM produto
+2023-11-07 15:30:16 :: Exibindo um produto
+2023-11-07 15:30:16 :: Exibindo um produto
+2023-11-07 15:30:16 :: SELECT * FROM produto
+2023-11-07 15:36:44 :: Exibindo um produto
+2023-11-07 15:36:44 :: Exibindo os produtos
+2023-11-07 15:36:44 :: SELECT * FROM produto
+2023-11-07 15:37:03 :: Exibindo um produto
+2023-11-07 15:37:03 :: Exibindo os produtos
+2023-11-07 15:37:03 :: SELECT * FROM produto
+2023-11-07 15:37:03 :: Exibindo um produto
+2023-11-07 15:37:03 :: Exibindo os produtos
+2023-11-07 15:37:03 :: SELECT * FROM produto
+2023-11-07 15:37:03 :: Exibindo um produto
+2023-11-07 15:37:03 :: Exibindo os produtos
+2023-11-07 15:37:03 :: SELECT * FROM produto
+2023-11-07 15:37:04 :: Exibindo um produto
+2023-11-07 15:37:04 :: Exibindo os produtos
+2023-11-07 15:37:04 :: SELECT * FROM produto
+2023-11-07 15:37:04 :: Exibindo um produto
+2023-11-07 15:37:04 :: Exibindo os produtos
+2023-11-07 15:37:04 :: SELECT * FROM produto
+2023-11-07 15:37:04 :: Exibindo um produto
+2023-11-07 15:37:04 :: Exibindo os produtos
+2023-11-07 15:37:04 :: SELECT * FROM produto
+2023-11-07 15:37:04 :: Exibindo um produto
+2023-11-07 15:37:04 :: Exibindo os produtos
+2023-11-07 15:37:04 :: SELECT * FROM produto
+2023-11-07 15:37:04 :: Exibindo um produto
+2023-11-07 15:37:04 :: Exibindo os produtos
+2023-11-07 15:37:04 :: SELECT * FROM produto
+2023-11-07 15:37:04 :: Exibindo um produto
+2023-11-07 15:37:04 :: Exibindo os produtos
+2023-11-07 15:37:04 :: SELECT * FROM produto
+2023-11-07 15:37:04 :: Exibindo um produto
+2023-11-07 15:37:04 :: Exibindo os produtos
+2023-11-07 15:37:04 :: SELECT * FROM produto
+2023-11-07 15:37:04 :: Exibindo um produto
+2023-11-07 15:37:04 :: Exibindo os produtos
+2023-11-07 15:37:04 :: SELECT * FROM produto
+2023-11-07 15:37:05 :: Exibindo um produto
+2023-11-07 15:37:05 :: Exibindo os produtos
+2023-11-07 15:37:05 :: SELECT * FROM produto
+2023-11-07 15:37:05 :: Exibindo um produto
+2023-11-07 15:37:05 :: Exibindo os produtos
+2023-11-07 15:37:05 :: SELECT * FROM produto
+2023-11-07 15:37:05 :: Exibindo um produto
+2023-11-07 15:37:05 :: Exibindo os produtos
+2023-11-07 15:37:05 :: SELECT * FROM produto
+2023-11-07 15:37:07 :: Exibindo um produto
+2023-11-07 15:37:07 :: Exibindo os produtos
+2023-11-07 15:37:07 :: SELECT * FROM produto
+2023-11-07 15:37:07 :: Exibindo um produto
+2023-11-07 15:37:07 :: Exibindo os produtos
+2023-11-07 15:37:07 :: SELECT * FROM produto
+2023-11-07 15:37:07 :: Exibindo um produto
+2023-11-07 15:37:07 :: Exibindo os produtos
+2023-11-07 15:37:07 :: SELECT * FROM produto
+2023-11-07 15:37:07 :: Exibindo um produto
+2023-11-07 15:37:07 :: Exibindo os produtos
+2023-11-07 15:37:07 :: SELECT * FROM produto
+2023-11-07 15:37:41 :: Exibindo um produto
+2023-11-07 15:37:41 :: Exibindo os produtos
+2023-11-07 15:37:41 :: SELECT * FROM produto
+2023-11-07 15:38:34 :: Exibindo um produto
+2023-11-07 15:38:34 :: SELECT * FROM produto WHERE id = 1
+2023-11-07 15:38:34 :: Exibindo os produtos
+2023-11-07 15:38:34 :: SELECT * FROM produto
+2023-11-07 15:40:18 :: Exibindo um produto
+2023-11-07 15:40:18 :: Exibindo os produtos
+2023-11-07 15:40:18 :: SELECT * FROM produto
+2023-11-07 15:40:20 :: Exibindo um produto
+2023-11-07 15:40:20 :: Exibindo os produtos
+2023-11-07 15:40:20 :: SELECT * FROM produto
+2023-11-07 15:41:00 :: Exibindo um produto
+2023-11-07 15:41:00 :: Exibindo os produtos
+2023-11-07 15:41:00 :: SELECT * FROM produto
+2023-11-07 15:45:17 :: Exibindo um produto
+2023-11-07 15:45:17 :: Exibindo os produtos
+2023-11-07 15:45:17 :: SELECT * FROM produto
+2023-11-07 15:45:21 :: Exibindo um produto
+2023-11-07 15:45:21 :: SELECT * FROM produto WHERE id = 4
+2023-11-07 15:45:21 :: DELETE FROM produto WHERE id = 4
+2023-11-07 15:45:21 :: Exibindo um produto
+2023-11-07 15:45:21 :: Exibindo os produtos
+2023-11-07 15:45:21 :: SELECT * FROM produto
+2023-11-07 15:45:37 :: Exibindo um produto
+2023-11-07 15:45:37 :: SELECT * FROM produto WHERE id = 3
+2023-11-07 15:45:37 :: DELETE FROM produto WHERE id = 3
+2023-11-07 15:45:37 :: Exibindo um produto
+2023-11-07 15:45:37 :: Exibindo os produtos
+2023-11-07 15:45:37 :: SELECT * FROM produto
+2023-11-07 15:47:02 :: Excluindo um produto
+2023-11-07 15:47:02 :: SELECT * FROM produto WHERE id = 2
+2023-11-07 15:47:02 :: DELETE FROM produto WHERE id = 2
+2023-11-07 15:47:02 :: Exibindo um produto
+2023-11-07 15:47:02 :: Exibindo os produtos
+2023-11-07 15:47:02 :: SELECT * FROM produto
+2023-11-07 15:52:14 :: Editando um produto
+2023-11-07 15:52:14 :: SELECT * FROM produto WHERE id = 1
+2023-11-07 15:52:14 :: Exibindo os produtos
+2023-11-07 15:52:14 :: SELECT * FROM produto
+2023-11-07 15:53:09 :: Editando um produto
+2023-11-07 15:53:09 :: Exibindo os produtos
+2023-11-07 15:53:09 :: SELECT * FROM produto
+2023-11-07 15:53:27 :: Editando um produto
+2023-11-07 15:53:27 :: Exibindo os produtos
+2023-11-07 15:53:27 :: SELECT * FROM produto
+2023-11-07 15:53:46 :: Editando um produto
+2023-11-07 15:53:46 :: SELECT * FROM produto WHERE id = 1
+2023-11-07 15:53:46 :: Exibindo os produtos
+2023-11-07 15:53:46 :: SELECT * FROM produto
+2023-11-07 15:53:51 :: Editando um produto
+2023-11-07 15:53:51 :: SELECT * FROM produto WHERE id = 2
+2023-11-07 15:53:51 :: Exibindo os produtos
+2023-11-07 15:53:51 :: SELECT * FROM produto
+2023-11-07 15:54:13 :: Editando um produto
+2023-11-07 15:54:13 :: SELECT * FROM produto WHERE id = 1
+2023-11-07 15:54:13 :: Exibindo os produtos
+2023-11-07 15:54:13 :: SELECT * FROM produto
+2023-11-07 16:27:29 :: Editando um produto
+2023-11-07 16:27:29 :: SELECT * FROM produto WHERE id = 1
+2023-11-07 16:27:29 :: Exibindo os produtos
+2023-11-07 16:27:29 :: SELECT * FROM produto
+2023-11-07 16:27:32 :: Editando um produto
+2023-11-07 16:27:32 :: Exibindo os produtos
+2023-11-07 16:27:32 :: SELECT * FROM produto
+2023-11-07 16:28:03 :: Editando um produto
+2023-11-07 16:28:03 :: SELECT * FROM produto WHERE id = 2
+2023-11-07 16:28:03 :: Exibindo os produtos
+2023-11-07 16:28:03 :: SELECT * FROM produto
+2023-11-07 16:28:06 :: Editando um produto
+2023-11-07 16:28:06 :: Exibindo os produtos
+2023-11-07 16:28:06 :: SELECT * FROM produto
+2023-11-07 16:28:08 :: Editando um produto
+2023-11-07 16:28:08 :: SELECT * FROM produto WHERE id = 1
+2023-11-07 16:28:08 :: Exibindo os produtos
+2023-11-07 16:28:08 :: SELECT * FROM produto
+2023-11-07 16:28:11 :: Editando um produto
+2023-11-07 16:28:11 :: Exibindo os produtos
+2023-11-07 16:28:11 :: SELECT * FROM produto
+2023-11-07 16:28:18 :: Editando um produto
+2023-11-07 16:28:18 :: SELECT * FROM produto WHERE id = 1
+2023-11-07 16:28:18 :: Exibindo os produtos
+2023-11-07 16:28:18 :: SELECT * FROM produto
+2023-11-07 16:28:23 :: Editando um produto
+2023-11-07 16:28:23 :: Exibindo os produtos
+2023-11-07 16:28:23 :: SELECT * FROM produto
+2023-11-07 16:28:24 :: Editando um produto
+2023-11-07 16:28:24 :: SELECT * FROM produto WHERE id = 2
+2023-11-07 16:28:24 :: Exibindo os produtos
+2023-11-07 16:28:24 :: SELECT * FROM produto
+2023-11-07 16:28:35 :: Editando um produto
+2023-11-07 16:28:35 :: Exibindo os produtos
+2023-11-07 16:28:35 :: SELECT * FROM produto
+2023-11-07 16:59:50 :: Editando um produto
+2023-11-07 16:59:50 :: Exibindo os produtos
+2023-11-07 17:00:02 :: Editando um produto
+2023-11-07 17:00:12 :: Editando um produto
+2023-11-07 17:00:12 :: Exibindo os produtos
+2023-11-07 17:00:12 :: SELECT * FROM produto
+2023-11-07 17:00:25 :: Editando um produto
+2023-11-07 17:00:25 :: Exibindo os produtos
+2023-11-07 17:00:25 :: SELECT * FROM produto
+2023-11-07 17:01:14 :: Editando um produto
+2023-11-07 17:01:14 :: Exibindo os produtos
+2023-11-07 17:01:14 :: SELECT * FROM produto
+2023-11-07 17:01:15 :: Editando um produto
+2023-11-07 17:01:15 :: Exibindo os produtos
+2023-11-07 17:01:15 :: SELECT * FROM produto
+2023-11-07 17:01:15 :: Editando um produto
+2023-11-07 17:01:15 :: Exibindo os produtos
+2023-11-07 17:01:15 :: SELECT * FROM produto
+2023-11-07 17:01:19 :: Excluindo um produto
+2023-11-07 17:01:19 :: SELECT * FROM produto WHERE id = 1
+2023-11-07 17:01:19 :: DELETE FROM produto WHERE id = 1
+2023-11-07 17:01:19 :: Editando um produto
+2023-11-07 17:01:19 :: Exibindo os produtos
+2023-11-07 17:01:19 :: SELECT * FROM produto
+2023-11-07 17:02:39 :: Editando um produto
+2023-11-07 17:02:39 :: Exibindo os produtos
+2023-11-07 17:02:39 :: SELECT * FROM produto
+2023-11-07 17:09:00 :: Editando um produto
+2023-11-07 17:09:00 :: Exibindo os produtos
+2023-11-07 17:09:00 :: SELECT * FROM produto
+2023-11-07 17:09:01 :: Editando um produto
+2023-11-07 17:09:01 :: Exibindo os produtos
+2023-11-07 17:09:01 :: SELECT * FROM produto
+2023-11-07 17:09:01 :: Editando um produto
+2023-11-07 17:09:01 :: Exibindo os produtos
+2023-11-07 17:09:01 :: SELECT * FROM produto
+2023-11-07 17:09:01 :: Editando um produto
+2023-11-07 17:09:01 :: Exibindo os produtos
+2023-11-07 17:09:01 :: SELECT * FROM produto
+2023-11-07 17:09:01 :: Editando um produto
+2023-11-07 17:09:01 :: Exibindo os produtos
+2023-11-07 17:09:01 :: SELECT * FROM produto
+2023-11-07 17:09:01 :: Editando um produto
+2023-11-07 17:09:01 :: Exibindo os produtos
+2023-11-07 17:09:01 :: SELECT * FROM produto
+2023-11-07 17:09:01 :: Editando um produto
+2023-11-07 17:09:01 :: Exibindo os produtos
+2023-11-07 17:09:01 :: SELECT * FROM produto
+2023-11-07 17:09:11 :: Editando um produto
+2023-11-07 17:09:11 :: Exibindo os produtos
+2023-11-07 17:09:11 :: SELECT * FROM produto
+2023-11-07 17:09:11 :: Editando um produto
+2023-11-07 17:09:11 :: Exibindo os produtos
+2023-11-07 17:09:11 :: SELECT * FROM produto
+2023-11-07 17:09:12 :: Editando um produto
+2023-11-07 17:09:12 :: Exibindo os produtos
+2023-11-07 17:09:12 :: SELECT * FROM produto
+2023-11-07 17:09:12 :: Editando um produto
+2023-11-07 17:09:12 :: Exibindo os produtos
+2023-11-07 17:09:12 :: SELECT * FROM produto

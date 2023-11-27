@@ -1,0 +1,20 @@
+<log>
+<time>2023-10-23 16:00:46</time>
+<message>Excluir um produto.</message>
+</log>
+<log>
+<time>2023-10-23 16:00:46</time>
+<message>SELECT * FROM produto WHERE id = 12</message>
+</log>
+<log>
+<time>2023-10-23 16:02:07</time>
+<message>Excluir um produto.</message>
+</log>
+<log>
+<time>2023-10-23 16:02:07</time>
+<message>SELECT * FROM produto WHERE id = 3</message>
+</log>
+<log>
+<time>2023-10-23 16:02:07</time>
+<message>DELETE FROM produto WHERE id = 3</message>
+</log>

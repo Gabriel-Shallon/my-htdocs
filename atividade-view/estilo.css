@@ -1,0 +1,48 @@
+body {
+    margin: 5px;
+} 
+table
+{
+    width: 100%;
+}
+label
+{
+    font-weight: bold;
+    color: rgb(122, 121, 121);
+}
+input[type="text"]
+{
+    width: 100%;
+    color: rgb(122, 121, 121);
+}
+
+p
+{
+    color: rgb(122, 121, 121);
+}
+input[type="submit"]
+{
+    background: #0066A2;
+    color: white;
+    border-style: outset;
+    border-color: #0066A2;
+    cursor: pointer;
+    font: bold12px arial,sans-serif;
+}
+input[type="reset"]
+{
+    background: #545555;
+    color: white;
+    border-style: outset;
+    border-color: #545555;
+    cursor: pointer;
+    font: bold12px arial,sans-serif;
+}
+input[type="submit"]:hover
+{
+    background: #7bd0e5;
+    color: white;
+    border-style: outset;
+    border-color: #7bd0e5;
+    font: bold12px arial,sans-serif;
+}

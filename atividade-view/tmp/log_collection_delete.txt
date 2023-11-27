@@ -1,0 +1,1 @@
+2023-10-30 14:07:45 :: DELETE FROM produto WHERE (descricao like '%WEBC%' or descricao like '%FILMAD%')
