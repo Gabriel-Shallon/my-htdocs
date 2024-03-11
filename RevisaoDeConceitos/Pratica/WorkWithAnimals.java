@@ -6,10 +6,10 @@ public class WorkWithAnimals {
     public static void main(String[] args){
 
 
-       int AnimalId = JOptionPane.showConfirmDialog(null, "Qual animal irá registrar?");
+       int AnimalType = JOptionPane.showConfirmDialog(null, "Qual animal irá registrar?");
        String Animal;
 
-        if (AnimalId == 0) {
+        if (AnimalType == 0) {
 
              Animal = "Cachorro";
 
@@ -18,7 +18,7 @@ public class WorkWithAnimals {
         (Integer.parseInt(JOptionPane.showInputDialog(null, "Qual o peso do(a) "+Animal+"?"))));
 
 
-        }else if(AnimalId == 1) { 
+        }else if(AnimalType == 1) { 
              
             Animal = "Gato";
         
