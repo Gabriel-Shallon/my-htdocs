@@ -4,6 +4,8 @@ import javax.swing.JOptionPane;
 
 class Animal{
 
+    static int nextId = 1;
+
     int id;
     String name;
     double height;
@@ -11,7 +13,10 @@ class Animal{
 
 
     Animal(String name, double height, int weight){
-        this.id = id+1;
+        this.id = nextId++;
+        this.name = name;
+        this.height = height;
+        this.weight = weight;
     }
 
 

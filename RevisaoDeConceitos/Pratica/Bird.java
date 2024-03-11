@@ -7,6 +7,7 @@ class Bird extends Animal{
         
     Bird(String name, double height, int weight) {
         super(name, height, weight);
+        
     }
 
     public void fly(){
