@@ -4,12 +4,12 @@ import javax.swing.JOptionPane;
 
 class Animal{
 
-    static int nextId = 1;
+    int nextId = 1;
 
-    int id;
-    String name;
-    double height;
-    int weight;
+    public int id;
+    private String name;
+    private double height;
+    private int weight;
 
 
     Animal(String name, double height, int weight){
