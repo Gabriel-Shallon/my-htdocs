@@ -6,24 +6,35 @@ public class WorkWithAnimals {
     public static void main(String[] args){
 
 
+       int AnimalId = JOptionPane.showConfirmDialog(null, "Qual animal irá registrar?");
+       String Animal;
+
+        if (AnimalId == 0) {
+
+             Animal = "Cachorro";
+
+        Dog Animal1 = new Dog((JOptionPane.showInputDialog(null, "Qual o nome do(a) "+Animal+"?")),
+        (Double.parseDouble(JOptionPane.showInputDialog(null, "Qual a altura do(a) "+Animal+"?"))),
+        (Integer.parseInt(JOptionPane.showInputDialog(null, "Qual o peso do(a) "+Animal+"?"))));
+
+
+        }else if(AnimalId == 1) { 
+             
+            Animal = "Gato";
         
-        Dog bobTheDog = new Dog();
+        Cat Animal1 = new Cat((JOptionPane.showInputDialog(null, "Qual o nome do(a) "+Animal+"?")),
+        (Double.parseDouble(JOptionPane.showInputDialog(null, "Qual a altura do(a) "+Animal+"?"))),
+        (Integer.parseInt(JOptionPane.showInputDialog(null, "Qual o peso do(a) "+Animal+"?"))));
 
+        }else{ 
+            
+            Animal = "Pássaro";
+        
+        Bird Animal1 = new Bird((JOptionPane.showInputDialog(null, "Qual o nome do(a) "+Animal+"?")),
+        (Double.parseDouble(JOptionPane.showInputDialog(null, "Qual a altura do(a) "+Animal+"?"))),
+        (Integer.parseInt(JOptionPane.showInputDialog(null, "Qual o peso do(a) "+Animal+"?"))));
 
-
-        bobTheDog.setName(JOptionPane.showInputDialog(null, "What'z da dogs naime??"));
-
-
-        bobTheDog.setWeight(Integer.parseInt(JOptionPane.showInputDialog(null, "What'z da dogs weight??")));
-
-
-        bobTheDog.setHeight(Double.parseDouble(JOptionPane.showInputDialog(null, "What'z da dogs height??")));
-
-
-
-
-
-
+        }
 
         
 

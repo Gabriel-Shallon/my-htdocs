@@ -4,9 +4,15 @@ import javax.swing.JOptionPane;
 
 class Animal{
 
+    int id;
     String name;
     double height;
     int weight;
+
+
+    Animal(String name, double height, int weight){
+        this.id = id+1;
+    }
 
 
     public void setName(String newName){
