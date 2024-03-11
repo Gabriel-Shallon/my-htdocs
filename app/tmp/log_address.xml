@@ -82,3 +82,11 @@
 <time>2023-12-04 11:41:18</time>
 <message>SELECT * FROM address WHERE id = 1</message>
 </log>
+<log>
+<time>2024-01-27 08:01:00</time>
+<message>Gerando o Address</message>
+</log>
+<log>
+<time>2024-01-27 08:01:00</time>
+<message>SELECT * FROM address WHERE id = 1</message>
+</log>
