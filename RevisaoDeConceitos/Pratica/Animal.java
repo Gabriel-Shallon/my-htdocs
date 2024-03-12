@@ -6,7 +6,7 @@ class Animal{
 
     int nextId = 1;
 
-    public int id;
+    private int id;
     private String name;
     private double height;
     private int weight;
@@ -62,6 +62,17 @@ class Animal{
     }
 
 
+    public void setSound(String string) {
+        
+    }
+
+
+
+    public int getId(){
+    
+        return id;
+    
+    }
 
 
     public String getName(){
