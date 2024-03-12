@@ -47,11 +47,11 @@ public class Agenda {
 
         }else if(opt == 1){
 
-            UIManager.put("OptionPane.okButtonText","Buscar");
+        UIManager.put("OptionPane.okButtonText","Buscar");
 
           String search = JOptionPane.showInputDialog(null, "Buscar número de contato pelo nome:");
 
-          UIManager.put("OptionPane.okButtonText","Ok");
+        UIManager.put("OptionPane.okButtonText","Ok");
 
           int flag = 0;
           for (Contato contato : listaDeContatos) {
@@ -69,8 +69,31 @@ public class Agenda {
 
 
 
-          
+
+
         }else if(opt == 2){
+
+        UIManager.put("OptionPane.okButtonText","Excluir");
+
+            String search = JOptionPane.showInputDialog(null, "Digite o nome do contato que deseja excluir:");
+  
+        UIManager.put("OptionPane.okButtonText","Ok");
+  
+            int flag = 0;
+            for (Contato contato : listaDeContatos) {
+              if (contato.getNome().equals(search)) {
+                  
+                  JOptionPane.showMessageDialog(null, contato.getNome()+"( "+contato.getTelefone()+") foi excluído.");
+                  flag = 1;
+              }
+            }
+            
+            if (flag==0){
+  
+              JOptionPane.showMessageDialog(null, "Nenhum resultado encontrado.");
+  
+            }
+
 
 
 
