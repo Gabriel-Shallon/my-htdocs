@@ -20,13 +20,15 @@ public class Agenda {
         
     if (opt == 0){
 
+
+
                 JTextField nomeField = new JTextField(2);
                 JTextField telefoneField = new JTextField(2);
 
-        Object[] message = {
-            "Nome:", nomeField,
-            "Telefone:", telefoneField
-        };
+                     Object[] message = {
+                        "Nome:", nomeField,
+                        "Telefone:", telefoneField
+                     };
 
             UIManager.put("OptionPane.cancelButtonText","Cancelar");
             UIManager.put("OptionPane.okButtonText","Cadastrar");
@@ -40,10 +42,34 @@ public class Agenda {
             }
       
 
+
+
+
         }else if(opt == 1){
 
+            UIManager.put("OptionPane.okButtonText","Buscar");
+
+          String search = JOptionPane.showInputDialog(null, "Buscar número de contato pelo nome:");
+
+          UIManager.put("OptionPane.okButtonText","Ok");
+
+          int flag = 0;
+          for (Contato contato : listaDeContatos) {
+            if (contato.getNome().equals(search)) {
+                JOptionPane.showMessageDialog(null, "Nome: "+contato.getNome()+"\nNúmero: "+contato.getTelefone());
+                flag = 1;
+            }
+          }
+          
+          if (flag==0){
+
+            JOptionPane.showMessageDialog(null, "Nenhum resultado encontrado.");
+
+          }
 
 
+
+          
         }else if(opt == 2){
 
 
@@ -59,5 +85,10 @@ public class Agenda {
         opt = JOptionPane.showOptionDialog(null, "Opções:", "Menu", JOptionPane.DEFAULT_OPTION, JOptionPane.INFORMATION_MESSAGE,null, options, options[0]);
 
     }
+    }
+
+    private static int size(ArrayList<Contato> listaDeContatos) {
+        // TODO Auto-generated method stub
+        throw new UnsupportedOperationException("Unimplemented method 'size'");
     }
 }

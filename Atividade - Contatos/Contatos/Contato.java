@@ -22,11 +22,11 @@ package Contatos;
 
 
 
-        public String setNome(){
+        public String getNome(){
             return nome;
         } 
 
-        public String setTelefone(){
+        public String getTelefone(){
             return telefone;
         }
         
