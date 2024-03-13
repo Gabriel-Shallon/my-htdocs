@@ -1,5 +1,6 @@
 package Contatos;
 
+import java.util.Iterator;
 import java.util.ArrayList;
 import javax.swing.JOptionPane;
 import javax.swing.JTextField;
@@ -79,15 +80,19 @@ public class Agenda {
   
         UIManager.put("OptionPane.okButtonText","Ok");
   
-            int flag = 0;
-            for (Contato contato : listaDeContatos) {
+        int flag = 0;
+        Iterator<Contato> iterator = listaDeContatos.iterator();
+
+          while (iterator.hasNext()) {
+            Contato contato = iterator.next();
+
               if (contato.getNome().equals(search)) {
-                  
-                  JOptionPane.showMessageDialog(null, contato.getNome()+"( "+contato.getTelefone()+") foi excluído.");
-                  flag = 1;
-              }
+                JOptionPane.showMessageDialog(null, contato.getNome()+"( "+contato.getTelefone()+") foi excluído.");
+              iterator.remove();
+
+              flag = 1;
             }
-            
+          }
             if (flag==0){
   
               JOptionPane.showMessageDialog(null, "Nenhum resultado encontrado.");
@@ -97,9 +102,29 @@ public class Agenda {
 
 
 
+
         }else if(opt == 3){
 
 
+      UIManager.put("OptionPane.okButtonText","Ok");
+
+          
+      if (listaDeContatos.isEmpty()) {
+        JOptionPane.showMessageDialog(null, "Nenhum contato foi adicionado ainda.");
+        }else{
+
+          StringBuilder list = new StringBuilder();
+            for (Contato contato : listaDeContatos) {
+                list.append("Nome: ").append(contato.getNome());
+                list.append("\nNúmero: ").append(contato.getTelefone());
+                list.append("\n\n"); 
+            }
+
+            JOptionPane.showMessageDialog(null, "Contatos\n\n"+list);
+
+          }
+
+  
 
         }
 
@@ -110,8 +135,4 @@ public class Agenda {
     }
     }
 
-    private static int size(ArrayList<Contato> listaDeContatos) {
-        // TODO Auto-generated method stub
-        throw new UnsupportedOperationException("Unimplemented method 'size'");
-    }
 }
