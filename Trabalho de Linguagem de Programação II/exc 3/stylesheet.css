@@ -1,0 +1,35 @@
+body {
+    font-family: Arial;
+    font-size: 12px;
+}
+
+table {
+    width: 600px;
+    margin: auto;
+    border-spacing: 2px;
+    border-collapse: separate;
+}
+
+th {
+    background-color: #0D5188;
+    color: white;
+    font-weight: bold;
+}
+
+td {
+    background-color: #C7E7F3;
+    color: #0D5188;
+    font-weight: bold;
+    padding: 2px;
+}
+
+td:nth-child(1), td:nth-child(4) {
+    width: 10%;
+    background-color: silver;
+    font-weight: normal;
+}
+
+td:nth-child(3), td:nth-child(6) {
+    width: 15%;
+    font-weight: normal;
+}
