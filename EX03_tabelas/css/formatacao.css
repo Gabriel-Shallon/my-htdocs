@@ -1,0 +1,15 @@
+body{
+    background-color: rgb(200, 255, 246);
+}
+
+.caixa{
+    width: 25%;
+    margin: auto;
+    margin-top: 20px;
+    background-color: white;
+    box-shadow: 0 0 2px 1px rgb(100,99, 99);
+}
+
+.center{
+    margin: 0 auto;
+}
