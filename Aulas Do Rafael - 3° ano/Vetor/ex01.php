@@ -20,8 +20,7 @@
     echo '<pre/>';
     print_r($Nuremos);
 
-
-    $Nuremos = array(2, 3, 1);
+    
     rsort($Nuremos); //deixa os valores do vetor em ordem decrescente (alfabética ou numérica)
     echo '<pre/>';
     print_r($Nuremos);
