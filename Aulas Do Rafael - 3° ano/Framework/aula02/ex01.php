@@ -8,7 +8,7 @@
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js" integrity="sha384-YvpcrYf0tY3lHB60NNkmXc5s9fDVZLESaAA55NDzOxhy9GkcIdslK1eN7N6jIeHz" crossorigin="anonymous"></script>
 </head>
 <body class="bg-info">
-<form action="./ex02r.php">
+<form action="./ex01r.php">
 <div class="card mx-auto mt-5 w-75">
   <div class="card-body">
     <h5 class="card-title text-center">COMPRIMENTO DO FIO</h5>
@@ -21,7 +21,7 @@
         queira...), a solução alternativa que ele
         encontrou foi medir os lados da casa, sabendo
         que a diagonal pode ser calculada com base
-        nos lados pelo Teorema de Pitágoras (a2 = b2 + c2
+        nos lados pelo Teorema de Pitágoras (a^2 = b^2 + c^2
         ). Considerando que a casa mede
         11,5 x 6,3 metros, faça um programa que calcule a quantidade mínima necessária de
         fio a ser comprada, com precisão em centímetros
@@ -31,25 +31,25 @@
         <div class="row">
             <div class="col-md-4">
                 <label for="n1" class="form">Medida parede 01 (m):</label>
-                <input type="number" class="form-control" id="InputParede01">
+                <input name="cpMedida1" type="text" class="form-control" id="InputParede01">
             </div>
             <div class="col-md-4">
                 <label for="n2" class="form">Medida parede 02 (m):</label>
-                <input type="number" class="form-control" id="InputParede02">
+                <input name="cpMedida2" type="text" class="form-control" id="InputParede02">
             </div>
                 <div class="col-md-2">
                 <br>
-                <input type="submit" class="btn btn-primary w-100" value="calcular">
+                <input name="btnCalcular" type="submit" class="btn btn-primary w-100" value="calcular">
             </div>
             <div class="col-md-2">
                 <br>
-                <input type="reset" class="btn btn-danger w-100" value="limpar">
+                <input name="btnLimpar"type="reset" class="btn btn-danger w-100" value="limpar">
         </div>
         </div>
       
         <div class="row">
             <div class="col-md12 m3">
-                <a href="Framework/aula01/aa.php" class="btn btn-link">Voltar</a>
+                <a href="index.php" class="btn btn-link">Voltar</a>
             </div>
         </div>
         

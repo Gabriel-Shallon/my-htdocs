@@ -29,13 +29,9 @@
 
     <div class="row">
         <div class="col-md12 m3">
-            <a href="./ex02.php" class="btn btn-link">Voltar</a>
+            <a href="ex01.php" class="btn btn-link">Voltar</a>
         </div>
     </div>
-   
-
-    
-
   </div>
 </div>
     
