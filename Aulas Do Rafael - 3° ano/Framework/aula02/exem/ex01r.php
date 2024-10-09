@@ -1,3 +1,14 @@
+<?php
+
+    $medida1=$_GET['cpMedida1'];
+    $medida2=$_GET['cpMedida2'];
+    $resultado = (sqrt(($medida1**2)+($medida2**2)))*100;
+    //recebe os valores enviado pela outra páginas (*100 ali pq é em centimetros)
+
+?>
+
+
+
 <!DOCTYPE html>
 <html lang="pt-br">
 <head>
@@ -15,15 +26,16 @@
     <table class="table table-bordered">
         <thead>
             <tr>
-                <th>Medida da parede 01</th>
-                <th>Medida da parede 02</th>
+                <th>Medida da parede 01 (m)</th>
+                <th>Medida da parede 02 (m)</th>
                 <th>Comprimento de fio a ser comprado(cm)</th>
             </tr>
         </thead>
         <tbody>
-            <td>0.0</td>
-            <td>0.0</td>
-            <td>0.0</td>
+            <td><?php echo $medida1 ?></td>
+            <td><?php echo $medida2 ?></td>
+            <td><?php echo round($resultado, 2) ?></td>
+            <!-- Os valores recebidos foram usados aqui -->
         </tbody>
     </table>
 

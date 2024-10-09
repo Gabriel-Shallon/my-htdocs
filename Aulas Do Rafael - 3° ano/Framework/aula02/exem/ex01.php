@@ -8,7 +8,7 @@
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js" integrity="sha384-YvpcrYf0tY3lHB60NNkmXc5s9fDVZLESaAA55NDzOxhy9GkcIdslK1eN7N6jIeHz" crossorigin="anonymous"></script>
 </head>
 <body class="bg-info">
-<form action="./ex01r.php">
+<form action="ex01r.php">
 <div class="card mx-auto mt-5 w-75">
   <div class="card-body">
     <h5 class="card-title text-center">COMPRIMENTO DO FIO</h5>
@@ -43,7 +43,7 @@
             </div>
             <div class="col-md-2">
                 <br>
-                <input name="btnLimpar"type="reset" class="btn btn-danger w-100" value="limpar">
+                <input name="btnLimpar" type="reset" class="btn btn-danger w-100" value="limpar">
         </div>
         </div>
       
@@ -58,3 +58,20 @@
 </form>
 </body>
 </html>
+
+
+
+<?php
+
+    if (!empty($_GET)){ 
+        //não funfa se nenhum dos campos tiverem sido usados
+
+        $medida1=$_GET['cpMedida1'];
+        $medida2=$_GET['cpMedida2'];
+        // variáveis em php que recebem os valores do campo html (pelo seu respectivo nome)
+        header('Location:ex1r.php?medida1='.$medida1.' &medida2'.$medida2);
+        //redireciona para a página de resposta levando os valores em parametros
+
+    }
+
+?>
