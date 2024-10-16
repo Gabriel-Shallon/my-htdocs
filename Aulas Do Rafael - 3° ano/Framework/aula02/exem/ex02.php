@@ -11,19 +11,21 @@
 <body class="bg-info">
     <form action="ex02r.php">
         <div class="card mx-auto mt-5 w-75">
-            <div class="card-body">
-                <label>Informe um número</label>
+            
+        <div class="card-body">
+                <label>Informe um número:</label>
                 <br>
-                <input name="cpNum" type="text">
-                <br>
-                <input type="submit" value="calcular">
-                <input type="reset" value="limpar">
+                <input name="cpNum" class="form-control w-25" type="text">
+                <input name="btnCalcular" type="submit" class="btn btn-primary" value="calcular">
+                <input name="btnLimpar" type="reset" class="btn btn-danger" value="limpar">
+
             </div>
             <div class="row">
-            <div class="col-md12 m3">
+            <div>
                 <a href="index.php" class="btn btn-link">Voltar</a>
             </div>
         </div>
+        
         </div>
     </form>
 

@@ -14,9 +14,9 @@
             <div class="list-group">
                 <a href="ex01.php" class="list-group-item list-group-item-action">Exemplo 01 - Comprimento do fio</a>
                 <a href="ex02.php" class="list-group-item list-group-item-action">Exemplo 02 - Tabuada</a>
-                <a href="" class="list-group-item list-group-item-action">Exemplo 03 - Analise de números</a>
-                <a href="#" class="list-group-item list-group-item-action">Exemplo 04 - Divisão tratada</a>
-                <a href="#" class="list-group-item list-group-item-action">Exemplo 05 - Jogo da ficha</a>
+                <a href="ex03.php" class="list-group-item list-group-item-action">Exemplo 03 - Analise de números</a>
+                <a href="ex04.php" class="list-group-item list-group-item-action">Exemplo 04 - Divisão tratada</a>
+                <a href="ex05.php" class="list-group-item list-group-item-action">Exemplo 05 - Jogo da ficha</a>
             </div>
         </div>
     </div>
