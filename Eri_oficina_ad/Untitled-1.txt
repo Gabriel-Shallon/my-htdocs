@@ -1,0 +1,13 @@
+#include <stdio.h>
+#include <omp.h>
+
+int main() {
+    // Define o número de threads que serão usadas
+    #pragma omp parallel
+    {
+        // Cada thread executará este código
+        //int id = omp_get_thread_num();
+        printf("Hello World");
+    }
+    return 0;
+}
