@@ -1,3 +1,17 @@
+<?php
+    include 'inc/funcoes.php';
+
+    if (!empty($_GET)){
+        if ($_GET['acao']=='Adicionar'){
+            header('Location:addcart.php');
+        }//if botão adicionar
+        if ($_GET['acao']=='Cancelar'){
+            session_destroy();
+            header('Location:index.php');
+        }
+    }
+?>
+
 <!DOCTYPE html>
 <html lang="pt-br">
 <head>
@@ -22,7 +36,7 @@
                             <input type="number" name="cpCPF" class="form-control">
                         </div>
                         <div class="col-md-4">
-                        <input type="submit" name="botao" class="btn btn-primary w-100 mt-4 mb-4" value="Adicionar">
+                        <input type="submit" name="acao" class="btn btn-primary w-100 mt-4 mb-4" value="Adicionar">
                         </div>
 
                         <table class="table mt-2">
@@ -49,13 +63,13 @@
                             <a href="index.php">Sair</a>
                         </div>
                         <div class="col-md-2">
-                            <input type="submit" name="botao" class="btn btn-success w-100" value="Concluir">
+                            <input type="submit" name="acao" class="btn btn-success w-100" value="Concluir">
                         </div>
                         <div class="col-md-2">
-                            <input type="reset" name="botao" class="btn btn-danger w-100" value="Cancelar">
+                            <input type="submit" name="acao" class="btn btn-danger w-100" value="Cancelar">
                         </div>
                         <div class="col-md-12 text-end mb-2 mt-4">
-                            <label class="fw-bold">Vendedor: XXXXXX</label>
+                            <label name="cpVendedor" class="fw-bold">Vendedor: <?php echo $_SESSION['us'];?></label>
                         </div>
 
 

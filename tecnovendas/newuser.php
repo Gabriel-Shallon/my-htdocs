@@ -1,3 +1,18 @@
+<?php
+    include 'inc/funcoes.php';
+    if(!empty($_GET)){
+        $nome = $_GET['cpNome'];
+        $tipo = $_GET['cpTipo'];    
+        $login = $_GET['cpLogin'];
+        $senha = $_GET['cpSenha'];
+        $msg = cadastrar_usuario($nome,$tipo,$login,$senha);
+        echo '<div class ="alert alert-sucess" role="alert">';
+            echo $msg;
+        echo '</div>';
+
+    }//if_GET
+?>
+
 <!DOCTYPE html>
 <html lang="pt-br">
 <head>
@@ -16,7 +31,7 @@
                 <div class="row">
                     <div class="col-3">
                         <label>Nome</label>
-                        <input nome="cpProduto" class="form-control">
+                        <input maxlength="80" name="cpNome" class="form-control">
                     </div>
                     <div class="col-3">
                         <label>Tipo</label>
@@ -29,14 +44,14 @@
                     </div>
                     <div class="col-2">
                         <label>Login</label>
-                        <input nome="cpLogin" class="form-control">
+                        <input maxlength="10" name="cpLogin" class="form-control">
                     </div>
                     <div class="col-2">
                         <label>Senha</label>
-                        <input nome="cpSenha" class="form-control">
+                        <input maxlength="10" name="cpSenha" class="form-control">
                     </div>
                     <div class="col-2">
-                        <input type="submit" nome="cpEntrar" class="btn btn-primary w-100 mt-4 mb-4" value="Entrar">
+                        <input type="submit" name="cpEntrar" class="btn btn-primary w-100 mt-4 mb-4" value="Cadastrar">
                     </div>
                 </div>
                 <div class="col-6">

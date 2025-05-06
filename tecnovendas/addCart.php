@@ -1,3 +1,7 @@
+<?php
+    include 'inc/funcoes.php';
+?>
+
 <!DOCTYPE html>
 <html lang="pt-br">
 <head>
@@ -19,7 +23,7 @@
                                 <input name="cpProduto" type="text" placeholder="Digite algo sobre o produto..." class="form-control">
                             </div>
                             <div class="col-md-2 mt-4">
-                                <input type="text" class="btn btn-success w-100" value="Buscar">
+                                <input type="submit" class="btn btn-success w-100" value="Buscar">
                             </div>
                             
                             <table class="table mt-2 mb-3">
@@ -34,25 +38,39 @@
                                     </tr>
                                 </thead>
                                 <tbody>
+                                    <?php 
+                                        $produtos = isset($_GET['cpProduto']) ? busca($_GET['cpProduto']) : '';
+                                        if(empty($_GET) || empty($produtos)){
+                                    ?>
                                     <tr>
-                                        <td colspan="5">Nenhum produto.</td>
+                                        <td colspan="6">Nenhum produto.</td>
                                     </tr>
+                                    
+                                    <?php   
+                                        }else{ 
+                                            
+                                        foreach($produtos as $produto){
+                                    ?>
+                                    
                                     <tr>
-                                        <td>567</td>
-                                        <td>Placa mãe AMD AM4 XT489 DDR4 Video-OFF</td>
-                                        <td>AMD</td>
-                                        <td>569,90</td>
-                                        <td>24</td>
+                                        <td><?php echo $produto['idproduto'] ?></td>
+                                        <td><?php echo $produto['nomepro'] ?></td>
+                                        <td><?php echo $produto['fab'] ?></td>
+                                        <td><?php echo $produto['preco'] ?></td>
+                                        <td><?php echo $produto['estoq'] ?></td>
                                         <td><a href="#">Selecionar</a></td>
                                     </tr>
+
+                                    <?php }} ?>
+                                    
                                 </tbody>
                             </table>
 
                             <div class="col-md-8 ">
-                                <a href="#">Voltar</a>
+                                <a href="main.php">Voltar</a>
                             </div>
                             <div class="col-md-4 text-end">
-                                <label class="fw-bold">Vendedor: XXXXXX</label>
+                                <label class="fw-bold">Vendedor: <?php echo $_SESSION['us'];?></label>
                             </div>
 
                         </div>

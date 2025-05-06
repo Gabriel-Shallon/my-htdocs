@@ -1,3 +1,17 @@
+<?php
+    include 'inc/funcoes.php';
+    if (!empty($_GET)){
+        $login = $_GET['cpLogin'];
+        $senha = $_GET['cpSenha'];
+        $msg = logar($login,$senha);
+        echo '<div class="alert alert-danger" role="alert">';
+            echo $msg;
+        echo '</div>';
+    }else{
+        echo "Conectado.";
+    }
+?>
+
 <!DOCTYPE html>
 <html lang="pt-br">
 <head>
