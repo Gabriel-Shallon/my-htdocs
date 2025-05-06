@@ -157,6 +157,4 @@
     }
 
 
-    function battle(array $players, array $dadosIni){
-
-    }
+  

@@ -1,5 +1,5 @@
 <?php
-// battle.php - Sistema de Combate 3D&T
+// battle.php - Sistema de Combate 3D&T (com Inventário e Equipado persistentes)
 session_start();
 include 'inc/func.php';
 
@@ -31,7 +31,7 @@ switch ($step) {
         echo '<h1>Iniciar Batalha</h1><form method="post">';
         foreach ($all as $p) {
             $n = htmlspecialchars($p['nome'], ENT_QUOTES);
-            echo "<label><input type='checkbox' name='players[]' value='{$n}'> {$n}</label><br>";
+            echo '<label><input type="checkbox" name="players[]" value="'.$n.'"> '.$n.'</label><br>';
         }
         echo '<button type="submit">Confirmar</button></form>';
         break;
@@ -47,7 +47,7 @@ switch ($step) {
         }
         echo '<h1>Iniciativa</h1><form method="post">';
         foreach ($b['players'] as $i => $nome) {
-            echo "<label>{$nome}: <input type='number' name='rolls[{$i}]' required></label><br>";
+            echo '<label>'.$nome.': <input type="number" name="rolls['.$i.']" required></label><br>';
         }
         echo '<button>Ok</button></form>';
         break;
@@ -59,6 +59,13 @@ switch ($step) {
             if ($pl && in_array($pl, $_SESSION['battle']['players'], true)) {
                 foreach ($_POST['stats'] as $stat => $val) {
                     setPlayerStat($pl, $stat, (int)$val);
+                }
+                // Campos persistentes
+                if (isset($_POST['inventory'])) {
+                    setPlayerStat($pl, 'inventario', $_POST['inventory']);
+                }
+                if (isset($_POST['equipped'])) {
+                    setPlayerStat($pl, 'equipado', $_POST['equipped']);
                 }
             }
         }
@@ -72,25 +79,30 @@ switch ($step) {
         $stats = getPlayer($cur);
         $notes = $b['notes'][$cur] ?? ['efeito'=>'','posição'=>'','concentrado'=>0];
 
-        // máximo múltiplo
+        // Máximo múltiplo
         $maxMulti = 1 + intdiv(max($stats['H'],0), 2);
 
-        // Exibe stats editáveis
-        echo "<h1>Turno de <strong>{$cur}</strong></h1>";
-        echo "<h2>Stats</h2><form method='post' action='?step=update_stats&player=".urlencode($cur)."'>";
+        // Exibe stats, inventário e equipado
+        echo '<h1>Turno de <strong>'.$cur.'</strong></h1>';
+        echo '<h2>Stats & Inventário</h2>';
+        echo '<form method="post" action="?step=update_stats&player='.urlencode($cur).'">';
         foreach (['F','H','R','A','PdF','PV','PM','PE'] as $c) {
-            $v = htmlspecialchars($stats[$c], ENT_QUOTES);
-            echo "{$c}: <input type='number' name='stats[{$c}]' value='{$v}' required><br>";
+            $v = htmlspecialchars($stats[$c] ?? '', ENT_QUOTES);
+            echo $c.': <input type="number" name="stats['.$c.']" value="'.$v.'" required><br>';
         }
-        echo '<button>Salvar Stats</button></form>';
+        $inv = htmlspecialchars($stats['inventario'] ?? '', ENT_QUOTES);
+        $eq  = htmlspecialchars($stats['equipado']   ?? '', ENT_QUOTES);
+        echo 'Inventário:<br><textarea name="inventory" rows="4" cols="60">'.$inv.'</textarea><br>';
+        echo 'Equipado:<br><textarea name="equipped" rows="2" cols="60">'.$eq.'</textarea><br>';
+          echo '<button>Salvar Stats</button></form>';
 
         // Form de ações
         echo '<h2>Ações</h2><form method="post" action="?step=act">'
-            ."<input type='hidden' name='player' value='".htmlspecialchars($cur,ENT_QUOTES)."'>"
-            ."Efeito: <input name='efeito' value='".htmlspecialchars($notes['efeito'],ENT_QUOTES)."'><br>"
-            ."Posição: <input name='posição' value='".htmlspecialchars($notes['posição'],ENT_QUOTES)."'><br>"
-            ."Concentrado: <input type='number' name='concentrado' min=0 value='".htmlspecialchars($notes['concentrado'],ENT_QUOTES)."'><br>"
-            ."Ação: <select id='action' name='action' onchange='onAct()'>";
+            .'<input type="hidden" name="player" value="'.htmlspecialchars($cur,ENT_QUOTES).'">'
+            .'Efeito: <input name="efeito" value="'.htmlspecialchars($notes['efeito'],ENT_QUOTES).'"><br>'
+            .'Posição: <input name="posição" value="'.htmlspecialchars($notes['posição'],ENT_QUOTES).'"><br>'
+            .'Concentrado: <input type="number" name="concentrado" min=0 value="'.htmlspecialchars($notes['concentrado'],ENT_QUOTES).'"><br>'
+            .'Ação: <select id="action" name="action" onchange="onAct()">';
         foreach ([
             'ataque'            => 'Atacar',
             'multiple'          => 'Múltiplo',
@@ -98,16 +110,16 @@ switch ($step) {
             'release_concentrar'=> 'Liberar Concentração',
             'fim'               => 'Terminar Batalha'
         ] as $v => $label) {
-            echo "<option value='{$v}'>{$label}</option>";
+            echo '<option value="'.$v.'">'.$label.'</option>';
         }
-        echo "</select><br>";
+        echo '</select><br>';
 
-        // Seção: ataque simples
+        // Seção de ataque simples
         echo '<div id="atkSimple"><fieldset><legend>Ataque</legend>'
             .'Tipo: <select name="atkType"><option>F</option><option>PdF</option></select><br>'
             .'Roll FA: <input type="number" name="dadoFA"><br>'
             .'Alvo: <select name="target">';
-        foreach ($order as $o) if ($o!==$cur) echo "<option>{$o}</option>";
+        foreach ($order as $o) if ($o !== $cur) echo '<option>'.$o.'</option>';
         echo '</select><br>'
             .'Reação: <select id="def" name="defesa" onchange="onDef()">'
             .'<option value="defender">Defender</option>'
@@ -117,12 +129,12 @@ switch ($step) {
             .'<label id="fdLbl">Roll FD/Esq.: <input id="fd" type="number" name="dadoFD"></label><br>'
             .'</fieldset></div>';
 
-        // Seção: ataque múltiplo
-        echo "<div id='atkMulti' style='display:none'><fieldset><legend>Múltiplo</legend>"
-            ."Tipo: <select name='atkTypeMulti'><option>F</option><option>PdF</option></select><br>"
-            ."Quantidade (2-{$maxMulti}): <input id='quant' type='number' name='quant' min=2 max={$maxMulti} value=2 onchange='gen()'><br>"
-            ."Alvo: <select name='targetMulti'>";
-        foreach ($order as $o) if ($o!==$cur) echo "<option>{$o}</option>";
+        // Seção de ataque múltiplo
+        echo '<div id="atkMulti" style="display:none"><fieldset><legend>Múltiplo</legend>'
+            .'Tipo: <select name="atkTypeMulti"><option>F</option><option>PdF</option></select><br>'
+            .'Quantidade (2-'.$maxMulti.'): <input id="quant" type="number" name="quant" min=2 max='.$maxMulti.' value=2 onchange="gen()"><br>'
+            .'Alvo: <select name="targetMulti">';
+        foreach ($order as $o) if ($o !== $cur) echo '<option>'.$o.'</option>';
         echo '</select><br>'
             .'Reação: <select id="defM" name="defesaMulti" onchange="onDefM()">'
             .'<option value="defender">Defender</option>'
@@ -132,34 +144,28 @@ switch ($step) {
             .'<div id="dCont"></div>'
             .'</fieldset></div>';
 
-        echo '<button type="submit">Executar</button> '
-            .'<button type="button" onclick="history.back()">Voltar</button>'
-            .'</form>';
+        echo '<button type="submit">Executar</button> <button type="button" onclick="history.back()">Voltar</button></form>';
 
-            // Mini-tela final (resumo parcial) abaixo das ações,
-        // **pulando** o player que está agindo
+        // Mini-tela final
         echo '<h2>Resumo Parcial da Batalha</h2>';
         echo '<form method="post" action="?step=save_partial">';
         foreach ($b['players'] as $pl) {
-            // Se for o player atual, pula
-            if ($pl === $cur) {
-                continue;
-            }
+            if ($pl === $cur) continue;
             $ps = getPlayer($pl);
-            echo "<fieldset style='margin:0.5em 0;padding:0.5em;border:1px solid #ccc'>";
-            echo "<legend><strong>" . htmlspecialchars($pl, ENT_QUOTES) . "</strong></legend>";
-            echo "<input type='hidden' name='player_names[]' value='" . htmlspecialchars($pl, ENT_QUOTES) . "'>";
+            echo '<fieldset style="margin:0.5em 0;padding:0.5em;border:1px solid #ccc">';
+            echo '<legend><strong>'.$pl.'</strong></legend>';
+            echo '<input type="hidden" name="player_names[]" value="'.$pl.'">';
             foreach (['F','H','R','A','PdF','PV','PM','PE'] as $c) {
-                $val = (int)$ps[$c];
-                echo "<label style='display:block'>{$c}: ";
-                echo "<input type='number' name='partial_stats[{$pl}][{$c}]' value='{$val}' required>";
-                echo "</label>";
+                $val = (int)($ps[$c] ?? 0);
+                echo '<label style="display:block">'.$c.': <input type="number" name="partial_stats['.$pl.']['.$c.']" value="'.$val.'" required></label>';
             }
-            echo "</fieldset>";
+            $invP = htmlspecialchars($ps['inventario'] ?? '', ENT_QUOTES);
+            $eqP  = htmlspecialchars($ps['equipado']   ?? '', ENT_QUOTES);
+            echo 'Inventário:<br><textarea name="partial_stats['.$pl.'][inventario]" rows="4" cols="60">'.$invP.'</textarea><br>';
+            echo 'Equipado:<br><textarea name="partial_stats['.$pl.'][equipado]" rows="2" cols="60">'.$eqP.'</textarea><br>';
+            echo '</fieldset>';
         }
-        echo '<button type="submit">Salvar Resumo Parcial</button>';
-        echo '</form>';
-
+        echo '<button type="submit">Salvar Resumo Parcial</button></form>';
 
         // Script JavaScript
         echo <<<JS
@@ -217,7 +223,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
   onAct();
 });
-</script>
+<\/script>
 JS;
         break;
 
@@ -227,7 +233,6 @@ JS;
             $b  = &$_SESSION['battle'];
             $pl = $_POST['player'] ?? '';
             $out = '';
-
             // Salva notas
             if ($pl && in_array($pl, $b['players'], true)) {
                 $b['notes'][$pl] = [
@@ -236,7 +241,6 @@ JS;
                     'concentrado'=> (int)($_POST['concentrado'] ?? 0),
                 ];
             }
-
             switch ($_POST['action'] ?? '') {
                 case 'ataque':
                     $dFA  = (int)($_POST['dadoFA'] ?? 0);
@@ -297,32 +301,27 @@ JS;
                     break;
 
                 case 'fim':
-                    header('Location: battle.php?step=final');
-                    exit;
-
+                    header('Location: battle.php?step=final'); exit;
                 default:
                     $out = 'Ação inválida ou não reconhecida.';
                     break;
             }
-
-            $b['turn_index'] ++;
-            echo "<p>{$out}</p>";
-            echo '<p><a href="battle.php?step=turn">Próximo Turno</a></p>';
+            $b['turn_index']++;
+            echo '<p>'.$out.'</p><p><a href="battle.php?step=turn">Próximo Turno</a></p>';
         } else {
-            echo '<p>Nenhum dado recebido para processar a ação.</p>';
-            echo '<p><a href="battle.php?step=turn">Voltar ao Turno</a></p>';
+            echo '<p>Nenhum dado recebido.</p><p><a href="battle.php?step=turn">Voltar</a></p>';
         }
         exit;
 
     // 4.5) Salvar Resumo Parcial
     case 'save_partial':
         if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-            $names        = $_POST['player_names']    ?? [];
-            $partialStats = $_POST['partial_stats']   ?? [];
+            $names        = $_POST['player_names'] ?? [];
+            $partialStats = $_POST['partial_stats'] ?? [];
             foreach ($names as $pl) {
                 if (isset($partialStats[$pl])) {
                     foreach ($partialStats[$pl] as $campo => $valor) {
-                        setPlayerStat($pl, $campo, (int)$valor);
+                        setPlayerStat($pl, $campo, ($campo==='inventario' || $campo==='equipado') ? $valor : (int)$valor);
                     }
                 }
             }
@@ -333,25 +332,25 @@ JS;
     case 'final':
         $b       = &$_SESSION['battle'];
         $players = $b['players'];
-        echo '<h1>Resumo da Batalha</h1>';
-        echo '<form method="post" action="battle.php?step=save_final">';
+        echo '<h1>Resumo da Batalha</h1><form method="post" action="battle.php?step=save_final">';
         foreach ($players as $pl) {
             $stats = getPlayer($pl);
-            echo "<fieldset style='margin-bottom:1em;padding:1em;border:1px solid #ccc'>";
-            echo "<legend><strong>" . htmlspecialchars($pl, ENT_QUOTES) . "</strong></legend>";
-            echo "<input type='hidden' name='player_names[]' value='" . htmlspecialchars($pl, ENT_QUOTES) . "'>";
+            echo '<fieldset style="margin-bottom:1em;padding:1em;border:1px solid #ccc">';
+            echo '<legend><strong>'.$pl.'</strong></legend>';
+            echo '<input type="hidden" name="player_names[]" value="'.$pl.'">';
             foreach (['F','H','R','A','PdF','PV','PM','PE'] as $c) {
-                $v = (int)$stats[$c];
-                echo "<label style='display:block;margin:0.5em 0'>{$c}: ";
-                echo "<input type='number' name='stats[{$pl}][{$c}]' value='{$v}' required>";
-                echo "</label>";
+                    echo '<label style="display:block;margin:0.5em 0">'.$c.': <input type="number" name="stats['.$pl.']['.$c.']" value="'.(int)$stats[$c].'" required></label>';
+                }
+                // Inventário e Equipado na Tela Final
+                $invF = htmlspecialchars($stats['inventario'] ?? '', ENT_QUOTES);
+                $eqF  = htmlspecialchars($stats['equipado']   ?? '', ENT_QUOTES);
+                echo 'Inventário:<br><textarea name="stats['.$pl.'][inventario]" rows="4" cols="60">'.$invF.'</textarea><br>';
+                // exemplo para Turno
+                echo 'Equipado:<br><textarea name="equipped" rows="2" cols="60">'.$eq.'</textarea><br>';
+                echo '</fieldset>';
             }
-            echo "</fieldset>";
-        }
-        echo '<button type="submit">Salvar Alterações</button>';
-        echo ' <a href="index.php">Nova Batalha</a>';
-        echo '</form>';
-        exit;
+            echo '<button type="submit">Salvar Alterações</button> <a href="index.php">Nova Batalha</a></form>';
+            exit;
 
     // 6) Salvar Final
     case 'save_final':
@@ -361,7 +360,8 @@ JS;
             foreach ($names as $pl) {
                 if (isset($allStats[$pl])) {
                     foreach ($allStats[$pl] as $campo => $valor) {
-                        setPlayerStat($pl, $campo, (int)$valor);
+                        // Persistência de inventário e equipado
+                        setPlayerStat($pl, $campo, ($campo === 'inventario' || $campo === 'equipado') ? $valor : (int)$valor);
                     }
                 }
             }
@@ -374,4 +374,4 @@ JS;
     default:
         header('Location: battle.php');
         exit;
-}
+      }
