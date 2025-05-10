@@ -32,18 +32,26 @@ function listPlayerTraits(string $player): array {
 }
 
 // Efeitos:
+
+
 // ASSOMBRADO: precisa de input 'roll_assombrado' no form
-function apply_assombrado(string $player, array $input): void {
+function apply_assombrado(string $player, array $input): ?string {
+    if (empty($_SESSION['battle']['orig'][$player])) {
+        foreach (['F','H','R','A','PdF'] as $s) {
+            $_SESSION['battle']['orig'][$player][$s] = getPlayerStat($player, $s);
+        }
+    }
     $d = intval($input['roll_assombrado'] ?? 0);
     if ($d >= 4 && $d <= 6) {
-        echo "<p><em>Assombrado:</em> fantasma apareceu! –1 em F,H,R,A,PdF.</p>";
         foreach (['F','H','R','A','PdF'] as $s) {
-            setPlayerStat($player, $s, max(0, getPlayerStat($player,$s)-1));
+            $current = &$_SESSION['battle']['stats'][$player][$s];
+            $current = max(0, $current - 1);
         }
-    } else {
-        echo "<p><em>Assombrado:</em> sem aparecimento.</p>";
+        return 'Assombrado(-1 F,H,R,A,PdF)';
     }
+    return null;
 }
+
 
 // REGENERAÇÃO: +1 PV todo turno
 function apply_regeneracao(string $player): void {

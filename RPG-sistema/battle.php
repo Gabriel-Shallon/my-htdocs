@@ -48,25 +48,37 @@ case 'select':
     }
     echo '<button type="submit">Confirmar</button></form>';
     break;
-
-    if (in_array('assombrado', listPlayerTraits($cur))) {
-        echo '<label>Roll Assombrado (1–6): <input type="number" name="roll_assombrado" min="1" max="6" required></label><br>';
-    }   
+ 
 
 // 2) Iniciativa
 case 'initiative':
-    $b = &$_SESSION['battle'];
+    $b = &$_SESSION['battle']; 
     if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $dados = array_map('intval', $_POST['rolls'] ?? []);
         $inic  = iniciativa($b['players'], $dados);
         $b['order'] = array_column($inic, 0);
+        foreach ($b['players'] as $i => $pl) {
+            if (isset($_POST['roll_assombrado'][$i])) {
+                $msg = apply_assombrado($pl, ['roll_assombrado' => $_POST['roll_assombrado'][$i]]);
+                if ($msg !== null) {
+                    $b['notes'][$pl]['efeito']      = $msg;
+                    $b['notes'][$pl]['assombrado']  = true;
+                }
+            }
+        }
         header('Location: battle.php?step=turn'); exit;
     }
     echo '<h1>Iniciativa</h1><form method="post">';
     foreach ($b['players'] as $i => $nome) {
         echo '<label>'.$nome.': <input type="number" name="rolls['.$i.']" required></label><br>';
+        if (in_array('assombrado', listPlayerTraits($nome))) {
+            echo '<label>'.$nome.' Assombrado (1–6), dado: '
+            .'<input type="number" name="roll_assombrado['.$i.']" min="1" max="6" required>'
+            .'</label><br>';
+        } 
     }
     echo '<button>Ok</button></form>';
+
     break;
 
 // 2.5) Atualizar stats
@@ -313,13 +325,6 @@ JS;
                 ];
             }
 
-
-        foreach (listPlayerTraits($pl) as $traitKey) {
-            $fn = "apply_{$traitKey}";
-            if (function_exists($fn)) {
-                $fn($pl, $_POST);
-            }
-        }
             switch ($_POST['action'] ?? '') {
                 
                 case 'pass':
@@ -449,28 +454,53 @@ JS;
     case 'final':
         $b       = &$_SESSION['battle'];
         $players = $b['players'];
-        echo '<h1>Resumo da Batalha</h1><form method="post" action="battle.php?step=save_final">';
+
+        // 1) Reverte os debuffs de Assombrado
+        foreach ($players as $pl) {
+            if (
+                !empty($b['notes'][$pl]['assombrado'])  // foi assombrado
+                && !empty($_SESSION['battle']['orig'][$pl]) // tem originais salvos
+            ) {
+                foreach ($_SESSION['battle']['orig'][$pl] as $stat => $origValue) {
+                    setPlayerStat($pl, $stat, $origValue);
+                }
+            }
+        }
+
+        // 2) Exibe o formulário de resumo final
+        echo '<h1>Resumo da Batalha</h1>';
+        echo '<form method="post" action="battle.php?step=save_final">';
         foreach ($players as $pl) {
             $stats = getPlayer($pl);
             echo '<fieldset style="margin-bottom:1em;padding:1em;border:1px solid #ccc">';
-            echo '<legend><strong>'.$pl.'</strong></legend>';
-            echo '<input type="hidden" name="player_names[]" value="'.$pl.'">';
+            echo '<legend><strong>' . htmlspecialchars($pl, ENT_QUOTES) . '</strong></legend>';
+            echo '<input type="hidden" name="player_names[]" value="' . htmlspecialchars($pl, ENT_QUOTES) . '">';
             foreach (['F','H','R','A','PdF','PV','PM','PE'] as $c) {
-                    echo '<label style="display:block;margin:0.5em 0">'.$c.': <input type="number" name="stats['.$pl.']['.$c.']" value="'.(int)$stats[$c].'" required></label>';
-                }
-                // Inventário e Equipado na Tela Final
-                $invF = htmlspecialchars($stats['inventario'] ?? '', ENT_QUOTES);
-                $eqF  = htmlspecialchars($stats['equipado']   ?? '', ENT_QUOTES);
-                echo 'Inventário:<br><textarea name="stats['.$pl.'][inventario]" rows="4" cols="60">'.$invF.'</textarea><br>';
-                // exemplo para Turno
-                echo 'Equipado:<br><textarea name="equipped" rows="2" cols="60">'.$eqF.'</textarea><br>';
-                echo '</fieldset>';
+                echo '<label style="display:block;margin:0.5em 0">'
+                   . $c . ': <input type="number" '
+                   . 'name="stats[' . htmlspecialchars($pl, ENT_QUOTES) . '][' . $c . ']" '
+                   . 'value="' . (int)$stats[$c] . '" required>'
+                   . '</label>';
             }
-            $_SESSION['battle']['init_index'] = 0;
-            $_SESSION['battle']['round']      = 1;
-            $_SESSION['battle']['notes']      = [];
-            echo '<button type="submit">Salvar Alterações</button> <a href="index.php">Nova Batalha</a></form>';
-            exit;
+            // Inventário e Equipado
+            $inv = htmlspecialchars($stats['inventario'] ?? '', ENT_QUOTES);
+            $eq  = htmlspecialchars($stats['equipado']   ?? '', ENT_QUOTES);
+            echo 'Inventário:<br>'
+               . '<textarea name="stats[' . htmlspecialchars($pl, ENT_QUOTES) . '][inventario]" rows="4" cols="60">'
+               . $inv . '</textarea><br>';
+            echo 'Equipado:<br>'
+               . '<textarea name="stats[' . htmlspecialchars($pl, ENT_QUOTES) . '][equipado]" rows="2" cols="60">'
+               . $eq . '</textarea><br>';
+            echo '</fieldset>';
+        }
+        // Reseta sessão de batalha
+        $_SESSION['battle']['init_index'] = 0;
+        $_SESSION['battle']['round']      = 1;
+        $_SESSION['battle']['notes']      = [];
+        $_SESSION['battle']['orig']       = [];
+        echo '<button type="submit">Salvar Alterações</button> '
+           . '<a href="index.php">Nova Batalha</a></form>';
+    exit;
 
     // 6) Salvar Final
     case 'save_final':

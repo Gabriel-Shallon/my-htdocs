@@ -10,24 +10,32 @@
         return $pdo;
     }//conecta
 
-    function newPlayer($nome, $F, $H, $R, $A, $PdF, $PV, $PM, $PE){
-        $pv_max = 10 + $R * 10;
-        
-        
-        
-        $pdo = conecta();
-        $query = $pdo->prepare('INSERT INTO RPG.player(nome, F, H, R, A, PdF, PV, PM, PE) VALUES (:nome, :F, :H, :R, :A, :PdF, :PV, :PM, :PE)');
+    function newPlayer($nome, $F, $H, $R, $A, $PdF, $PE, $inventario, $equipado){
 
-        $query->bindValue(':nome', $nome);
-        $query->bindValue(':F', $F);
-        $query->bindValue(':H', $H);
-        $query->bindValue(':R', $R); 
-        $query->bindValue(':A', $A);
-        $query->bindValue(':PdF', $PdF);
-        $query->bindValue(':PV', $PV);
-        $query->bindValue(':PM', $PM);
-        $query->bindValue(':PE', $PE);
-    
+        $PV_max = ($R > 0 ? $R * 5 : 1);
+        $PM_max = ($R > 0 ? $R * 5 : 1);
+        $PV     = $PV_max;
+        $PM     = $PM_max;
+
+        $pdo = conecta();
+        $sql = 'INSERT INTO RPG.player
+          (nome,F,H,R,A,PdF,PV,PV_max,PM,PM_max,PE,inventario,equipado)
+         VALUES
+          (:nome,:F,:H,:R,:A,:PdF,:PV,:PV_max,:PM,:PM_max,:PE,:inventario,:equipado)';
+        $query = $pdo->prepare($sql);
+        $query->bindValue(':nome',   $nome);
+        $query->bindValue(':F',      $F);
+        $query->bindValue(':H',      $H);
+        $query->bindValue(':R',      $R);
+        $query->bindValue(':A',      $A);
+        $query->bindValue(':PdF',    $PdF);
+        $query->bindValue(':PV',     $PV);
+        $query->bindValue(':PV_max', $PV_max);
+        $query->bindValue(':PM',     $PM);
+        $query->bindValue(':PM_max', $PM_max);
+        $query->bindValue(':PE',     $PE);
+        $query->bindValue(':inventario',     $inventario);
+        $query->bindValue(':equipado',     $equipado);
         $query->execute();
 
     }
