@@ -2,6 +2,7 @@
 // battle.php - Sistema de Combate 3D&T (com Inventário e Equipado persistentes)
 session_start();
 include 'inc/func.php';
+include 'inc/traitList.php';
 
     if (!isset($_SESSION['battle'])) {
         $_SESSION['battle'] = [];
@@ -18,9 +19,7 @@ if (!isset($_SESSION['battle'])) {
     $_SESSION['battle'] = [
         'players'     => [],
         'order'       => [],
-        // índice de iniciativa (avança a cada ação)
         'init_index'  => 0,
-        // contador de rodadas (turnos completos)
         'round'       => 1,
         'notes'       => [],
     ];
@@ -49,6 +48,10 @@ case 'select':
     }
     echo '<button type="submit">Confirmar</button></form>';
     break;
+
+    if (in_array('assombrado', listPlayerTraits($cur))) {
+        echo '<label>Roll Assombrado (1–6): <input type="number" name="roll_assombrado" min="1" max="6" required></label><br>';
+    }   
 
 // 2) Iniciativa
 case 'initiative':
@@ -86,7 +89,10 @@ case 'turn':
     $order = $b['order'];
     $cur = $order[$b['init_index'] % count($order)];
     $stats = getPlayer($cur);
-    $notes = $b['notes'][$cur] ?? ['efeito'=>'','posição'=>'','concentrado'=>0];
+    $notes = array_merge(
+    ['efeito' => '', 'posição' => '', 'concentrado' => 0],
+            $b['notes'][$cur] ?? []
+    );
     $maxMulti = 1 + intdiv(max($stats['H'],0), 2);
 
     echo '<h1>Iniciativa de <strong>'.$cur.'</strong> <small>(Rodada '.$b['round'].')</small></h1>';
@@ -115,7 +121,6 @@ case 'turn':
                 echo '<option value="start_concentrar">Iniciar Concentração</option>';
             } else {
                 echo '<option value="start_concentrar">Continuar Concentração (+1)</option>';
-                // ——> opção agora dentro do SELECT
                 echo '<option value="release_concentrar" data-bonus="'.$notes['concentrado'].'">'
                    .'Liberar Concentração (bônus: +'.$notes['concentrado'].')</option>';
             }
@@ -127,62 +132,95 @@ case 'turn':
             // Ataque simples
             echo '<div id="atkSimple" style="display: none;"><fieldset><legend>Ataque</legend>'
             .'Tipo: <select name="atkType"><option>F</option><option>PdF</option></select><br>'
-            // Aqui deixamos o input de FA sempre necessário, mas o JS vai preenchê-lo no release
             .'Roll FA: <input id="dadoFA" type="number" name="dadoFA" required><br>'
             .'Alvo: <select name="target">';
             foreach ($order as $o) if ($o !== $cur) echo '<option>'.$o.'</option>';
             echo '</select><br>'
-           .'Reação: <select id="def" name="defesa" onchange="onDef()">'
-           .'<option value="defender">Defender</option>'
-           .'<option value="defender_esquiva">Esquivar</option>'
-           .'<option value="indefeso">Indefeso</option>'
-           .'</select><br>'
-           .'<label id="fdLbl">Roll FD/Esq.: <input id="dadoFD" type="number" name="dadoFD" required></label><br>'
-           .'</fieldset></div>';
+            .'Reação: <select id="def" name="defesa" onchange="onDef()">'
+            .'<option value="defender">Defender</option>'
+            .'<option value="defender_esquiva">Esquivar</option>'
+            .'<option value="indefeso">Indefeso</option>'
+            .'</select><br>'
+            .'<label id="fdLbl">Roll FD/Esq.: <input id="dadoFD" type="number" name="dadoFD" required></label><br>'
+            .'</fieldset></div>';
     
-        // Ataque múltiplo
-        echo '<div id="atkMulti" style="display:none"><fieldset><legend>Múltiplo</legend>'
-           .'Tipo: <select name="atkTypeMulti"><option>F</option><option>PdF</option></select><br>'
-           .'Quantidade (2-'.$maxMulti.'): <input id="quant" type="number" name="quant" min=2 max='.$maxMulti.' value=2 onchange="gen()"><br>'
-           .'Alvo: <select name="targetMulti">';
-        foreach ($order as $o) if ($o !== $cur) echo '<option>'.$o.'</option>';
-        echo '</select><br>'
-        .'Reação: <select id="defM" name="defesaMulti" onchange="onDefM()">'
-        .'<option value="defender">Defender</option>'
-        .'<option value="defender_esquiva">Esquivar</option>'
-        .'<option value="indefeso">Indefeso</option>'
-        .'</select><br>'
-        .'<div id="dCont"></div>'
-        .'</fieldset></div>';
+            // Ataque múltiplo
+            echo '<div id="atkMulti" style="display:none"><fieldset><legend>Múltiplo</legend>'
+            .'Tipo: <select name="atkTypeMulti"><option>F</option><option>PdF</option></select><br>'
+            .'Quantidade (2-'.$maxMulti.'): <input id="quant" type="number" name="quant" '
+            .'min="2" max="'.$maxMulti.'" value="2" onchange="gen()"><br>'
+            .'Alvo: <select name="targetMulti">';
+            foreach ($order as $o) if ($o !== $cur) echo '<option>'.$o.'</option>';
+            echo '</select><br>'
+            .'Reação: <select id="defM" name="defesaMulti" onchange="onDefM()">'
+            .'<option value="defender">Defender</option>'
+            .'<option value="defender_esquiva">Esquivar</option>'
+            .'<option value="indefeso">Indefeso</option>'
+            .'</select><br>'
+            .'<div id="dCont"></div>'
+            .'</fieldset></div>';
 
     echo '<button type="submit">Executar</button> <button type="button" onclick="history.back()">Voltar</button></form>';
     
 
-    // Resumo Parcial
-    echo '<h2>Resumo Parcial da Batalha</h2>';
-    echo '<form method="post" action="?step=save_partial">';
-    foreach ($b['players'] as $pl) {
-        if ($pl === $cur) continue;
-        $ps = getPlayer($pl);
-        echo '<fieldset style="margin:0.5em 0;padding:0.5em;border:1px solid #ccc">';
-        echo '<legend><strong>'.$pl.'</strong></legend>';
-        echo '<input type="hidden" name="player_names[]" value="'.$pl.'">';
-        foreach (['F','H','R','A','PdF','PV','PM','PE'] as $c) {
-            $val = (int)($ps[$c] ?? 0);
-            echo '<label style="display:block">'.$c.': <input type="number" name="partial_stats['.$pl.']['.$c.']" value="'.$val.'" required></label>';
-        }
-        $invP = htmlspecialchars($ps['inventario'] ?? '', ENT_QUOTES);
-        $eqP  = htmlspecialchars($ps['equipado']   ?? '', ENT_QUOTES);
-        echo 'Inventário:<br><textarea name="partial_stats['.$pl.'][inventario]" rows="4" cols="60">'.$invP.'</textarea><br>';
-        echo 'Equipado:<br><textarea name="partial_stats['.$pl.'][equipado]" rows="2" cols="60">'.$eqP.'</textarea><br>';
-        echo '</fieldset>';
-    }
-    echo '<button type="submit">Salvar Resumo Parcial</button></form>';
+            // Resumo Parcial
+            echo '<h2>Resumo Parcial da Batalha</h2>';
+            echo '<form method="post" action="?step=save_partial">';
+            foreach ($b['players'] as $pl) {
+                if ($pl === $cur) continue;
+                $ps   = getPlayer($pl);
+                $note = $b['notes'][$pl] ?? ['efeito'=>'','posição'=>''];
+                $id   = preg_replace('/\W+/', '_', $pl); // id seguro
+            
+                echo '<fieldset style="margin:0.5em 0;padding:0.5em;border:1px solid #ccc">';
+                echo '<legend><strong>'.$pl.'</strong></legend>';
+                echo '<input type="hidden" name="player_names[]" value="'.$pl.'">';
+            
+                foreach (['F','H','R','A','PdF','PV','PM','PE'] as $c) {
+                    $val = (int)($ps[$c] ?? 0);
+                    echo '<label style="display:block">'.$c.': '
+                       .'<input type="number" name="partial_stats['.$pl.']['.$c.']" '
+                       .'value="'.$val.'" required></label>';
+                }
+            
+                echo '<button type="button" onclick="toggleSection(\'sec_'.$id.'\')">'
+                   .'Mostrar/Ocultar Detalhes</button>';
+            
+                echo '<div id="sec_'.$id.'" style="display:none;margin-top:.5em;">';
+            
+                echo 'Inventário:<br>'
+                   .'<textarea name="partial_stats['.$pl.'][inventario]" rows="4" cols="60">'
+                   .htmlspecialchars($ps['inventario'] ?? '', ENT_QUOTES)
+                   .'</textarea><br>';
+            
+                echo 'Equipado:<br>'
+                   .'<textarea name="partial_stats['.$pl.'][equipado]" rows="2" cols="60">'
+                   .htmlspecialchars($ps['equipado'] ?? '', ENT_QUOTES)
+                   .'</textarea><br>';
+            
+                echo 'Efeito:<br>'
+                   .'<textarea name="partial_stats['.$pl.'][efeito]" rows="4" cols="60">'
+                   .htmlspecialchars($note['efeito'], ENT_QUOTES)
+                   .'</textarea><br>';
+            
+                echo 'Posição:<br>'
+                   .'<textarea name="partial_stats['.$pl.'][posição]" rows="2" cols="30">'
+                   .htmlspecialchars($note['posição'], ENT_QUOTES)
+                   .'</textarea><br>';
+            
+                echo '</div>';
+                echo '</fieldset>';
+            }
+            echo '<button type="submit">Salvar Resumo Parcial</button></form>';
     
 
-    // Script JavaScript corrigido
-    echo <<<JS
+echo <<<JS
     <script>
+    function toggleSection(id) {
+    const el = document.getElementById(id);
+        if (!el) return;
+       el.style.display = (el.style.display === 'none') ? 'block' : 'none';
+    }
     document.addEventListener('DOMContentLoaded', () => {
       
       const actionSel = document.getElementById('action');
@@ -195,11 +233,18 @@ case 'turn':
       const faInput   = document.querySelector('input[name="dadoFA"]');
       const fdInput   = document.querySelector('input[name="dadoFD"]');
       
-      
+      const quantInput = document.getElementById('quant');
+      quantInput.addEventListener('input', () => {
+        gen();
+        document.querySelectorAll('#dCont input').forEach(i => i.required = true);
+      });
     
       function onAct() {
         const act = actionSel.value;
-        const bonus = parseInt(actionSel.options[actionSel.selectedIndex].dataset.bonus || '0', 10);
+        const bonus = parseInt(
+            actionSel.options[actionSel.selectedIndex].dataset.bonus || '0',
+            10
+        );
     
         const showSimple = (act === 'ataque' || act === 'release_concentrar');
         const showMulti  = (act === 'multiple');
@@ -213,9 +258,10 @@ case 'turn':
         fdInput.required = showSimple;
 
         if (act === 'release_concentrar') {
-            faInput.value = bonus;
+            faInput.placeholder = '+' + bonus + ' de atk concentrado';;
         } else {
             faInput.value = '';
+            faInput.placeholder = '';
         }
     
         if (showMulti) {
@@ -232,7 +278,7 @@ case 'turn':
       function clearMultiInputs() {
         dCont.innerHTML = '';
       }
-    
+
       function gen() {
         const cnt = parseInt(document.getElementById('quant').value, 10) || 0;
         let html = '';
@@ -241,17 +287,16 @@ case 'turn':
         }
         html += '<label>Roll FD/Esq.: <input type="number" name="dadoFDMulti" required></label><br>';
         dCont.innerHTML = html;
-      }
-    
-      // eventos
+      }   
+
       actionSel.addEventListener('change', onAct);
       def.addEventListener('change', onAct);
       defM.addEventListener('change', onAct);
       onAct();
     });
     </script>
-    JS;
-        break;
+JS;
+    break;
 
     // 4) Processar ação
     case 'act':
@@ -267,7 +312,20 @@ case 'turn':
                     'concentrado'=> (int)($_POST['concentrado'] ?? 0),
                 ];
             }
+
+
+        foreach (listPlayerTraits($pl) as $traitKey) {
+            $fn = "apply_{$traitKey}";
+            if (function_exists($fn)) {
+                $fn($pl, $_POST);
+            }
+        }
             switch ($_POST['action'] ?? '') {
+                
+                case 'pass':
+                    $out = "<strong>{$pl}</strong> passou seu turno.";
+                break;
+                
                 case 'ataque':
                     $dFA  = (int)($_POST['dadoFA'] ?? 0);
                     $tipo = $_POST['atkType'] ?? 'F';
@@ -285,52 +343,51 @@ case 'turn':
 
                     setPlayerStat($tgt, 'PV', max(getPlayerStat($tgt,'PV') - $dano, 0));
                     $out = "<strong>{$pl}</strong> atacou <strong>{$tgt}</strong> ({$tipo}): dano = {$dano}";
+                break;
+
+                case 'multiple':
+                    $tipo  = $_POST['atkTypeMulti']   ?? 'F';
+                    $tgt   = $_POST['targetMulti']    ?? '';
+                    $q     = (int)($_POST['quant']    ?? 1);
+                    $dados = $_POST['dadosMulti']      ?? [];
+                    $dFD   = (int)($_POST['dadoFDMulti'] ?? 0);
+                    $def   = $_POST['defesaMulti']     ?? 'defender';
+                    
+                    $faTot = FAmulti($pl, $q, $tipo, $dados);
+                    
+                    if ($def === 'indefeso' || $def === 'defender_esquiva') {
+                        $dano = max($faTot - FDindefeso($tgt), 0);
+                    } else {
+                        $dano = max($faTot - FD($tgt, $dFD), 0);
+                    }
+                    
+                    setPlayerStat($tgt, 'PV', max(getPlayerStat($tgt,'PV') - $dano, 0));
+                    $out = "<strong>{$pl}</strong> fez ataque múltiplo em <strong>{$tgt}</strong> ({$q}x{$tipo}): FA total = {$faTot}, dano = {$dano}";
                     break;
 
-                    case 'multiple':
-                        $tipo  = $_POST['atkTypeMulti']   ?? 'F';
-                        $tgt   = $_POST['targetMulti']    ?? '';
-                        $q     = (int)($_POST['quant']    ?? 1);
-                        $dados = $_POST['dadosMulti']      ?? [];
-                        $dFD   = (int)($_POST['dadoFDMulti'] ?? 0);
-                        $def   = $_POST['defesaMulti']     ?? 'defender';
-                    
-                        // Calcula FA total conforme função existente
-                        $faTot = FAmulti($pl, $q, $tipo, $dados);
-                    
-                        // Defesa: indefeso ou esquiva falha usam FDindefeso (sem reaplicar FA)
-                        if ($def === 'indefeso' || $def === 'defender_esquiva') {
-                            $dano = max($faTot - FDindefeso($tgt), 0);
-                        } else {
-                            // defesa normal subtrai FD com dado de defesa
-                            $dano = max($faTot - FD($tgt, $dFD), 0);
+                    case 'start_concentrar':
+                        if (empty($b['notes'][$pl]['concentrado'])) {
+                            $b['notes'][$pl]['concentrado'] = 1;
                         }
-                    
-                        // Aplica dano e monta saída
-                        setPlayerStat($tgt, 'PV', max(getPlayerStat($tgt,'PV') - $dano, 0));
-                        $out = "<strong>{$pl}</strong> fez ataque múltiplo em <strong>{$tgt}</strong> ({$q}x{$tipo}): FA total = {$faTot}, dano = {$dano}";
-                        break;
-
-                        case 'start_concentrar':
-                            // marca que o jogador está concentrando; rounds serão somados no bloco acima
-                            if (empty($b['notes'][$pl]['concentrado'])) {
-                                $b['notes'][$pl]['concentrado'] = 1;
-                            }
-                            $out = "<strong>{$pl}</strong> iniciou/concentra (rodada atual: +{$b['notes'][$pl]['concentrado']})";
-                        break;
-                        
-
+                        $out = "<strong>{$pl}</strong> iniciou/concentra (rodada atual: +{$b['notes'][$pl]['concentrado']})";
+                break;         
 
                 case 'release_concentrar':
                     $bonus = $b['notes'][$pl]['concentrado'] ?? 0;
-                    $dFA   = (int)($_POST['dadoFA'] ?? 0);
-                    $tipo  = $_POST['atkType']  ?? 'F';
-                    $tgt   = $_POST['target']   ?? '';
+                    $dado  = (int)($_POST['dadoFA'] ?? 0);
+                    $tipo  = $_POST['atkType']   ?? 'F';
+                    $tgt   = $_POST['target']    ?? '';
 
-                    $dano = FAFDresult($pl, $tgt, $dFA + $bonus, 0, $tipo);
+                    $fa_normal = FA($pl, $tipo, $dado);
+
+                    $fa_total = $fa_normal + $bonus;
+                                    
+                    $defesa = (int)($_POST['dadoFD'] ?? 0);
+                    $dano   = max($fa_total - FD($tgt, $defesa), 0);
+
                     setPlayerStat($tgt, 'PV', max(getPlayerStat($tgt,'PV') - $dano, 0));
                     $b['notes'][$pl]['concentrado'] = 0;
-                    $out = "<strong>{$pl}</strong> liberou ataque (+{$bonus})";
+                    $out = "<strong>{$pl}</strong> liberou ataque (FA={$fa_normal} + bônus {$bonus} = {$fa_total}): dano = {$dano}";
                     break;
 
                 case 'fim':
@@ -340,15 +397,11 @@ case 'turn':
                     break;
             }
             $total   = count($b['order']);
-            // salva o índice antigo para detectar fim de rodada
-
-            // 1) Avança iniciativa (próximo jogador)
+           
             $b['init_index']++;
 
-            // 2) Se fechou o ciclo completo (voltou ao 0), incrementa rodada
             if ($b['init_index'] % $total === 0) {
                 $b['round']++;
-                // 3) Ao iniciar nova rodada, incrementa concentração de cada jogador que já esteja concentrando
                 foreach ($b['notes'] as $player => &$note) {
                     if (!empty($note['concentrado'])) {
                         $note['concentrado']++;
@@ -357,27 +410,40 @@ case 'turn':
                 unset($note);
             }
 
-            // Feedback e redirecionamento continuam iguais
             echo '<p>'.$out.'</p><p><a href="battle.php?step=turn">Próximo Turno</a></p>';
         } else {
             echo '<p>Nenhum dado recebido.</p><p><a href="battle.php?step=turn">Voltar</a></p>';
         }
         exit;
 
-    // 4.5) Salvar Resumo Parcial
-    case 'save_partial':
-        if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-            $names        = $_POST['player_names'] ?? [];
-            $partialStats = $_POST['partial_stats'] ?? [];
-            foreach ($names as $pl) {
-                if (isset($partialStats[$pl])) {
-                    foreach ($partialStats[$pl] as $campo => $valor) {
-                        setPlayerStat($pl, $campo, ($campo==='inventario' || $campo==='equipado') ? $valor : (int)$valor);
+        // 4.5) Salvar Resumo Parcial
+        case 'save_partial':
+            if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+                $names        = $_POST['player_names']   ?? [];
+                $partialStats = $_POST['partial_stats']  ?? [];
+                $partialNotes = $_POST['partial_stats']  ?? [];
+            
+                foreach ($names as $pl) {
+                    if (isset($partialStats[$pl])) {
+                        foreach ($partialStats[$pl] as $campo => $valor) {
+                            if (in_array($campo, ['F','H','R','A','PdF','PV','PM','PE'], true)) {
+                                setPlayerStat($pl, $campo, (int)$valor);
+                            }
+                            elseif (in_array($campo, ['inventario','equipado'], true)) {
+                                setPlayerStat($pl, $campo, $valor);
+                            }
+                        }
+                    }
+                    if (isset($partialStats[$pl]['efeito'])) {
+                        $_SESSION['battle']['notes'][$pl]['efeito'] = $partialStats[$pl]['efeito'];
+                    }
+                    if (isset($partialStats[$pl]['posição'])) {
+                        $_SESSION['battle']['notes'][$pl]['posição'] = $partialStats[$pl]['posição'];
                     }
                 }
             }
-        }
-        header('Location: battle.php?step=turn'); exit;
+            header('Location: battle.php?step=turn');
+            exit;
 
     // 5) Tela Final
     case 'final':
@@ -414,7 +480,6 @@ case 'turn':
             foreach ($names as $pl) {
                 if (isset($allStats[$pl])) {
                     foreach ($allStats[$pl] as $campo => $valor) {
-                        // Persistência de inventário e equipado
                         setPlayerStat($pl, $campo, ($campo === 'inventario' || $campo === 'equipado') ? $valor : (int)$valor);
                     }
                 }

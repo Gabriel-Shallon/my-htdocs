@@ -11,6 +11,10 @@
     }//conecta
 
     function newPlayer($nome, $F, $H, $R, $A, $PdF, $PV, $PM, $PE){
+        $pv_max = 10 + $R * 10;
+        
+        
+        
         $pdo = conecta();
         $query = $pdo->prepare('INSERT INTO RPG.player(nome, F, H, R, A, PdF, PV, PM, PE) VALUES (:nome, :F, :H, :R, :A, :PdF, :PV, :PM, :PE)');
 
