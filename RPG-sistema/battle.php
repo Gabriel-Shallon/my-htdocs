@@ -107,40 +107,37 @@ case 'turn':
            .'Efeito:<br><textarea name="efeito" rows="4" cols="60">'.htmlspecialchars($notes['efeito'],ENT_QUOTES).'</textarea><br>'
            .'Posição:<br><textarea name="posição" rows="2" cols="30">'.htmlspecialchars($notes['posição'],ENT_QUOTES).'</textarea><br>'
            .'Concentrado: <input type="number" name="concentrado" min=0 value="'.htmlspecialchars($notes['concentrado'],ENT_QUOTES).'"><br>'
-           .'Ação: <select id="action" name="action" onchange="onAct()">';
-            // sempre mostramos “Passar Iniciativa” e “Terminar”…
+           .'<select id="action" name="action" onchange="onAct()">';
             echo '<option value="pass">Passar Iniciativa</option>';
             echo '<option value="fim">Terminar Batalha</option>';
 
-            // se ainda não está concentrando, deixamos iniciar
             if ($notes['concentrado'] == 0) {
                 echo '<option value="start_concentrar">Iniciar Concentração</option>';
-            }
-            // se já está, opções “Continuar” e “Liberar”
-            else {
+            } else {
                 echo '<option value="start_concentrar">Continuar Concentração (+1)</option>';
-                echo '<option value="release_concentrar">Liberar Concentração ('.$notes['concentrado'].' turnos)</option>';
+                // ——> opção agora dentro do SELECT
+                echo '<option value="release_concentrar" data-bonus="'.$notes['concentrado'].'">'
+                   .'Liberar Concentração (bônus: +'.$notes['concentrado'].')</option>';
             }
 
-            // e as ações de ataque
             echo '<option value="ataque">Atacar</option>';
             echo '<option value="multiple">Múltiplo</option>';
-
-        echo '</select><br>';
+            echo '</select><br>';
     
-        // Ataque simples
-        echo '<div id="atkSimple"><fieldset><legend>Ataque</legend>'
-           .'Tipo: <select name="atkType"><option>F</option><option>PdF</option></select><br>'
-           .'Roll FA: <input type="number" name="dadoFA" required><br>'
-           .'Alvo: <select name="target">';
-        foreach ($order as $o) if ($o !== $cur) echo '<option>'.$o.'</option>';
-        echo '</select><br>'
+            // Ataque simples
+            echo '<div id="atkSimple" style="display: none;"><fieldset><legend>Ataque</legend>'
+            .'Tipo: <select name="atkType"><option>F</option><option>PdF</option></select><br>'
+            // Aqui deixamos o input de FA sempre necessário, mas o JS vai preenchê-lo no release
+            .'Roll FA: <input id="dadoFA" type="number" name="dadoFA" required><br>'
+            .'Alvo: <select name="target">';
+            foreach ($order as $o) if ($o !== $cur) echo '<option>'.$o.'</option>';
+            echo '</select><br>'
            .'Reação: <select id="def" name="defesa" onchange="onDef()">'
            .'<option value="defender">Defender</option>'
            .'<option value="defender_esquiva">Esquivar</option>'
            .'<option value="indefeso">Indefeso</option>'
            .'</select><br>'
-           .'<label id="fdLbl">Roll FD/Esq.: <input id="fd" type="number" name="dadoFD" required></label><br>'
+           .'<label id="fdLbl">Roll FD/Esq.: <input id="dadoFD" type="number" name="dadoFD" required></label><br>'
            .'</fieldset></div>';
     
         // Ataque múltiplo
@@ -150,13 +147,13 @@ case 'turn':
            .'Alvo: <select name="targetMulti">';
         foreach ($order as $o) if ($o !== $cur) echo '<option>'.$o.'</option>';
         echo '</select><br>'
-    .'Reação: <select id="defM" name="defesaMulti" onchange="onDefM()">'
-    .'<option value="defender">Defender</option>'
-    .'<option value="defender_esquiva">Esquivar</option>'
-    .'<option value="indefeso">Indefeso</option>'
-    .'</select><br>'
-    .'<div id="dCont"></div>'
-    .'</fieldset></div>';
+        .'Reação: <select id="defM" name="defesaMulti" onchange="onDefM()">'
+        .'<option value="defender">Defender</option>'
+        .'<option value="defender_esquiva">Esquivar</option>'
+        .'<option value="indefeso">Indefeso</option>'
+        .'</select><br>'
+        .'<div id="dCont"></div>'
+        .'</fieldset></div>';
 
     echo '<button type="submit">Executar</button> <button type="button" onclick="history.back()">Voltar</button></form>';
     
@@ -187,6 +184,7 @@ case 'turn':
     echo <<<JS
     <script>
     document.addEventListener('DOMContentLoaded', () => {
+      
       const actionSel = document.getElementById('action');
       const atkSimple = document.getElementById('atkSimple');
       const atkMulti  = document.getElementById('atkMulti');
@@ -196,11 +194,16 @@ case 'turn':
       const fdLbl     = document.getElementById('fdLbl');
       const faInput   = document.querySelector('input[name="dadoFA"]');
       const fdInput   = document.querySelector('input[name="dadoFD"]');
+      
+      
     
       function onAct() {
-        const showSimple = actionSel.value === 'ataque';
-        const showMulti  = actionSel.value === 'multiple';
+        const act = actionSel.value;
+        const bonus = parseInt(actionSel.options[actionSel.selectedIndex].dataset.bonus || '0', 10);
     
+        const showSimple = (act === 'ataque' || act === 'release_concentrar');
+        const showMulti  = (act === 'multiple');
+
         // mostra/oculta blocos
         atkSimple.style.display = showSimple ? 'block' : 'none';
         atkMulti.style.display  = showMulti  ? 'block' : 'none';
@@ -208,6 +211,12 @@ case 'turn':
         // configura required apenas quando visível
         faInput.required = showSimple;
         fdInput.required = showSimple;
+
+        if (act === 'release_concentrar') {
+            faInput.value = bonus;
+        } else {
+            faInput.value = '';
+        }
     
         if (showMulti) {
           gen();
