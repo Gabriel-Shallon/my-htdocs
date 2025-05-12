@@ -13,7 +13,7 @@
         <a href="atk.php">Simular Ataque</a>
         <a href="initiative.php">Simular Iniciativa</a>
         <a href="battle.php">Simular Combate</a>
-        
+
     </nav>
 </body>
 </html>

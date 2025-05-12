@@ -1,5 +1,5 @@
 <?php
-// battle.php - Sistema de Combate 3D&T (com Inventário e Equipado persistentes)
+// battle.php - Sistema de Combate 3D&T
 session_start();
 include 'inc/func.php';
 include 'inc/traitList.php';
@@ -53,21 +53,26 @@ case 'select':
 // 2) Iniciativa
 case 'initiative':
     $b = &$_SESSION['battle']; 
-    if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-        $dados = array_map('intval', $_POST['rolls'] ?? []);
-        $inic  = iniciativa($b['players'], $dados);
-        $b['order'] = array_column($inic, 0);
-        foreach ($b['players'] as $i => $pl) {
-            if (isset($_POST['roll_assombrado'][$i])) {
-                $msg = apply_assombrado($pl, ['roll_assombrado' => $_POST['roll_assombrado'][$i]]);
-                if ($msg !== null) {
-                    $b['notes'][$pl]['efeito']      = $msg;
-                    $b['notes'][$pl]['assombrado']  = true;
+    $rolls = $_POST['rolls'] ?? [];    
+    $inicList = iniciativa($b['players'], $rolls);
+    $b['order'] = array_column($inicList, 'nome');
+    foreach ($b['players'] as $i => $pl) {
+        if (isset($_POST['roll_assombrado'][$i])) {
+            if (!isset($b['orig'][$pl])) {
+                $b['orig'][$pl] = [];
+                foreach (['F','H','R','A','PdF'] as $s) {
+                    $b['orig'][$pl][$s] = getPlayerStat($pl, $s);
                 }
             }
+            $msg = assombrado($pl, ['roll_assombrado' => $_POST['roll_assombrado'][$i]]);
+            if ($msg !== null) {
+                $b['notes'][$pl]['efeito']     = $msg;
+                $b['notes'][$pl]['assombrado'] = true;
+            }
+            header('Location: battle.php?step=turn'); exit;
         }
-        header('Location: battle.php?step=turn'); exit;
     }
+    
     echo '<h1>Iniciativa</h1><form method="post">';
     foreach ($b['players'] as $i => $nome) {
         echo '<label>'.$nome.': <input type="number" name="rolls['.$i.']" required></label><br>';
@@ -77,7 +82,7 @@ case 'initiative':
             .'</label><br>';
         } 
     }
-    echo '<button>Ok</button></form>';
+    echo '<button type="submit">Ok</button></form>';
 
     break;
 
@@ -102,10 +107,23 @@ case 'turn':
     $cur = $order[$b['init_index'] % count($order)];
     $stats = getPlayer($cur);
     $notes = array_merge(
-    ['efeito' => '', 'posição' => '', 'concentrado' => 0],
-            $b['notes'][$cur] ?? []
+        ['efeito'=>'','posição'=>'','concentrado'=>0,'draco_active'=>false],
+        $b['notes'][$cur] ?? []
     );
+    $b['notes'][$cur] = $notes;
     $maxMulti = 1 + intdiv(max($stats['H'],0), 2);
+
+    if ($notes['draco_active']) {
+    $pm = getPlayerStat($cur, 'PM');
+    if ($pm > 1) {
+        setPlayerStat($cur, 'PM', $pm - 1);
+    } else {
+        // última carga, desativa automaticamente
+        draconificacao($cur, false);
+        $b['notes'][$cur]['draco_active'] = false;
+        $b['notes'][$cur]['efeito'] .= "\nDraconificação desativada (PM esgotado) e Instável.";
+    }
+}
 
     echo '<h1>Iniciativa de <strong>'.$cur.'</strong> <small>(Rodada '.$b['round'].')</small></h1>';
     // Stats e inventário
@@ -129,6 +147,15 @@ case 'turn':
             echo '<option value="pass">Passar Iniciativa</option>';
             echo '<option value="fim">Terminar Batalha</option>';
 
+
+            if (in_array('draconificacao', listPlayerTraits($cur))) {
+                if (!$notes['draco_active']) {
+                    echo '<option value="activate_draco">Ativar Draconificação (1PM/turno)</option>';
+                } else {
+                    echo '<option value="deactivate_draco">Desativar Draconificação (ação extra)</option>';
+                }
+            }
+
             if ($notes['concentrado'] == 0) {
                 echo '<option value="start_concentrar">Iniciar Concentração</option>';
             } else {
@@ -139,6 +166,9 @@ case 'turn':
 
             echo '<option value="ataque">Atacar</option>';
             echo '<option value="multiple">Múltiplo</option>';
+            if (in_array('tiro_múltiplo', listPlayerTraits($cur))) {
+                echo '<option value="tiro_multi">Tiro Múltiplo (Trait)</option>';
+            }
             echo '</select><br>';
     
             // Ataque simples
@@ -170,6 +200,25 @@ case 'turn':
             .'<option value="indefeso">Indefeso</option>'
             .'</select><br>'
             .'<div id="dCont"></div>'
+            .'</fieldset></div>';
+
+            //Tiro múltiplo
+            echo '<div id="atkTiroMulti" style="display:none"><fieldset><legend>Tiro Múltiplo (Trait)</legend>'
+            .'Tipo: <select name="atkTypeTiroMulti"><option>PdF</option></select><br>'
+            .'Quantidade (1-'.$stats['H'].'): <input id="quantTiro" type="number" name="quantTiro" '
+            .'min="1" max="'.$stats['H'].'" value="1"><br>'
+            .'Alvo: <select name="targetTiroMulti">';
+            foreach ($order as $o) if ($o !== $cur) echo '<option>'.$o.'</option>';
+            echo '</select><br>'
+            .'Reação: <select id="defTiro" name="defesaTiroMulti">'
+            .'<option value="defender">Defender</option>'
+            .'<option value="defender_esquiva">Esquivar</option>'
+            .'<option value="indefeso">Indefeso</option>'
+            .'</select><br>'
+            .'<div id="dContTiro"></div>'
+            .'<label id="fdTiroLbl">Roll FD/Esq.: '
+            .'<input id="dadoFDTiro" type="number" name="dadoFDTiro" required>'
+            .'</label><br>'
             .'</fieldset></div>';
 
     echo '<button type="submit">Executar</button> <button type="button" onclick="history.back()">Voltar</button></form>';
@@ -227,87 +276,104 @@ case 'turn':
     
 
 echo <<<JS
-    <script>
-    function toggleSection(id) {
-    const el = document.getElementById(id);
-        if (!el) return;
-       el.style.display = (el.style.display === 'none') ? 'block' : 'none';
+<script>
+function toggleSection(id) {
+  const el = document.getElementById(id);
+  if (!el) return;
+  el.style.display = (el.style.display === 'none') ? 'block' : 'none';
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+  const actionSel   = document.getElementById('action');
+  const atkSimple   = document.getElementById('atkSimple');
+  const atkMulti    = document.getElementById('atkMulti');
+  const atkTiro     = document.getElementById('atkTiroMulti');
+  const dCont       = document.getElementById('dCont');
+  const dContTiro   = document.getElementById('dContTiro');
+  const def         = document.getElementById('def');
+  const defM        = document.getElementById('defM');
+  const defTiro     = document.getElementById('defTiro');
+  const fdLbl       = document.getElementById('fdLbl');
+  const fdTiroLbl   = document.getElementById('fdTiroLbl');
+  const faInput     = document.querySelector('input[name="dadoFA"]');
+  const fdInput     = document.querySelector('input[name="dadoFD"]');
+  const quant       = document.getElementById('quant');
+  const quantTiro   = document.getElementById('quantTiro');
+
+  function gen() {
+    const cnt = parseInt(quant.value, 10) || 0;
+    let html = '';
+    for (let i = 1; i <= cnt; i++) {
+      html += '<label>Roll FA ' + i + ': <input type="number" name="dadosMulti[]" required></label><br>';
     }
-    document.addEventListener('DOMContentLoaded', () => {
-      
-      const actionSel = document.getElementById('action');
-      const atkSimple = document.getElementById('atkSimple');
-      const atkMulti  = document.getElementById('atkMulti');
-      const dCont     = document.getElementById('dCont');
-      const defM      = document.getElementById('defM');
-      const def       = document.getElementById('def');
-      const fdLbl     = document.getElementById('fdLbl');
-      const faInput   = document.querySelector('input[name="dadoFA"]');
-      const fdInput   = document.querySelector('input[name="dadoFD"]');
-      
-      const quantInput = document.getElementById('quant');
-      quantInput.addEventListener('input', () => {
-        gen();
-        document.querySelectorAll('#dCont input').forEach(i => i.required = true);
-      });
-    
-      function onAct() {
-        const act = actionSel.value;
-        const bonus = parseInt(
-            actionSel.options[actionSel.selectedIndex].dataset.bonus || '0',
-            10
-        );
-    
-        const showSimple = (act === 'ataque' || act === 'release_concentrar');
-        const showMulti  = (act === 'multiple');
+    html += '<label>Roll FD/Esq.: <input type="number" name="dadoFDMulti" required></label><br>';
+    dCont.innerHTML = html;
+  }
 
-        // mostra/oculta blocos
-        atkSimple.style.display = showSimple ? 'block' : 'none';
-        atkMulti.style.display  = showMulti  ? 'block' : 'none';
-    
-        // configura required apenas quando visível
-        faInput.required = showSimple;
-        fdInput.required = showSimple;
+  function clearMultiInputs() {
+    dCont.innerHTML = '';
+  }
 
-        if (act === 'release_concentrar') {
-            faInput.placeholder = '+' + bonus + ' de atk concentrado';;
-        } else {
-            faInput.value = '';
-            faInput.placeholder = '';
-        }
-    
-        if (showMulti) {
-          gen();
-          document.querySelectorAll('#dCont input').forEach(i => i.required = true);
-        } else {
-          clearMultiInputs();
-        }
-    
-        // mostra FD label apenas para ataque simples não indefeso
-        fdLbl.style.display = (showSimple && def.value !== 'indefeso') ? 'block' : 'none';
-      }
-    
-      function clearMultiInputs() {
-        dCont.innerHTML = '';
-      }
+  function genTiro() {
+    const cnt = parseInt(quantTiro.value, 10) || 0;
+    let html = '';
+    for (let i = 1; i <= cnt; i++) {
+      html += '<label>Roll PdF ' + i + ': <input type="number" name="dadosTiroMulti[]" required></label><br>';
+    }
+    dContTiro.innerHTML = html;
+    fdTiroLbl.style.display = (defTiro.value !== 'indefeso') ? 'block' : 'none';
+  }
 
-      function gen() {
-        const cnt = parseInt(document.getElementById('quant').value, 10) || 0;
-        let html = '';
-        for (let i = 1; i <= cnt; i++) {
-            html += '<label>Roll FA ' + i + ': <input type="number" name="dadosMulti[]" required></label><br>';
-        }
-        html += '<label>Roll FD/Esq.: <input type="number" name="dadoFDMulti" required></label><br>';
-        dCont.innerHTML = html;
-      }   
+function onAct() {
+    const act       = actionSel.value;
+    const showSimple= (act === 'ataque' || act === 'release_concentrar');
+    const showMulti = (act === 'multiple');
+    const showTiro  = (act === 'tiro_multi');
 
-      actionSel.addEventListener('change', onAct);
-      def.addEventListener('change', onAct);
-      defM.addEventListener('change', onAct);
-      onAct();
-    });
-    </script>
+    atkSimple.style.display = showSimple ? 'block' : 'none';
+    atkMulti.style.display  = showMulti  ? 'block' : 'none';
+    atkTiro.style.display   = showTiro   ? 'block' : 'none';
+
+    faInput.required = showSimple;
+    fdInput.required = showSimple;
+
+    if (act === 'release_concentrar') {
+      const bonus = parseInt(actionSel.options[actionSel.selectedIndex].dataset.bonus || '0', 10);
+      faInput.placeholder = '+' + bonus + ' de atk concentrado';
+    } else {
+      faInput.value = '';
+      faInput.placeholder = '';
+    }
+
+    if (showMulti) {
+      gen();
+    } else {
+      clearMultiInputs();
+    }
+    fdLbl.style.display = (showMulti && defM.value !== 'indefeso') ? 'block' : 'none';
+
+    if (showTiro) {
+      genTiro();
+    } else {
+      dContTiro.innerHTML = '';
+    }
+}
+
+quant.addEventListener('input', () => {
+  gen();
+  document.querySelectorAll('#dCont input').forEach(i => i.required = true);
+});
+quantTiro.addEventListener('input', genTiro);
+def.addEventListener('change', onDef);
+defM.addEventListener('change', onDefM);
+defTiro.addEventListener('change', genTiro);
+actionSel.addEventListener('change', onAct);
+
+  onAct();
+});
+</script>
 JS;
+
     break;
 
     // 4) Processar ação
@@ -359,7 +425,7 @@ JS;
                     $def   = $_POST['defesaMulti']     ?? 'defender';
                     
                     $faTot = FAmulti($pl, $q, $tipo, $dados);
-                    
+
                     if ($def === 'indefeso' || $def === 'defender_esquiva') {
                         $dano = max($faTot - FDindefeso($tgt), 0);
                     } else {
@@ -393,14 +459,52 @@ JS;
                     setPlayerStat($tgt, 'PV', max(getPlayerStat($tgt,'PV') - $dano, 0));
                     $b['notes'][$pl]['concentrado'] = 0;
                     $out = "<strong>{$pl}</strong> liberou ataque (FA={$fa_normal} + bônus {$bonus} = {$fa_total}): dano = {$dano}";
-                    break;
+                break;
+
+                case 'tiro_multi':
+                    $tgt   = $_POST['targetTiroMulti'] ?? '';
+                    $q     = (int)($_POST['quantTiro'] ?? 1);
+                    $dados = $_POST['dadosTiroMulti'] ?? [];
+                    // calcula FA e consome PM
+                    $faTot = FAtiroMultiplo($pl, $q, $dados);
+                    // reação e FD do bloco de tiro
+                    $def   = $_POST['defesaTiroMulti'] ?? 'defender';
+                    if ($def === 'indefeso' || $def === 'defender_esquiva') {
+                        $dano = max($faTot - FDindefeso($tgt), 0);
+                    } else {
+                        $dFD  = (int)($_POST['dadoFDTiro'] ?? 0);
+                        $dano = max($faTot - FD($tgt, $dFD), 0);
+                    }
+                
+                    setPlayerStat($tgt, 'PV', max(getPlayerStat($tgt,'PV') - $dano, 0));
+                    $out = "<strong>{$pl}</strong> usou <em>Tiro Múltiplo</em> em <strong>{$tgt}</strong> "
+                         . "({$q}xPdF): FA total = {$faTot}, dano = {$dano}";
+                break;
+
+                case 'activate_draco':
+                    draconificacao($pl, true);
+                    $b['notes'][$pl]['draco_active'] = true;
+                    $out = "<strong>{$pl}</strong> ativou draconificação (+1PdF,+1R,+2H; Voo={$voo}m/s)";
+                break;
+                case 'deactivate_draco':
+                    draconificacao($pl, false);
+                    $b['notes'][$pl]['draco_active'] = false;
+                    $out = "<strong>{$pl}</strong> desativou Draconificação e ficou instável.";
+                break;
+
+
 
                 case 'fim':
                     header('Location: battle.php?step=final'); exit;
+
                 default:
                     $out = 'Ação inválida ou não reconhecida.';
                     break;
+
+
             }
+
+            
             $total   = count($b['order']);
            
             $b['init_index']++;
@@ -455,16 +559,13 @@ JS;
         $b       = &$_SESSION['battle'];
         $players = $b['players'];
 
-        // 1) Reverte os debuffs de Assombrado
-        foreach ($players as $pl) {
-            if (
-                !empty($b['notes'][$pl]['assombrado'])  // foi assombrado
-                && !empty($_SESSION['battle']['orig'][$pl]) // tem originais salvos
-            ) {
-                foreach ($_SESSION['battle']['orig'][$pl] as $stat => $origValue) {
-                    setPlayerStat($pl, $stat, $origValue);
+        if (!empty($b['orig'])) {
+            foreach ($b['orig'] as $pl => $origStats) {
+                foreach ($origStats as $stat => $valor) {
+                    setPlayerStat($pl, $stat, $valor);
                 }
             }
+            $b['orig'] = [];
         }
 
         // 2) Exibe o formulário de resumo final
@@ -497,7 +598,6 @@ JS;
         $_SESSION['battle']['init_index'] = 0;
         $_SESSION['battle']['round']      = 1;
         $_SESSION['battle']['notes']      = [];
-        $_SESSION['battle']['orig']       = [];
         echo '<button type="submit">Salvar Alterações</button> '
            . '<a href="index.php">Nova Batalha</a></form>';
     exit;
@@ -524,3 +624,6 @@ JS;
         header('Location: battle.php');
         exit;
       }
+
+
+      

@@ -139,34 +139,21 @@
 
 
 
-    function iniciativa(array $lutadores, array $dados): array {
-        $inicList = [];
-        foreach ($lutadores as $idx => $nome) {
-            $H = (int) getPlayerStat($nome, 'H');
-            $dado = (int) ($dados[$idx] ?? 0);
-            $total = $H + $dado;
-    
-            $inicList[] = [
-                'nome'  => $nome,
-                'H'     => $H,
-                'total' => $total,
-            ];
-        }
-    
-        usort($inicList, function($a, $b) {
-            return $b['total'] <=> $a['total'];
-        });
-    
-        $resultado = [];
-        foreach ($inicList as $item) {
-            $resultado[] = [
-                $item['nome'],
-                $item['H'],
-                $item['total'],
-            ];
-        } 
-        return $resultado;
+function iniciativa(array $lutadores, array $dados): array {
+    $inicList = [];
+    foreach ($lutadores as $idx => $nome) {
+        $H     = (int) getPlayerStat($nome, 'H');
+        $dado  = (int) ($dados[$idx] ?? 0);
+        $total = $H + $dado;
+        $inicList[] = [
+            'nome'  => $nome,
+            'H'     => $H,
+            'total' => $total,
+        ];
     }
-
+    // Ordena decrescente por iniciativa
+    usort($inicList, fn($a,$b) => $b['total'] <=> $a['total']);
+    return $inicList;
+}
 
   

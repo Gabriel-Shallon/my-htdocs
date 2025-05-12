@@ -1,34 +1,104 @@
 <?php
-// editplayer.php - Selecionar e editar stats de um player existente
+// editplayer.php - Selecionar e editar stats e traits de um player existente
 session_start();
 include 'inc/func.php';
+include 'inc/traitList.php'; // funções listPlayerTraits, addPlayerTrait, removePlayerTrait
 
-// Se recebeu submissão de edição
-if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['save'])) {
-    $nome = $_POST['nome'];
-    // campos numéricos fixos
-    foreach (['F','H','R','A','PdF','PE'] as $campo) {
-        setPlayerStat($nome, $campo, (int)$_POST[$campo]);
-    }
-    // Vida atual e máxima
-    setPlayerStat($nome, 'PV',     (int)$_POST['PV']);
-    setPlayerStat($nome, 'PV_max', (int)$_POST['PV_max']);
-    // Magia atual e máxima
-    setPlayerStat($nome, 'PM',     (int)$_POST['PM']);
-    setPlayerStat($nome, 'PM_max', (int)$_POST['PM_max']);
-    // inventário e equipado
-    setPlayerStat($nome, 'inventario', $_POST['inventario'] ?? '');
-    setPlayerStat($nome, 'equipado',   $_POST['equipado']   ?? '');
-    header("Location: editplayer.php?msg=".urlencode("{$nome} atualizado com sucesso"));
-    exit;
-}
-
+$pdo = conecta();
 // Lista de players
 $all = getAllPlayers();
 
-// Se recebeu seleção, carrega dados
-$selected   = $_GET['player'] ?? null;
+// Seleção
+$selected = $_REQUEST['player'] ?? null;
 $playerData = $selected ? getPlayer($selected) : null;
+$msg = '';
+
+// Processa submissão de edição
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['save'])) {
+    $nome = $_POST['nome'];
+    // Stats básicos
+    foreach (['F','H','R','A','PdF','PE','PV','PV_max','PM','PM_max'] as $campo) {
+        if (isset($_POST[$campo])) setPlayerStat($nome, $campo, (int)$_POST[$campo]);
+    }
+    setPlayerStat($nome, 'inventario', $_POST['inventario'] ?? '');
+    setPlayerStat($nome, 'equipado',   $_POST['equipado']   ?? '');
+
+    // Traits: diferença entre desejado e atual
+    // Reúne quantidade desejada
+    $submitted = $_POST['traits'] ?? [];
+    $desired = array_map('intval', $submitted);
+    // Carrega quantidades atuais
+    $current = ['advantage'=>[], 'disadvantage'=>[]];
+    // Vantagens
+    $stmt = $pdo->prepare("SELECT advantage_id, COUNT(*) AS cnt FROM RPG.player_advantages WHERE player_name=? GROUP BY advantage_id");
+    $stmt->execute([$nome]);
+    foreach ($stmt->fetchAll(PDO::FETCH_ASSOC) as $r) {
+        $current['advantage'][(int)$r['advantage_id']] = (int)$r['cnt'];
+    }
+    // Desvantagens
+    $stmt = $pdo->prepare("SELECT disadvantage_id, COUNT(*) AS cnt FROM RPG.player_disadvantages WHERE player_name=? GROUP BY disadvantage_id");
+    $stmt->execute([$nome]);
+    foreach ($stmt->fetchAll(PDO::FETCH_ASSOC) as $r) {
+        $current['disadvantage'][(int)$r['disadvantage_id']] = (int)$r['cnt'];
+    }
+    // Ajusta cada trait
+    $pmExtraId = 4;  // ajuste para o seu banco
+    $pvExtraId = 30;  // ajuste para o seu banco
+
+    foreach ($desired as $key => $want) {
+        list($type, $id) = explode(':', $key);
+        $have = $current[$type][$id] ?? 0;
+        $diff = $want - $have;
+  
+        if ($diff > 0) {
+            // adiciona instâncias
+            for ($i = 0; $i < $diff; $i++) {
+                addPlayerTrait($nome, $id, $type);
+           
+                if ($type === 'advantage') {
+                    if ((int)$id === $pmExtraId) {
+                        PMextra($nome);
+                    }
+                    if ((int)$id === $pvExtraId) {
+                        PVextra($nome);
+                    }
+                }
+            }
+        } elseif ($diff < 0) {
+            // remove instâncias
+            for ($i = 0; $i < -$diff; $i++) {
+                removePlayerTrait($nome, $id, $type);
+           
+                if ($type === 'advantage') {
+                    if ((int)$id === $pmExtraId) {
+                        deapplyPMextra($nome);
+                    }
+                    if ((int)$id === $pvExtraId) {
+                        deapplyPVextra($nome);
+                    }
+                }
+            }
+        }
+    }
+    $msg = "Player $nome atualizado com sucesso.";
+    // Recarrega dados após update
+    header('Location: editplayer.php?player='.urlencode($nome).'&msg='.urlencode($msg));
+    exit;
+}
+
+// Carrega traits gerais
+$advantages = $pdo->query('SELECT id,name,effect_text FROM RPG.advantages ORDER BY name')->fetchAll(PDO::FETCH_ASSOC);
+$disadvantages= $pdo->query('SELECT id,name,effect_text FROM RPG.disadvantages ORDER BY name')->fetchAll(PDO::FETCH_ASSOC);
+
+// Carrega quantidades atuais para exibir
+$current = ['advantage'=>[], 'disadvantage'=>[]];
+if ($selected) {
+    $nome = $selected;
+    $stmt = $pdo->prepare("SELECT advantage_id, COUNT(*) AS cnt FROM RPG.player_advantages WHERE player_name=? GROUP BY advantage_id");
+    $stmt->execute([$nome]); foreach($stmt->fetchAll(PDO::FETCH_ASSOC) as $r) $current['advantage'][(int)$r['advantage_id']] = (int)$r['cnt'];
+    $stmt = $pdo->prepare("SELECT disadvantage_id, COUNT(*) AS cnt FROM RPG.player_disadvantages WHERE player_name=? GROUP BY disadvantage_id");
+    $stmt->execute([$nome]); foreach($stmt->fetchAll(PDO::FETCH_ASSOC) as $r) $current['disadvantage'][(int)$r['disadvantage_id']] = (int)$r['cnt'];
+}
 ?>
 <!DOCTYPE html>
 <html lang="pt-BR">
@@ -36,93 +106,76 @@ $playerData = $selected ? getPlayer($selected) : null;
   <meta charset="UTF-8">
   <title>Editar Personagem</title>
   <style>
-    body{font-family:sans-serif;max-width:600px;margin:2em auto;}
+    body{font-family:sans-serif;max-width:800px;margin:2em auto;}
     form{border:1px solid #ccc;padding:1em;margin-bottom:1em;}
+    fieldset{margin-bottom:1em;padding:1em;border:1px solid #aaa;}
+    legend{font-weight:bold;}
     label{display:block;margin:.5em 0;}
-    .dual-inputs { display: flex; gap: 1em; }
-    .dual-inputs input { width: 100%; }
-    input, textarea, select{padding:.4em;box-sizing:border-box;}
-    button{margin-top:1em;}
-    .msg{background:#eef;padding:.8em;}
+    .dual{display:flex;gap:1em;}
+    .traits-grid{display:grid;grid-template-columns:1fr 1fr;gap:1em;}
+    input,textarea,select,button{padding:.4em;box-sizing:border-box;}
+    .msg{background:#eef;padding:.8em;margin-bottom:1em;}
+    .effect{font-style:italic;color:#555;}
+    .count{width:4em;margin-left:.5em;}
   </style>
 </head>
 <body>
   <h1>Editar Personagem</h1>
-  <?php if (!empty($_GET['msg'])): ?>
-    <div class="msg"><?= htmlspecialchars($_GET['msg']) ?></div>
-  <?php endif; ?>
+  <?php if (!empty($_GET['msg'])): ?><div class="msg"><?=htmlspecialchars($_GET['msg'])?></div><?php endif;?>
 
-  <!-- Seleção de player -->
-  <form method="get" action="editplayer.php">
-    <label>Selecione um player:
+  <form method="get">
+    <label>Player:
       <select name="player" onchange="this.form.submit()">
-        <option value="">-- Escolha --</option>
-        <?php foreach ($all as $p):
-          $n   = htmlspecialchars($p['nome'], ENT_QUOTES);
-          $sel = ($n === $selected) ? ' selected' : '';
+        <option value="">-- escolha --</option>
+        <?php foreach($all as $p):
+          $n=$p['nome']; $sel=($n===$selected?' selected':'');
         ?>
-          <option value="<?= $n ?>"<?= $sel ?>><?= $n ?></option>
-        <?php endforeach; ?>
+          <option value="<?=htmlspecialchars($n)?>"<?=$sel?>><?=htmlspecialchars($n)?></option>
+        <?php endforeach;?>
       </select>
     </label>
   </form>
 
   <?php if ($playerData): ?>
-    <!-- Form de edição -->
-    <form method="post" action="editplayer.php">
-      <input type="hidden" name="nome" value="<?= htmlspecialchars($selected,ENT_QUOTES) ?>">
+  <form method="post">
+    <input type="hidden" name="nome" value="<?=htmlspecialchars($selected)?>">
+    <?php foreach(['F'=>'Força','H'=>'Habilidade','R'=>'Resistência','A'=>'Agilidade','PdF'=>'Poder de Fogo','PE'=>'XP'] as $c=>$l):?>
+      <label><?=$l?> (<?=$c?>): <input type="number" name="<?=$c?>" value="<?=(int)$playerData[$c]?>" required></label>
+    <?php endforeach;?>
+    <div class="dual">
+      <label>PV: <input type="number" name="PV" value="<?=(int)$playerData['PV']?>" min="0" required></label>
+      <label>PV_max: <input type="number" name="PV_max" value="<?=(int)$playerData['PV_max']?>" min="1" required></label>
+    </div>
+    <div class="dual">
+      <label>PM: <input type="number" name="PM" value="<?=(int)$playerData['PM']?>" min="0" required></label>
+      <label>PM_max: <input type="number" name="PM_max" value="<?=(int)$playerData['PM_max']?>" min="1" required></label>
+    </div>
+    <label>Inventário:<textarea name="inventario" rows="3" cols="60"><?=htmlspecialchars($playerData['inventario']??'')?></textarea></label>
+    <label>Equipado:<textarea name="equipado" rows="3" cols="60"><?=htmlspecialchars($playerData['equipado']??'')?></textarea></label>
 
-      <?php
-      // Campos fixos
-      $labels = [
-        'F'   => 'Força',
-        'H'   => 'Habilidade',
-        'R'   => 'Resistência',
-        'A'   => 'Armadura',
-        'PdF' => 'Poder de Fogo',
-        'PE'  => 'Experiência'
-      ];
-      foreach ($labels as $campo => $label):
-        $v = (int)$playerData[$campo];
-      ?>
-        <label><?= $label ?> (<?= $campo ?>):
-          <input type="number" name="<?= $campo ?>" value="<?= $v ?>" required>
+    <fieldset><legend>Vantagens</legend><div class="traits-grid">
+      <?php foreach($advantages as $a): $cnt=$current['advantage'][$a['id']]??0; $key="advantage:{$a['id']}";?>
+        <label title="<?=htmlspecialchars($a['effect_text'])?>">
+          <?=htmlspecialchars($a['name'])?>
+          <input type="number" name="traits[<?=$key?>]" value="<?=$cnt?>" min="0" class="count">
+          <span class="effect">x<?=$cnt?></span>
         </label>
-      <?php endforeach; ?>
+      <?php endforeach;?>
+    </div></fieldset>
 
-      <!-- PV atual / máximo -->
-      
-        <div class="dual-inputs">
-        <label>Vida (PV):  
-          <input type="number" name="PV"     value="<?= (int)$playerData['PV']     ?>" min="0" required placeholder="Atual">
+    <fieldset><legend>Desvantagens</legend><div class="traits-grid">
+      <?php foreach($disadvantages as $d): $cnt=$current['disadvantage'][$d['id']]??0; $key="disadvantage:{$d['id']}";?>
+        <label title="<?=htmlspecialchars($d['effect_text'])?>">
+          <?=htmlspecialchars($d['name'])?>
+          <input type="number" name="traits[<?=$key?>]" value="<?=$cnt?>" min="0" class="count">
+          <span class="effect">x<?=$cnt?></span>
         </label>
-        <label>Vida Máxima  
-          <input type="number" name="PV_max" value="<?= (int)$playerData['PV_max'] ?>" min="1" required placeholder="Máx">
-        </label>
-        </div>
-      
+      <?php endforeach;?>
+    </div></fieldset>
 
-      <!-- PM atual / máximo -->
-        <div class="dual-inputs">
-        <label>Magia (PM):  
-          <input type="number" name="PM"     value="<?= (int)$playerData['PM']     ?>" min="0" required placeholder="Atual">
-        </label>
-        <label>Magia Máxima  
-          <input type="number" name="PM_max" value="<?= (int)$playerData['PM_max'] ?>" min="1" required placeholder="Máx">
-        </label>
-        </div>
-
-      <!-- Inventário e Equipado -->
-      <label>Inventário:
-        <textarea name="inventario" rows="4" cols='60'><?= htmlspecialchars($playerData['inventario'] ?? '', ENT_QUOTES) ?></textarea>
-      </label>
-      <label>Equipado:
-        <textarea name="equipado" rows="4" cols='60'><?= htmlspecialchars($playerData['equipado'] ?? '', ENT_QUOTES) ?></textarea>
-      </label>
-
-      <button type="submit" name="save">Salvar Alterações</button>
-      <a href="editplayer.php">Cancelar</a>
-    </form>
-  <?php endif; ?>
+    <button type="submit" name="save">Salvar Alterações</button>
+    <a href="editplayer.php">Cancelar</a>
+  </form>
+  <?php endif;?>
 </body>
 </html>
