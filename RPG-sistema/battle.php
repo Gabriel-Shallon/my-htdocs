@@ -360,7 +360,7 @@ document.addEventListener('DOMContentLoaded', () => {
   const dCont       = document.getElementById('dCont');
   const dContTiro   = document.getElementById('dContTiro');
   const dadoFDTiro  = document.getElementById('dadoFDTiro');
-
+    
   function genMulti() {
     let cnt = parseInt(quant.value, 10) || 0;
     let html = '';
