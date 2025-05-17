@@ -113,19 +113,23 @@
         return max(FA($atacante, $atkType, $dadoFA) - FD($defensor,$dadoFD),0);
     }
 
+
     
     function FAFDindefeso(string $atacante, string $defensor, int $dadoFA, string $atkType){
         return max(FA($atacante, $atkType, $dadoFA) - FDindefeso($defensor),0);
     }
 
 
-    function FAFDesquiva(string $atacante, string $defensor, int $dadoEsquiva, int $dadoFA, string $atkType){
-        $meta = getPlayerStat($defensor, 'H') - getPlayerStat($atacante, 'H');
+    function FAFDesquiva(string $atacante, string $defensor,int $dadoFD, int $dadoFA, string $atkType){
+        $bonus = 0;
+        if (in_array('aceleracao_i', listPlayerTraits($defensor), true)) {$bonus = 1;};
+        if (in_array('teleporte', listPlayerTraits($defensor), true)) {$bonus = 2;};
+        $meta = (getPlayerStat($defensor, 'H') + $bonus) - getPlayerStat($atacante, 'H');
         if ($meta <= 0){
             return FAFDindefeso($atacante, $defensor, $dadoFA, $atkType);
         }
         if ($meta > 0 && $meta < 6){
-            if($dadoEsquiva <= $meta){
+            if($dadoFD <= $meta){
                 return 0;
             }else{
                 return FAFDindefeso($atacante, $defensor, $dadoFA, $atkType);
@@ -136,24 +140,56 @@
         }
     }
 
-
-
-
-function iniciativa(array $lutadores, array $dados): array {
-    $inicList = [];
-    foreach ($lutadores as $idx => $nome) {
-        $H     = (int) getPlayerStat($nome, 'H');
-        $dado  = (int) ($dados[$idx] ?? 0);
-        $total = $H + $dado;
-        $inicList[] = [
-            'nome'  => $nome,
-            'H'     => $H,
-            'total' => $total,
-        ];
+    function esquivaMulti(string $atacante, string $defensor, int $dado): string {
+        $bonus = 0;
+        if (in_array('aceleracao_i', listPlayerTraits($defensor), true)) {$bonus = 1;};
+        if (in_array('teleporte', listPlayerTraits($defensor), true)) {$bonus = 2;};
+        $meta = (getPlayerStat($defensor, 'H') + $bonus) - getPlayerStat($atacante, 'H');
+        if ($meta <= 0) {
+            return 'defender_esquiva_fail';
+        }
+        if ($dado <= $meta) {
+            return 'defender_esquiva_success';
+        } else {
+        return 'defender_esquiva_fail';
+        }
     }
-    // Ordena decrescente por iniciativa
-    usort($inicList, fn($a,$b) => $b['total'] <=> $a['total']);
-    return $inicList;
-}
+
+
+
+
+    function iniciativa(array $lutadores, array $dados): array {
+        $inicList = [];
+        foreach ($lutadores as $idx => $nome) {
+            $H = (int) getPlayerStat($nome, 'H');
+            $traits = listPlayerTraits($nome);
+            if (in_array('teleporte', $traits, true)) {
+                $bonus = 2;
+            } elseif (in_array('aceleracao', $traits, true)) {
+                $bonus = 1;
+            } else {
+                $bonus = 0;
+            }
+            $dado = isset($dados[$idx]) ? (int) $dados[$idx] : 0;
+            $total = $H + $dado + $bonus;
+            $inicList[] = [
+                'nome'       => $nome,
+                'total'      => $total,
+                'habilidade' => $H,
+                'indice'     => $idx,
+            ];
+        }
+
+        usort($inicList, function($a, $b) {
+            if ($a['total'] !== $b['total']) {
+                return $b['total'] <=> $a['total'];
+            }
+            if ($a['habilidade'] !== $b['habilidade']) {
+                return $b['habilidade'] <=> $a['habilidade'];
+            }
+            return $a['indice'] <=> $b['indice'];
+        });
+        return $inicList;
+    }
 
   

@@ -4,6 +4,13 @@
 
 require_once 'func.php';
 
+function normalizeKey(string $s): string {
+    // remove acentos
+    $s = iconv('UTF-8','ASCII//TRANSLIT',$s);
+    // minusculas e underlines
+    return strtolower(str_replace(' ','_',$s));
+}
+
 // Retorna lista de chaves de traits (ex: ['assombrado','regeneracao'])
 function listPlayerTraits(string $player): array {
     $pdo = conecta();
@@ -16,7 +23,7 @@ function listPlayerTraits(string $player): array {
     ");
     $stmt->execute([$player]);
     foreach ($stmt->fetchAll(PDO::FETCH_COLUMN) as $n) {
-        $res[] = strtolower(str_replace(' ','_', $n));
+        $res[] = normalizeKey($n);
     }
     // desvantagens
     $stmt = $pdo->prepare("
@@ -64,7 +71,9 @@ function removePlayerTrait(string $player, int $traitId, string $type): bool {
 // Efeitos:
 
 
+
 //DESVANTAGENS//
+
 function assombrado(string $player, array $input): ?string {
     $d = intval($input['roll_assombrado'] ?? 0);
     if ($d >= 4 && $d <= 6) {
@@ -76,10 +85,6 @@ function assombrado(string $player, array $input): ?string {
     return null;
 }
 
-function instabilidade(string $player){
-    return 'Instável';//não pode fazer mais nenhuma ação nesse turno, escondendo as opções de ações para esse turno, e no resultado do turno vai ser colocado algo que o player está instável. O efeito é basicamente o da ação passar turno.
-}
-
 function muggles(string $player){
     //atualizar quando houver magias
 }
@@ -89,10 +94,10 @@ function muggles(string $player){
 
 
 //VANTAGENS//
+
 function invulnerabilidadeFogo(){
     //atualizar quando tivermos tipos de dano
 }
-
 
 function PMextra(string $player){
     setPlayerStat($player, 'PM_max', (getPlayerStat($player, 'PM_max')+10));
@@ -114,48 +119,59 @@ function PVextra(string $player){
 };
 
 
-function FAtiroMultiplo(string $atacante, int $quant, array $dados): int {
-    $H  = (int) getPlayerStat($atacante, 'H');
-    $PdF = (int) getPlayerStat($atacante, 'PdF');
-    $PM  = (int) getPlayerStat($atacante, 'PM');
-
-    $q = min($quant, max($H, 0));
-    if ($q < 1) {
-        return 0;
+function FAtiroMultiplo(string $atacante, int $quant, array $dados, string $tgt, string $defesa, int $dadoFD): int {
+    $H      = (int) getPlayerStat($atacante, 'H');
+    $PdF    = (int) getPlayerStat($atacante, 'PdF');
+    $PM     = (int) getPlayerStat($atacante, 'PM');
+    $maxT   = max($H, 0);
+    $q      = min($quant, $maxT);
+    if ($PM < $q) {
+        throw new Exception("PM insuficientes ({$PM}) para {$q} tiros.");
     }
-    
-    $custo = max($q - 1, 0);
-    if ($PM < $custo) {
-        throw new Exception("PM insuficientes: precisa de {$custo}, tem {$PM}");
-    }
+    setPlayerStat($atacante, 'PM', $PM - $q);
 
-    setPlayerStat($atacante, 'PM', $PM - $custo);
-    $baseFA = $PdF + $H;
-
-    $totalFA = 0;
+    $danoTotal = 0;
     for ($i = 0; $i < $q; $i++) {
-        $d = isset($dados[$i]) ? (int)$dados[$i] : 0;
-        $totalFA += $baseFA + $d;
-    }
+        $rollFA = isset($dados[$i]) ? (int)$dados[$i] : 0;
+        $FA     = $PdF + $H + $rollFA;
 
-    return $totalFA;
+        if ($defesa === 'indefeso') {
+            $FDval = FDindefeso($tgt);
+        } else if ($defesa === 'defender_esquiva_success') {
+           continue;
+        } else {
+           $FDval = FD($tgt, $dadoFD);
+        }
+        $danoTotal += max($FA - $FDval, 0);
+    }
+    return $danoTotal;
 }
+
 
 
 function draconificacao(string $player, bool $active){
     if ($active) {
-        // ganhou os bônus
         setPlayerStat($player,'PdF', getPlayerStat($player,'PdF')+1);
         setPlayerStat($player,'R',   getPlayerStat($player,'R')+1);
         setPlayerStat($player,'H',   getPlayerStat($player,'H')+2);
     } else {
-        // remove bônus e aplica instabilidade
         setPlayerStat($player,'PdF', getPlayerStat($player,'PdF')-1);
         setPlayerStat($player,'R',   getPlayerStat($player,'R')-1);
         setPlayerStat($player,'H',   getPlayerStat($player,'H')-2);
-        instabilidade($player);
     }
-}//Mandando true, ativa a draconificação. Mandando false, desativa ela e concede instabilidade por 1 turno.
+}
+
+
+function fusaoEterna(string $player, int $PdFOriginal, bool $active){
+    if($active==true){
+        setPlayerStat($player, 'PM', getPlayerStat($player, 'PM')-3);
+        setPlayerStat($player, 'F', getPlayerStat($player, 'F')+getPlayerStat($player, 'PdF')*2);
+        setPlayerStat($player, 'PdF', 0);
+    } else {
+        setPlayerStat($player, 'F', (getPlayerStat($player, 'F')-$PdFOriginal*2));
+        setPlayerStat($player, 'PdF', $PdFOriginal);
+    }
+}
 
 
 
