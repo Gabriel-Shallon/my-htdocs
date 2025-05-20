@@ -158,6 +158,46 @@
 
 
 
+    function spendPM(string $player, int $cost): bool {
+        $pm   = getPlayerStat($player, 'PM');
+        $pv   = getPlayerStat($player, 'PV');
+        $traits = listPlayerTraits($player);
+        $hasEV = in_array('energia_vital', $traits, true);
+        $usePv = $_SESSION['battle']['notes'][$player]['use_pv'] ?? false;
+
+        if ($usePv) {
+            $ratio = in_array('magia_de_sangue', $traits, true) ? 1 : 2;
+            $pvNeeded = $cost * $ratio;
+            if ($pv >= $pvNeeded) {
+                setPlayerStat($player, 'PV', $pv - $pvNeeded);
+                return true;
+            }
+            return false;
+        }
+
+        if ($pm >= $cost) {
+            setPlayerStat($player, 'PM', $pm - $cost);
+            return true;
+        }
+        if (! $hasEV) {
+            return false;
+        }
+        $remaining = $cost - $pm;
+        setPlayerStat($player, 'PM', 0);
+        $ratio = in_array('magia_de_sangue', $traits, true) ? 1 : 2;
+        $pvNeeded = $remaining * $ratio;
+        if ($pv >= $pvNeeded) {
+            setPlayerStat($player, 'PV', $pv - $pvNeeded);
+            return true;
+        }
+        setPlayerStat($player, 'PV', $pv);
+        setPlayerStat($player, 'PM', $pm);
+        return false;
+    }
+
+
+
+
     function iniciativa(array $lutadores, array $dados): array {
         $inicList = [];
         foreach ($lutadores as $idx => $nome) {

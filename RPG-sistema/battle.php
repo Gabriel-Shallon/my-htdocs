@@ -124,7 +124,12 @@ case 'update_stats':
 
 // 3) initiative atual
 case 'turn':
-    $b     = &$_SESSION['battle'];
+    $b = &$_SESSION['battle'];
+    if (!empty($b['needs_reload'])) {
+        $b['needs_reload'] = false;
+        echo '<script>window.location.reload();</script>';
+        exit;
+    }
     $order = $b['order'];
     $cur = $order[$b['init_index'] % count($order)];
     $stats = getPlayer($cur);
@@ -134,12 +139,10 @@ case 'turn':
     );
     $b['notes'][$cur] = $notes;
     $maxMulti = 1 + intdiv(max($stats['H'],0), 2);
+    $isIncorp = ! empty($notes['incorp_active']);
 
     if ($notes['draco_active']) {
-        $pm = getPlayerStat($cur, 'PM');
-        if ($pm > 0) {
-            setPlayerStat($cur, 'PM', $pm - 1);
-        } else {
+        if (spendPM($cur, 1)) {} else {
             draconificacao($cur, false);
             $b['notes'][$cur]['draco_active'] = false;
             $b['notes'][$cur]['efeito'] .= "\nDraconificação desativada (PM esgotado) e Instável.";
@@ -150,27 +153,62 @@ case 'turn':
         $curPV = getPlayerStat($cur, 'PV');
         $curR  = getPlayerStat($cur, 'R');
         if ($curPV <= $curR) {
+            $linhas = explode("\n", $b['notes'][$cur]['efeito']);
+            $linhas_filtradas = array_filter($linhas, function($linha) {
+                return ! in_array(trim($linha), [
+                    'Em Fúria até o fim da batalha (Não pode usar magia nem esquiva).'
+                ], true);
+            });
+            $b['notes'][$cur]['efeito'] = implode("\n", $linhas_filtradas);                
             $b['notes'][$cur]['furia'] = true;
             $b['notes'][$cur]['efeito'] .= "\nEm Fúria até o fim da batalha (Não pode usar magia nem esquiva).";
         }
     }
+
+    if (! empty($notes['extra_energy_next'])) {
+        energiaExtra($cur);
+        $b['notes'][$cur]['efeito'] .= "\nEnergia extra aplicada: PVs restaurados ao máximo.";
+        unset($b['notes'][$cur]['extra_energy_next']);
+    }    
 
     if (in_array('furia', listPlayerTraits($cur), true)) {
         $curPV = getPlayerStat($cur, 'PV');
         $curR  = getPlayerStat($cur, 'R');
         if ($curPV <= $curR) {
             $b['notes'][$cur]['furia'] = true;
+            $linhas = explode("\n", $b['notes'][$cur]['efeito']);
+            $linhas_filtradas = array_filter($linhas, function($linha) {
+                return ! in_array(trim($linha), [
+                    'Em Fúria até o fim da batalha (Não pode usar magia nem esquiva).'
+                ], true);
+            });
+            $b['notes'][$cur]['efeito'] = implode("\n", $linhas_filtradas);             
             $b['notes'][$cur]['efeito'] .= "\nEm Fúria até o fim da batalha (Não pode usar magia nem esquiva).";
         }
     };
 
     if (in_array('invulnerabilidade_fogo', listPlayerTraits($cur), true)) {
+        $linhas = explode("\n", $b['notes'][$cur]['efeito']);
+        $linhas_filtradas = array_filter($linhas, function($linha) {
+            return ! in_array(trim($linha), [
+                'Invulnerabilidade a fogo (dano por fogo dividido por 10).'
+            ], true);
+        });
+        $b['notes'][$cur]['efeito'] = implode("\n", $linhas_filtradas);         
         $b['notes'][$cur]['efeito'] .= "\nInvulnerabilidade a fogo (dano por fogo dividido por 10).";
     };
 
     if (in_array('codigo_da_derrota', listPlayerTraits($cur), true)) {
+        $linhas = explode("\n", $b['notes'][$cur]['efeito']);
+        $linhas_filtradas = array_filter($linhas, function($linha) {
+            return ! in_array(trim($linha), [
+                'Lute até a morte.'
+            ], true);
+        });
+        $b['notes'][$cur]['efeito'] = implode("\n", $linhas_filtradas);           
         $b['notes'][$cur]['efeito'] .= "\nLute até a morte.";
     };
+    
 
     echo '<h1>Iniciativa de <strong>'.$cur.'</strong> <small>(Rodada '.$b['round'].')</small></h1>';
     // Stats e inventário
@@ -195,6 +233,14 @@ case 'turn':
             echo '<option value="pass">Passar Iniciativa</option>';
             echo '<option value="fim">Terminar Batalha</option>';
 
+
+            if (in_array('energia_vital', listPlayerTraits($cur), true)) {
+                if (empty($notes['use_pv'])) {
+                    echo '<option value="enable_use_pv">Usar PV em vez de PM</option>';
+                } else {
+                    echo '<option value="disable_use_pv">Voltar a usar PM normalmente</option>';
+                }
+            }            
 
             if (in_array('incorporeo', listPlayerTraits($cur), true)) {
                 if (!$notes['incorp_active']) {
@@ -228,6 +274,22 @@ case 'turn':
                    .'Liberar Concentração (bônus: +'.$notes['concentrado'].')</option>';
             }
 
+            if (in_array('energia_extra', listPlayerTraits($cur), true)) {
+                echo '<option value="extra_energy">Usar Energia Extra</option>';
+            } 
+
+
+            $validTargets = [];
+            foreach ($order as $o) {
+                if ($o === $cur) continue;
+                $targetNotes   = $b['notes'][$o] ?? [];
+                $targetIncorp  = !empty($targetNotes['incorp_active']);
+                if ($isIncorp === $targetIncorp) {
+                    $validTargets[] = $o;
+                }
+            }
+            $hasTargets = count($validTargets) > 0;            
+
             echo '<option value="ataque">Atacar</option>';
             echo '<option value="multiple">Múltiplo</option>';
             if (in_array('tiro_multiplo', listPlayerTraits($cur))) {
@@ -236,75 +298,81 @@ case 'turn':
             echo '</select><br>';
 
             // Ataque simples
-            echo '<div id="atkSimple" style="display: none;"><fieldset><legend>Ataque</legend>'
-            .'Tipo: <select name="atkType"><option>F</option><option>PdF</option></select><br>'
-            .'Roll FA: <input id="dadoFA" type="number" name="dadoFA" required><br>'
-            .'Alvo: <select name="target">';
-            foreach ($order as $o) if ($o !== $cur) {
-                echo '<option>'.$o.'</option>'; 
-                $target = $o;
-                $targetNotes = $b['notes'][$target] ?? [];
-                $isFuria = ! empty($targetNotes['furia']);            
+            if($hasTargets){
+                echo '<div id="atkSimple" style="display: none;"><fieldset><legend>Ataque</legend>'
+                .'Tipo: <select name="atkType"><option>F</option><option>PdF</option></select><br>'
+                .'Roll FA: <input id="dadoFA" type="number" name="dadoFA" required><br>'
+                .'Alvo: <select name="target">';
+                foreach ($order as $o) if ($o !== $cur) {
+                    echo '<option>'.$o.'</option>'; 
+                    $target = $o;
+                    $targetNotes = $b['notes'][$target] ?? [];
+                    $isFuria = ! empty($targetNotes['furia']);            
+                }
+                echo '</select><br>'
+                .'Reação: <select id="def" name="defesa">'
+                .'<option value="defender">Defender</option>';
+                if (! $isFuria) {
+                    echo '<option value="defender_esquiva">Esquivar</option>';
+                }
+                echo '<option value="indefeso">Indefeso</option>'
+                .'</select><br>'
+                .'<label id="fdLbl">Roll FD/Esq.: <input id="dadoFD" type="number" name="dadoFD" required></label><br>'
+                .'</fieldset></div>';
             }
-            echo '</select><br>'
-            .'Reação: <select id="def" name="defesa">'
-            .'<option value="defender">Defender</option>';
-            if (! $isFuria) {
-                echo '<option value="defender_esquiva">Esquivar</option>';
-            }
-            echo '<option value="indefeso">Indefeso</option>'
-            .'</select><br>'
-            .'<label id="fdLbl">Roll FD/Esq.: <input id="dadoFD" type="number" name="dadoFD" required></label><br>'
-            .'</fieldset></div>';
     
             // Ataque múltiplo
-            echo '<div id="atkMulti" style="display:none"><fieldset><legend>Múltiplo</legend>'
-            .'Tipo: <select name="atkTypeMulti"><option>F</option><option>PdF</option></select><br>'
-            .'Quantidade (2-'.$maxMulti.'): <input id="quant" type="number" name="quant" '
-            .'min="2" max="'.$maxMulti.'" value="2"><br>'
-            .'Alvo: <select name="targetMulti">';
-            foreach ($order as $o) if ($o !== $cur) {
-                echo '<option>'.$o.'</option>'; 
-                $target = $o;
-                $targetNotes = $b['notes'][$target] ?? [];
-                $isFuria = ! empty($targetNotes['furia']);            
+            if($hasTargets){
+                echo '<div id="atkMulti" style="display:none"><fieldset><legend>Múltiplo</legend>'
+                .'Tipo: <select name="atkTypeMulti"><option>F</option><option>PdF</option></select><br>'
+                .'Quantidade (2-'.$maxMulti.'): <input id="quant" type="number" name="quant" '
+                .'min="2" max="'.$maxMulti.'" value="2"><br>'
+                .'Alvo: <select name="targetMulti">';
+                foreach ($order as $o) if ($o !== $cur) {
+                    echo '<option>'.$o.'</option>'; 
+                    $target = $o;
+                    $targetNotes = $b['notes'][$target] ?? [];
+                    $isFuria = ! empty($targetNotes['furia']);            
+                }
+                echo '</select><br>'
+                .'Reação: <select id="defM" name="defesaMulti">'
+                .'<option value="defender">Defender</option>';
+                if (! $isFuria) {
+                    echo '<option value="defender_esquiva">Esquivar</option>';
+                }
+                echo '<option value="indefeso">Indefeso</option>'
+                .'</select><br>'
+                .'<div id="dCont"></div>'
+                .'</fieldset></div>';
             }
-            echo '</select><br>'
-            .'Reação: <select id="defM" name="defesaMulti">'
-            .'<option value="defender">Defender</option>';
-            if (! $isFuria) {
-                echo '<option value="defender_esquiva">Esquivar</option>';
-            }
-            echo '<option value="indefeso">Indefeso</option>'
-            .'</select><br>'
-            .'<div id="dCont"></div>'
-            .'</fieldset></div>';
 
             //Tiro múltiplo
-            echo '<div id="atkTiroMulti" style="display:none"><fieldset><legend>Tiro Múltiplo (Trait)</legend>'
-            .'Tipo: <select name="atkTypeTiroMulti"><option>PdF</option></select><br>'
-            .'Quantidade (1-'.$stats['H'].'): <input id="quantTiro" type="number" name="quantTiro" '
-            .'min="1" max="'.$stats['H'].'" value="1"><br>'
-            .'Alvo: <select name="targetTiroMulti">';
-            foreach ($order as $o) if ($o !== $cur) {
-                echo '<option>'.$o.'</option>'; 
-                $target = $o;
-                $targetNotes = $b['notes'][$target] ?? [];
-                $isFuria = ! empty($targetNotes['furia']);            
+            if($hasTargets){
+                echo '<div id="atkTiroMulti" style="display:none"><fieldset><legend>Tiro Múltiplo (Trait)</legend>'
+                .'Tipo: <select name="atkTypeTiroMulti"><option>PdF</option></select><br>'
+                .'Quantidade (1-'.$stats['H'].'): <input id="quantTiro" type="number" name="quantTiro" '
+                .'min="1" max="'.$stats['H'].'" value="1"><br>'
+                .'Alvo: <select name="targetTiroMulti">';
+                foreach ($order as $o) if ($o !== $cur) {
+                    echo '<option>'.$o.'</option>'; 
+                    $target = $o;
+                    $targetNotes = $b['notes'][$target] ?? [];
+                    $isFuria = ! empty($targetNotes['furia']);            
+                }
+                echo '</select><br>'
+                .'Reação: <select id="defTiro" name="defesaTiroMulti">'
+                .'<option value="defender">Defender</option>';
+                if (! $isFuria) {
+                    echo '<option value="defender_esquiva">Esquivar</option>';
+                }
+                echo '<option value="indefeso">Indefeso</option>'
+                .'</select><br>'
+                .'<div id="dContTiro"></div>'
+                .'<label id="fdTiroLbl">Roll FD/Esq.: '
+                .'<input id="dadoFDTiro" type="number" name="dadoFDTiro" required>'
+                .'</label><br>'
+                .'</fieldset></div>';
             }
-            echo '</select><br>'
-            .'Reação: <select id="defTiro" name="defesaTiroMulti">'
-            .'<option value="defender">Defender</option>';
-            if (! $isFuria) {
-                echo '<option value="defender_esquiva">Esquivar</option>';
-            }
-            echo '<option value="indefeso">Indefeso</option>'
-            .'</select><br>'
-            .'<div id="dContTiro"></div>'
-            .'<label id="fdTiroLbl">Roll FD/Esq.: '
-            .'<input id="dadoFDTiro" type="number" name="dadoFDTiro" required>'
-            .'</label><br>'
-            .'</fieldset></div>';
 
             echo '<button type="submit">Executar</button> ';
             echo '<button type="button" onclick="history.back()">Voltar</button>';
@@ -501,6 +569,7 @@ JS;
                 case 'pass':
                     $out = "<strong>{$pl}</strong> passou seu turno.";
                     $b['init_index']++;
+                    $_SESSION['battle']['needs_reload'] = true;
                 break;
 
                 
@@ -526,6 +595,7 @@ JS;
                     setPlayerStat($tgt, 'PV', max(getPlayerStat($tgt,'PV') - $dano, 0));
                     $out = "<strong>{$pl}</strong> atacou <strong>{$tgt}</strong> ({$tipo}): dano = {$dano}";
                     $b['init_index']++;
+                    $_SESSION['battle']['needs_reload'] = true;
                 break;
 
 
@@ -553,13 +623,14 @@ JS;
                         $dano = max($faTot - FD($tgt, $dFD), 0);
                     }
                     
-                    if (!empty($b['notes'][$tgt]['incorp_active']) && in_array($tipo, ['F','PdF'], true) && empty($b['notes'][$pl]['incorp_active'])) {
+                    if (!empty($b['notes'][$tgt]['incorp_active']) && empty($b['notes'][$pl]['incorp_active'])) {
                         $dano = 0;
                         $out .= " (inútil: alvo incorpóreo)";
                     }                      
                     setPlayerStat($tgt, 'PV', max(getPlayerStat($tgt,'PV') - $dano, 0));
                     $out = "<strong>{$pl}</strong> fez ataque múltiplo em <strong>{$tgt}</strong> ({$q}x{$tipo}): FA total = {$faTot}, dano = {$dano}";
                     $b['init_index']++;
+                    $_SESSION['battle']['needs_reload'] = true;
                 break;
 
 
@@ -569,6 +640,7 @@ JS;
                     }
                     $out = "<strong>{$pl}</strong> iniciou/concentra (rodada atual: +{$b['notes'][$pl]['concentrado']})";
                     $b['init_index']++;
+                    $_SESSION['battle']['needs_reload'] = true;
                 break;         
 
 
@@ -585,7 +657,7 @@ JS;
                     $defesa = (int)($_POST['dadoFD'] ?? 0);
                     $dano   = max($fa_total - FD($tgt, $defesa), 0);
 
-                    if (!empty($b['notes'][$tgt]['incorp_active']) && in_array($tipo, ['F','PdF'], true) && empty($b['notes'][$pl]['incorp_active'])) {
+                    if (!empty($b['notes'][$tgt]['incorp_active']) && empty($b['notes'][$pl]['incorp_active'])) {
                         $dano = 0;
                         $out .= " (inútil: alvo incorpóreo)";
                     }                      
@@ -593,6 +665,7 @@ JS;
                     $b['notes'][$pl]['concentrado'] = 0;
                     $out = "<strong>{$pl}</strong> liberou ataque (FA={$fa_normal} + bônus {$bonus} = {$fa_total}): dano = {$dano}";
                     $b['init_index']++;
+                    $_SESSION['battle']['needs_reload'] = true;
                 break;
 
 
@@ -615,22 +688,23 @@ JS;
                         $dano    = FAtiroMultiplo($pl, $q, $dados, $tgt, $tipoDef, $dadoFD);
                     }
                     
-                    if (!empty($b['notes'][$tgt]['incorp_active']) && in_array($tipo, ['F','PdF'], true) && empty($b['notes'][$pl]['incorp_active'])) {
+                    if (!empty($b['notes'][$tgt]['incorp_active']) && empty($b['notes'][$pl]['incorp_active'])) {
                         $dano = 0;
                         $out .= " (inútil: alvo incorpóreo)";
                     }                      
                     setPlayerStat($tgt, 'PV', max(getPlayerStat($tgt, 'PV') - $dano, 0));
                     $out = "<strong>{$pl}</strong> usou <em>Tiro Múltiplo</em> em <strong>{$tgt}</strong>\n({$q}xPdF): dano total = {$dano}";
                     $b['init_index']++;
+                    $_SESSION['battle']['needs_reload'] = true;
                 break;
 
 
                 case 'activate_draco':
                     $pm = getPlayerStat($pl,'PM');
-                    if ($pm >= 3) {
+                    if ($pm >= 1) {
                         draconificacao($pl, true);
                         $b['notes'][$pl]['draco_active'] = true;
-                        $voo = getPlayerStat($pl, 'H')*2;
+                        $voo = getPlayerStat($pl, 'H')*20;
                         $out = "<strong>{$pl}</strong> ativou draconificação (+1PdF,+1R,+2H; Voo={$voo}m/s)";
                         $b['notes'][$pl]['efeito'] .= "\nDracônico: (+1PdF,+1R,+2H; Voo={$voo}m/s)";
                     } else {
@@ -649,6 +723,7 @@ JS;
                     });
                     $b['notes'][$pl]['efeito'] = implode("\n", $linhas_filtradas);                                     
                     $b['init_index']++;
+                    $_SESSION['battle']['needs_reload'] = true;
                 break;
 
 
@@ -687,10 +762,8 @@ JS;
 
 
                 case 'activate_incorp':
-                    // consome 2 PM de uma vez
                     $pm = getPlayerStat($pl,'PM');
-                    if ($pm >= 2) {
-                        setPlayerStat($pl,'PM',$pm-2);
+                    if (spendPM($pl, 2)) {
                         $b['notes'][$pl]['incorp_active'] = true;
                         $b['notes'][$pl]['efeito'] .= "\nIncorpóreo: imune a dano F/PdF; não pode usar F ou PdF.";
                         $out = "<strong>{$pl}</strong> tornou‑se Incorpóreo (−2 PM).";
@@ -708,16 +781,37 @@ JS;
                     $b['notes'][$pl]['efeito'] = implode("\n",$linhas);
                     $out = "<strong>{$pl}</strong> retornou ao corpo físico.";
                 break;
+
+
+                case 'enable_use_pv':
+                    $b['notes'][$pl]['use_pv'] = true;
+                    $out = "<strong>{$pl}</strong> ativou uso de PV no lugar de PM.";
+                break;
+                case 'disable_use_pv':
+                    unset($b['notes'][$pl]['use_pv']);
+                    $out = "<strong>{$pl}</strong> voltou a usar PM normalmente.";
+                break;                
                 
+
+                case 'extra_energy':
+                    if (spendPM($pl, 2)){
+                            $b['notes'][$pl]['extra_energy_next'] = true;
+                        $out = "<strong>{$pl}</strong> irá recuperar todos seus PVs até o próximo turno.";
+                        $b['init_index']++;
+                        $_SESSION['battle']['needs_reload'] = true;
+                    } else {
+                        $out = "<strong>{$pl}</strong> não tem PMs o suficiente.";
+                    }
+                break;
 
                 case 'fim':
                     header('Location: battle.php?step=final');
                     $b['init_index']++;
+                    $_SESSION['battle']['needs_reload'] = true;
                 exit;
 
                 default:
                     $out = 'Ação inválida ou não reconhecida.';
-                    $b['init_index']++;
                 break;
 
 
@@ -840,8 +934,6 @@ JS;
     default:
         header('Location: battle.php');
         exit;
-
-
 
 
 }      

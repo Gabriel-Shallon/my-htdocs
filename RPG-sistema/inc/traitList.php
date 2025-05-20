@@ -122,14 +122,11 @@ function PVextra(string $player){
 function FAtiroMultiplo(string $atacante, int $quant, array $dados, string $tgt, string $defesa, int $dadoFD): int {
     $H      = (int) getPlayerStat($atacante, 'H');
     $PdF    = (int) getPlayerStat($atacante, 'PdF');
-    $PM     = (int) getPlayerStat($atacante, 'PM');
     $maxT   = max($H, 0);
     $q      = min($quant, $maxT);
-    if ($PM < $q) {
-        throw new Exception("PM insuficientes ({$PM}) para {$q} tiros.");
+    if (!spendPM($atacante, $q)) {
+        throw new Exception("PM/PVs insuficientes para {$q} tiros.");
     }
-    setPlayerStat($atacante, 'PM', $PM - $q);
-
     $danoTotal = 0;
     for ($i = 0; $i < $q; $i++) {
         $rollFA = isset($dados[$i]) ? (int)$dados[$i] : 0;
@@ -164,7 +161,9 @@ function draconificacao(string $player, bool $active){
 
 function fusaoEterna(string $player, int $PdFOriginal, bool $active){
     if($active==true){
-        setPlayerStat($player, 'PM', getPlayerStat($player, 'PM')-3);
+        if (! spendPM($player, 3)) {
+            throw new Exception("PM/PVs insuficientes para Fusão Eterna.");
+        }
         setPlayerStat($player, 'F', getPlayerStat($player, 'F')+getPlayerStat($player, 'PdF')*2);
         setPlayerStat($player, 'PdF', 0);
     } else {
@@ -172,6 +171,12 @@ function fusaoEterna(string $player, int $PdFOriginal, bool $active){
         setPlayerStat($player, 'PdF', $PdFOriginal);
     }
 }
+
+
+function energiaExtra ($player){
+    setPlayerStat($player, 'PV', getPlayerStat($player, 'PV_max'));
+}
+
 
 
 
