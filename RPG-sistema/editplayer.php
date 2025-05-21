@@ -139,7 +139,7 @@ if ($selected) {
   <?php if ($playerData): ?>
   <form method="post">
     <input type="hidden" name="nome" value="<?=htmlspecialchars($selected)?>">
-    <?php foreach(['F'=>'Força','H'=>'Habilidade','R'=>'Resistência','A'=>'Agilidade','PdF'=>'Poder de Fogo','PE'=>'XP'] as $c=>$l):?>
+    <?php foreach(['F'=>'Força','H'=>'Habilidade','R'=>'Resistência','A'=>'Amardura','PdF'=>'Poder de Fogo','PE'=>'XP'] as $c=>$l):?>
       <label><?=$l?> (<?=$c?>): <input type="number" name="<?=$c?>" value="<?=(int)$playerData[$c]?>" required></label>
     <?php endforeach;?>
     <div class="dual">

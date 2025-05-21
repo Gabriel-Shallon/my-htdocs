@@ -38,21 +38,32 @@ case 'select':
             header('Location: battle.php'); exit;
         }
         $_SESSION['battle'] = [
-            'players'     => [],
+            'players'     => $selected,
             'order'       => [],
             'init_index'  => 0,
             'round'       => 1,
             'notes'       => [],
         ];
-        $_SESSION['battle']['players'] = $selected;
+        $_SESSION['battle']['hasAlly'] = []; 
+        foreach ($selected as $nome) {
+            if (in_array('aliado', listPlayerTraits($nome), true)) {
+                $_SESSION['battle']['hasAlly'][$nome] = getPlayerAllies($nome); 
+            }
+        }  
         header('Location: battle.php?step=initiative'); exit;
-    }
+    }     
     $all = getAllPlayers();
+    $exclude = getAllAllies(); 
     echo '<h1>Iniciar Batalha</h1><form method="post">';
-    foreach ($all as $p) {
-        $n = htmlspecialchars($p['nome'], ENT_QUOTES);
-        echo '<label><input type="checkbox" name="players[]" value="'.$n.'"> '.$n.'</label><br>';
-    }
+
+    foreach ($all as $p) {  
+            $n = $p['nome'];
+            if (in_array($n, $exclude, true)) {
+                continue;
+            }   
+            $safe = htmlspecialchars($n, ENT_QUOTES);         
+            echo '<label><input type="checkbox" name="players[]" value="'.$n.'"> '.$n.'</label><br>';
+    }  
     echo '<button type="submit">Confirmar</button></form>';
     break;
  
@@ -130,8 +141,19 @@ case 'turn':
         echo '<script>window.location.reload();</script>';
         exit;
     }
+
     $order = $b['order'];
-    $cur = $order[$b['init_index'] % count($order)];
+    if (count($order) === 0) {
+        echo "<p>Nenhum lutador na batalha.</p>";
+        exit;
+    }
+
+    if (! empty($_SESSION['battle']['playingAlly'])) {
+        $cur = $_SESSION['battle']['playingAlly'];
+    } else {
+        $cur = $order[$b['init_index'] % count($order)];
+    }
+
     $stats = getPlayer($cur);
     $notes = array_merge(
         ['efeito'=>'','posição'=>'','concentrado'=>0,'draco_active'=>false,'incorp_active'=>false],
@@ -140,6 +162,13 @@ case 'turn':
     $b['notes'][$cur] = $notes;
     $maxMulti = 1 + intdiv(max($stats['H'],0), 2);
     $isIncorp = ! empty($notes['incorp_active']);
+    $hasAlly = isset($_SESSION['battle']['hasAlly'][$cur]);
+
+
+    if ($hasAlly) {
+        $allyName = $_SESSION['battle']['hasAlly'][$cur][0];
+        $b['notes'][$cur]['ally'] = $allyName;
+    }    
 
     if ($notes['draco_active']) {
         if (spendPM($cur, 1)) {} else {
@@ -260,7 +289,7 @@ case 'turn':
 
             if (in_array('fusao_eterna', listPlayerTraits($cur), true)) {
                 if (empty($notes['fusao_active'])) {
-                    echo '<option value="activate_fusao">Ativar Fusão Eterna (1PM/turno)</option>';
+                    echo '<option value="activate_fusao">Ativar Fusão Eterna (3PM)</option>';
                 } else {
                     echo '<option value="deactivate_fusao">Desativar Fusão Eterna</option>';
                 }
@@ -278,6 +307,13 @@ case 'turn':
                 echo '<option value="extra_energy">Usar Energia Extra</option>';
             } 
 
+            if (!empty($notes['ally'])) {
+                echo '<option value="use_ally">Jogar com Aliado ('.$notes['ally'].')</option>';
+            }            
+
+            if ($cur == $_SESSION['battle']['playingAlly']) {
+                echo '<option value="back_to_owner">Voltar ao Dono</option>';   
+            }           
 
             $validTargets = [];
             foreach ($order as $o) {
@@ -288,6 +324,17 @@ case 'turn':
                     $validTargets[] = $o;
                 }
             }
+
+            $allies = getAllAllies();
+            foreach ($allies as $ally) {
+                if ($ally === $cur) continue;
+                $targetNotes  = $b['notes'][$ally] ?? [];
+                $targetIncorp = !empty($targetNotes['incorp_active']);
+                if ($isIncorp === $targetIncorp) {
+                    $validTargets[] = $ally;
+                }
+            }
+
             $hasTargets = count($validTargets) > 0;            
 
             echo '<option value="ataque">Atacar</option>';
@@ -312,7 +359,7 @@ case 'turn':
                 echo '</select><br>'
                 .'Reação: <select id="def" name="defesa">'
                 .'<option value="defender">Defender</option>';
-                if (! $isFuria) {
+                if (!$isFuria) {
                     echo '<option value="defender_esquiva">Esquivar</option>';
                 }
                 echo '<option value="indefeso">Indefeso</option>'
@@ -565,10 +612,12 @@ JS;
             }
 
             switch ($_POST['action'] ?? '') {
-                
+
+
                 case 'pass':
                     $out = "<strong>{$pl}</strong> passou seu turno.";
                     $b['init_index']++;
+                    unset($_SESSION['battle']['playingAlly']);
                     $_SESSION['battle']['needs_reload'] = true;
                 break;
 
@@ -595,6 +644,7 @@ JS;
                     setPlayerStat($tgt, 'PV', max(getPlayerStat($tgt,'PV') - $dano, 0));
                     $out = "<strong>{$pl}</strong> atacou <strong>{$tgt}</strong> ({$tipo}): dano = {$dano}";
                     $b['init_index']++;
+                    unset($_SESSION['battle']['playingAlly']);
                     $_SESSION['battle']['needs_reload'] = true;
                 break;
 
@@ -630,6 +680,7 @@ JS;
                     setPlayerStat($tgt, 'PV', max(getPlayerStat($tgt,'PV') - $dano, 0));
                     $out = "<strong>{$pl}</strong> fez ataque múltiplo em <strong>{$tgt}</strong> ({$q}x{$tipo}): FA total = {$faTot}, dano = {$dano}";
                     $b['init_index']++;
+                    unset($_SESSION['battle']['playingAlly']);
                     $_SESSION['battle']['needs_reload'] = true;
                 break;
 
@@ -640,6 +691,7 @@ JS;
                     }
                     $out = "<strong>{$pl}</strong> iniciou/concentra (rodada atual: +{$b['notes'][$pl]['concentrado']})";
                     $b['init_index']++;
+                    unset($_SESSION['battle']['playingAlly']);
                     $_SESSION['battle']['needs_reload'] = true;
                 break;         
 
@@ -665,6 +717,7 @@ JS;
                     $b['notes'][$pl]['concentrado'] = 0;
                     $out = "<strong>{$pl}</strong> liberou ataque (FA={$fa_normal} + bônus {$bonus} = {$fa_total}): dano = {$dano}";
                     $b['init_index']++;
+                    unset($_SESSION['battle']['playingAlly']);
                     $_SESSION['battle']['needs_reload'] = true;
                 break;
 
@@ -695,6 +748,7 @@ JS;
                     setPlayerStat($tgt, 'PV', max(getPlayerStat($tgt, 'PV') - $dano, 0));
                     $out = "<strong>{$pl}</strong> usou <em>Tiro Múltiplo</em> em <strong>{$tgt}</strong>\n({$q}xPdF): dano total = {$dano}";
                     $b['init_index']++;
+                    unset($_SESSION['battle']['playingAlly']);
                     $_SESSION['battle']['needs_reload'] = true;
                 break;
 
@@ -723,6 +777,7 @@ JS;
                     });
                     $b['notes'][$pl]['efeito'] = implode("\n", $linhas_filtradas);                                     
                     $b['init_index']++;
+                    unset($_SESSION['battle']['playingAlly']);
                     $_SESSION['battle']['needs_reload'] = true;
                 break;
 
@@ -795,20 +850,36 @@ JS;
 
                 case 'extra_energy':
                     if (spendPM($pl, 2)){
-                            $b['notes'][$pl]['extra_energy_next'] = true;
+                        $b['notes'][$pl]['extra_energy_next'] = true;
                         $out = "<strong>{$pl}</strong> irá recuperar todos seus PVs até o próximo turno.";
                         $b['init_index']++;
+                        unset($_SESSION['battle']['playingAlly']);
                         $_SESSION['battle']['needs_reload'] = true;
                     } else {
                         $out = "<strong>{$pl}</strong> não tem PMs o suficiente.";
                     }
-                break;
+                break;   
+                
+                
+                case 'use_ally':
+                    $b = &$_SESSION['battle'];
+                    $ally = $b['notes'][$pl]['ally'] ?? null;
+                    $_SESSION['battle']['playingAlly'] = $ally;
+                    header('Location: battle.php?step=turn');
+                exit;
+                case 'back_to_owner':
+                    unset($_SESSION['battle']['playingAlly']);
+                    header('Location: battle.php?step=turn');
+                exit;  
+
 
                 case 'fim':
                     header('Location: battle.php?step=final');
                     $b['init_index']++;
+                    unset($_SESSION['battle']['playingAlly']);
                     $_SESSION['battle']['needs_reload'] = true;
                 exit;
+
 
                 default:
                     $out = 'Ação inválida ou não reconhecida.';

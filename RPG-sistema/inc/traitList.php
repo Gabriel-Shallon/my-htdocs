@@ -178,6 +178,17 @@ function energiaExtra ($player){
 }
 
 
+function getPlayerAllies(string $player): array {
+    $pdo = conecta();
+    $stmt = $pdo->prepare("SELECT aliado FROM RPG.allies WHERE dono = :dono");
+    $stmt->execute(['dono' => $player]);
+    return $stmt->fetchAll(PDO::FETCH_COLUMN);
+}
+function getAllAllies(): array {
+    $pdo = conecta();
+    $stmt = $pdo->query("SELECT DISTINCT aliado FROM RPG.allies");
+    return $stmt->fetchAll(PDO::FETCH_COLUMN);
+}
 
 
 ?>
