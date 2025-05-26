@@ -4,14 +4,17 @@
 
 require_once 'func.php';
 
-function normalizeKey(string $s): string {
-    // remove acentos
-    $s = iconv('UTF-8','ASCII//TRANSLIT',$s);
-    // minusculas e underlines
-    return strtolower(str_replace(' ','_',$s));
+function slugify(string $str): string {
+    if (class_exists('Normalizer')) {
+        $str = Normalizer::normalize($str, Normalizer::FORM_D);
+    }
+    $str = preg_replace('/\pM+/u', '', $str);
+    $str = iconv('UTF-8', 'ASCII//TRANSLIT//IGNORE', $str);
+    $str = preg_replace('/[^A-Za-z0-9 ]/', '', $str);
+    $str = strtolower(str_replace(' ', '_', $str));
+    return $str;
 }
 
-// Retorna lista de chaves de traits (ex: ['assombrado','regeneracao'])
 function listPlayerTraits(string $player): array {
     $pdo = conecta();
     $res = [];
@@ -23,7 +26,7 @@ function listPlayerTraits(string $player): array {
     ");
     $stmt->execute([$player]);
     foreach ($stmt->fetchAll(PDO::FETCH_COLUMN) as $n) {
-        $res[] = normalizeKey($n);
+        $res[] = slugify($n);
     }
     // desvantagens
     $stmt = $pdo->prepare("
@@ -33,7 +36,7 @@ function listPlayerTraits(string $player): array {
     ");
     $stmt->execute([$player]);
     foreach ($stmt->fetchAll(PDO::FETCH_COLUMN) as $n) {
-        $res[] = strtolower(str_replace(' ','_', $n));
+        $res[] = slugify($n);
     }
     return $res;
 }
@@ -178,17 +181,50 @@ function energiaExtra ($player){
 }
 
 
-function getPlayerAllies(string $player): array {
+function getPlayerAllies(string $player){
     $pdo = conecta();
     $stmt = $pdo->prepare("SELECT aliado FROM RPG.allies WHERE dono = :dono");
     $stmt->execute(['dono' => $player]);
     return $stmt->fetchAll(PDO::FETCH_COLUMN);
 }
-function getAllAllies(): array {
+function getAlliePlayer(string $aliado) {
+    $pdo = conecta();
+    $stmt = $pdo->prepare("SELECT dono FROM RPG.allies WHERE aliado = :aliado");
+    $stmt->execute(['aliado' => $aliado]);
+    return $stmt->fetch(PDO::FETCH_COLUMN);
+}
+function getAllAllies(){
     $pdo = conecta();
     $stmt = $pdo->query("SELECT DISTINCT aliado FROM RPG.allies");
     return $stmt->fetchAll(PDO::FETCH_COLUMN);
 }
 
+
+function getPlayerPartner(string $player){
+    $pdo = conecta();
+    $sql = "SELECT a.aliado FROM `RPG`.`allies` AS a JOIN `RPG`.`player_advantages` AS pa ON pa.player_name = a.aliado JOIN `RPG`.`advantages` AS adv ON adv.id = pa.advantage_id  AND adv.name = 'Parceiro'WHERE a.dono = :dono";
+    $stmt = $pdo->prepare($sql);
+    $stmt->execute(['dono' => $player]);
+    return $stmt->fetchAll(PDO::FETCH_COLUMN);
+}
+function getPartnerOwner(string $partner) {
+    $pdo = conecta();
+    $sql = "SELECT a.dono FROM `RPG`.`allies` AS a JOIN `RPG`.`player_advantages` AS pa ON pa.player_name = a.dono JOIN `RPG`.`advantages` AS adv ON adv.id = pa.advantage_id AND adv.name = 'Parceiro' WHERE a.aliado = :aliado";
+    $stmt = $pdo->prepare($sql);
+    $stmt->execute(['aliado' => $partner]);
+    return $stmt->fetch(PDO::FETCH_COLUMN);
+}
+
+
+function agarrao(string $player, string $alvo, int $dF){
+    $result = ($dF + getPlayerStat($player, 'F')) - getPlayerStat($alvo, 'F');
+    
+    if ($result <= 0){
+        return false;
+    }
+    if ($result > 0){
+        return true;
+    }
+}
 
 ?>

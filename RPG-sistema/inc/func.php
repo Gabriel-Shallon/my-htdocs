@@ -196,6 +196,41 @@
     }
 
 
+    function applyDamage(string $pl, string $tgt, int $dano, string $tipo, string &$out){
+        if (!empty($b['notes'][$tgt]['incorp_active']) && in_array($tipo, ['F','PdF'], true) && empty($b['notes'][$pl]['incorp_active'])) {
+            $dano = 0;
+            $out .= " (inútil: alvo incorpóreo)";
+        } else {  
+        
+            $ligacaoNatural = false;
+            if (!empty(getAlliePlayer($tgt)) && in_array('ligacao_natural', listPlayerTraits(getAlliePlayer($tgt)), true)){       
+                setPlayerStat($tgt, 'PV', max(getPlayerStat($tgt,'PV') - $dano, 0));
+                setPlayerStat(getAlliePlayer($tgt), 'PV', max(getPlayerStat(getAlliePlayer($tgt),'PV') - $dano, 0));
+                $ligacaoNatural = true;
+            } if (!empty($_SESSION['battle']['playingPartner'][$tgt]) && $ligacaoNatural == false){ 
+                $distriDano = ceil($dano/2);
+                setPlayerStat($_SESSION['battle']['playingPartner'][$tgt]['owner'], 'PV', max(getPlayerStat($_SESSION['battle']['playingPartner'][$tgt]['owner'],'PV') - $distriDano, 0));
+                setPlayerStat($_SESSION['battle']['playingPartner'][$tgt]['name'], 'PV', max(getPlayerStat($_SESSION['battle']['playingPartner'][$tgt]['name'],'PV') - $distriDano, 0));
+            } else {
+                setPlayerStat($tgt, 'PV', max(getPlayerStat($tgt,'PV') - $dano, 0));
+            }
+            $ligacaoNatural = false;
+        }
+       return $out; 
+    }
+
+
+ function removeEffect(string $efeito, array $remover): string {
+    $linhas = explode("\n", $efeito);
+
+    $linhasFiltradas = array_filter($linhas, function($linha) use ($remover) {
+        return ! in_array(trim($linha), $remover, true);
+    });
+
+    return implode("\n", $linhasFiltradas);
+}
+  
+
 
 
     function iniciativa(array $lutadores, array $dados): array {
