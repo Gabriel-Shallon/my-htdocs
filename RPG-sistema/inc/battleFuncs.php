@@ -1,84 +1,51 @@
 <?php
-//funcao conexao com banco de dados
-    function conecta(){
-        $pdo = new PDO('mysql:dbname=RPG;charset=utf8mb4','root','');
-        //com xampp - não usa semha
-        //se não usa xampp - senha 'root'
-        $pdo -> setAttribute(PDO::ATTR_ERRMODE,PDO::ERRMODE_EXCEPTION);
-        //Ativar no PDO o modo de tratar erros ao conectar no banco
 
-        return $pdo;
-    }//conecta
+include_once 'generalFuncs.php';
+include_once 'traitFuncs.php';
 
-    function newPlayer($nome, $F, $H, $R, $A, $PdF, $PE, $inventario, $equipado){
-
-        $PV_max = ($R > 0 ? $R * 5 : 1);
-        $PM_max = ($R > 0 ? $R * 5 : 1);
-        $PV     = $PV_max;
-        $PM     = $PM_max;
-
-        $pdo = conecta();
-        $sql = 'INSERT INTO RPG.player
-          (nome,F,H,R,A,PdF,PV,PV_max,PM,PM_max,PE,inventario,equipado)
-         VALUES
-          (:nome,:F,:H,:R,:A,:PdF,:PV,:PV_max,:PM,:PM_max,:PE,:inventario,:equipado)';
-        $query = $pdo->prepare($sql);
-        $query->bindValue(':nome',   $nome);
-        $query->bindValue(':F',      $F);
-        $query->bindValue(':H',      $H);
-        $query->bindValue(':R',      $R);
-        $query->bindValue(':A',      $A);
-        $query->bindValue(':PdF',    $PdF);
-        $query->bindValue(':PV',     $PV);
-        $query->bindValue(':PV_max', $PV_max);
-        $query->bindValue(':PM',     $PM);
-        $query->bindValue(':PM_max', $PM_max);
-        $query->bindValue(':PE',     $PE);
-        $query->bindValue(':inventario',     $inventario);
-        $query->bindValue(':equipado',     $equipado);
-        $query->execute();
-
-    }
-
-    function getPlayer($nome){
-        $pdo = conecta();
-        $player = $pdo->prepare('SELECT * FROM RPG.player WHERE nome = :nome');
-        $player->bindValue(':nome', $nome, PDO::PARAM_STR);
-        $player->execute();
-        return $player->fetch(PDO::FETCH_ASSOC) ?? NULL;
-    }
-
-    function getPlayerStat(string $nome, string $campo) {
-        return getPlayer($nome)[$campo] ?? null;
-    }
-
-    function setPlayerStat(string $nome, string $campo, $valor){
-        $pdo = conecta();
-        $sql = "UPDATE RPG.player SET {$campo} = :valor WHERE nome = :nome";
-        $stmt = $pdo->prepare($sql);
-        $stmt->bindValue(':valor', $valor);
-        $stmt->bindValue(':nome', $nome, PDO::PARAM_STR);
-        $stmt->execute();
-    }
-
-    function getAllPlayers(){
-        $pdo = conecta();
-        $players = $pdo->prepare('SELECT nome FROM RPG.player');
-        $players->execute();
-        return $players->fetchAll(PDO::FETCH_ASSOC) ?? NULL;
+    function iniciativa(array $lutadores, array $dados): array {
+        $inicList = [];
+        foreach ($lutadores as $idx => $nome) {
+            $H = (int) getPlayerStat($nome, 'H');
+            $traits = listPlayerTraits($nome);
+            if (in_array('teleporte', $traits, true)) {
+                $bonus = 2;
+            } elseif (in_array('aceleracao', $traits, true)) {
+                $bonus = 1;
+            } else {
+                $bonus = 0;
+            }
+            $dado = isset($dados[$idx]) ? (int) $dados[$idx] : 0;
+            $total = $H + $dado + $bonus;
+            $inicList[] = [
+                'nome'       => $nome,
+                'total'      => $total,
+                'habilidade' => $H,
+                'indice'     => $idx,
+            ];
+        }
+        usort($inicList, function($a, $b) {
+            if ($a['total'] !== $b['total']) {
+                return $b['total'] <=> $a['total'];
+            }
+            if ($a['habilidade'] !== $b['habilidade']) {
+                return $b['habilidade'] <=> $a['habilidade'];
+            }
+            return $a['indice'] <=> $b['indice'];
+        });
+        return $inicList;
     }
 
 
 
-
-
+    
     function FA (string $atacante, string $atkType, int $dado){
-        return getPlayerStat($atacante, $atkType) + getPlayerStat($atacante, 'H') + $dado;
+        return getPlayerStat($atacante, $atkType) + getPlayerStat($atacante, 'H') + $dado + applyCrit($atacante, $atkType, $dado);
     }
 
 
     function FD (string $defensor, int $dado){
-        return getPlayerStat($defensor, 'A') + getPlayerStat($defensor, 'H') + $dado;
+        return getPlayerStat($defensor, 'A') + getPlayerStat($defensor, 'H') + $dado + applyCrit($defensor, 'A', $dado);
     }
 
 
@@ -99,7 +66,7 @@
         $totalFA = 0;
         $count = min($quant, count($dados));
         for ($i = 0; $i < $count; $i++) {
-            $totalFA += ($baseFA + (int)$dados[$i]);
+            $totalFA += ($baseFA + (int)$dados[$i]) + applyCrit($atacante, $atkType, $dados[$i]);
         }
     
         return $totalFA;
@@ -196,12 +163,19 @@
     }
 
 
+    function applyCrit($pl, $critType, $dado){
+        if($dado == 6){
+            return getPlayerStat($pl, $critType);
+        } else {
+            return 0;
+        }
+    }
+
     function applyDamage(string $pl, string $tgt, int $dano, string $tipo, string &$out){
-        if (!empty($b['notes'][$tgt]['incorp_active']) && in_array($tipo, ['F','PdF'], true) && empty($b['notes'][$pl]['incorp_active'])) {
+        if (!empty($_SESSION['battle']['notes'][$tgt]['incorp_active']) && in_array($tipo, ['F','PdF'], true) && empty($_SESSION['battle']['notes'][$pl]['incorp_active'])) {
             $dano = 0;
             $out .= " (inútil: alvo incorpóreo)";
         } else {  
-        
             $ligacaoNatural = false;
             if (!empty(getAlliePlayer($tgt)) && in_array('ligacao_natural', listPlayerTraits(getAlliePlayer($tgt)), true)){       
                 setPlayerStat($tgt, 'PV', max(getPlayerStat($tgt,'PV') - $dano, 0));
@@ -220,51 +194,24 @@
     }
 
 
- function removeEffect(string $efeito, array $remover): string {
-    $linhas = explode("\n", $efeito);
+    function removeEffect(string $efeito, array $remover): string {
+        $linhas = explode("\n", $efeito);
 
-    $linhasFiltradas = array_filter($linhas, function($linha) use ($remover) {
-        return ! in_array(trim($linha), $remover, true);
-    });
-
-    return implode("\n", $linhasFiltradas);
-}
-  
-
-
-
-    function iniciativa(array $lutadores, array $dados): array {
-        $inicList = [];
-        foreach ($lutadores as $idx => $nome) {
-            $H = (int) getPlayerStat($nome, 'H');
-            $traits = listPlayerTraits($nome);
-            if (in_array('teleporte', $traits, true)) {
-                $bonus = 2;
-            } elseif (in_array('aceleracao', $traits, true)) {
-                $bonus = 1;
-            } else {
-                $bonus = 0;
-            }
-            $dado = isset($dados[$idx]) ? (int) $dados[$idx] : 0;
-            $total = $H + $dado + $bonus;
-            $inicList[] = [
-                'nome'       => $nome,
-                'total'      => $total,
-                'habilidade' => $H,
-                'indice'     => $idx,
-            ];
-        }
-
-        usort($inicList, function($a, $b) {
-            if ($a['total'] !== $b['total']) {
-                return $b['total'] <=> $a['total'];
-            }
-            if ($a['habilidade'] !== $b['habilidade']) {
-                return $b['habilidade'] <=> $a['habilidade'];
-            }
-            return $a['indice'] <=> $b['indice'];
+        $linhasFiltradas = array_filter($linhas, function($linha) use ($remover) {
+            return ! in_array(trim($linha), $remover, true);
         });
-        return $inicList;
-    }
 
+        return implode("\n", $linhasFiltradas);
+    }
   
+
+    function selectTarget($cur, $validTargets) {
+        foreach ($validTargets as $tgt) if ($tgt !== $cur) {
+            $isFuria    = ! empty($_SESSION['battle']['notes'][$tgt]['furia']);
+            $isAgarrado = ! empty($_SESSION['battle']['agarrao'][$tgt]['agarrado']);
+            echo '<option value="'.htmlspecialchars($tgt).'" '
+            .'data-furia="'.($isFuria    ? '1' : '0').'" '
+            .'data-agarrao="'.($isAgarrado? '1' : '0').'">'
+            .htmlspecialchars($tgt).'</option>';                              
+        }
+    }

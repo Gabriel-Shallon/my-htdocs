@@ -1,20 +1,11 @@
 <?php
 // battle.php - Sistema de Combate 3D&T
 session_start();
-include 'inc/func.php';
-include 'inc/traitList.php';
+include_once 'inc/generalFuncs.php';
+include_once 'inc/traitFuncs.php';
+include_once 'inc/battleFuncs.php';
 
-    if (!isset($_SESSION['battle'])) {
-        $_SESSION['battle'] = [];
-    }
-    if (!array_key_exists('players',    $_SESSION['battle'])) $_SESSION['battle']['players']    = [];
-    if (!array_key_exists('order',      $_SESSION['battle'])) $_SESSION['battle']['order']      = [];
-    if (!array_key_exists('init_index', $_SESSION['battle'])) $_SESSION['battle']['init_index'] = 0;
-    if (!array_key_exists('round',      $_SESSION['battle'])) $_SESSION['battle']['round']      = 1;
-    if (!array_key_exists('notes',      $_SESSION['battle'])) $_SESSION['battle']['notes']      = [];
-
-
-// Inicializa sessão de batalha
+// Inicializa sessão
 if (!isset($_SESSION['battle'])) {
     $_SESSION['battle'] = [
         'players'     => [],
@@ -24,27 +15,28 @@ if (!isset($_SESSION['battle'])) {
         'notes'       => [],
     ];
 }
+$b = &$_SESSION['battle'];
 
-// Dispatcher de passos
+// Passos
 $step = $_GET['step'] ?? 'select';
 switch ($step) {
 
 
-// 1) Seleção de lutadores
+// 1) Seleção de players
 case 'select':
     if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $selected = array_map('trim', $_POST['players'] ?? []);
         if (count($selected) < 2) {
             header('Location: battle.php'); exit;
         }
-        $_SESSION['battle'] = [
+        $b = [
             'players'     => $selected,
             'order'       => [],
             'init_index'  => 0,
             'round'       => 1,
             'notes'       => [],
         ];
-        $_SESSION['battle']['hasAlly'] = []; 
+        $b['hasAlly'] = []; 
   
         header('Location: battle.php?step=initiative'); exit;
     }     
@@ -66,7 +58,6 @@ case 'select':
 
 // 2) Iniciativa
 case 'initiative':
-    $b     = &$_SESSION['battle'];
     $rolls = $_POST['rolls'] ?? [];
 
     if ($_SERVER['REQUEST_METHOD'] === 'POST') {
@@ -120,7 +111,7 @@ case 'initiative':
 case 'update_stats':
     if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $pl = $_GET['player'] ?? '';
-        if ($pl && in_array($pl, $_SESSION['battle']['players'], true)) {
+        if ($pl && in_array($pl, $b['players'], true)) {
             foreach ($_POST['stats'] as $stat => $val) {
                 setPlayerStat($pl, $stat, (int)$val);
             }
@@ -132,7 +123,7 @@ case 'update_stats':
 
 // 3) initiative atual
 case 'turn':
-    $b = &$_SESSION['battle'];
+
     if (!empty($b['needs_reload'])) {
         $b['needs_reload'] = false;
         echo '<script>window.location.reload();</script>';
@@ -145,8 +136,8 @@ case 'turn':
         exit;
     }
 
-    if (! empty($_SESSION['battle']['playingAlly'])) {
-        $cur = $_SESSION['battle']['playingAlly'];
+    if (! empty($b['playingAlly'])) {
+        $cur = $b['playingAlly'];
     } else {
         $cur = $order[$b['init_index'] % count($order)];
     }
@@ -227,8 +218,8 @@ case 'turn':
     
 
 
-    if (!empty($_SESSION['battle']['playingPartner'][$cur])){
-        echo '<h1>Iniciativa da dupla <strong>'.$cur.' & '.$_SESSION['battle']['playingPartner'][$cur]['name'].'</strong> <small>(Rodada '.$b['round'].')</small></h1>';
+    if (!empty($b['playingPartner'][$cur])){
+        echo '<h1>Iniciativa da dupla <strong>'.$cur.' & '.$b['playingPartner'][$cur]['name'].'</strong> <small>(Rodada '.$b['round'].')</small></h1>';
     } else {
     echo '<h1>Iniciativa de <strong>'.$cur.'</strong> <small>(Rodada '.$b['round'].')</small></h1>';
     }
@@ -245,7 +236,6 @@ case 'turn':
 
         // Form de ações
         echo '<h2>Ações</h2>';
-        // if (!empty($_SESSION['battle']['agarrao'][$cur])){
 
             echo '<form method="post" action="battle.php?step=act" id="actionForm">'
            .'<input type="hidden" name="player" value="'.htmlspecialchars($cur,ENT_QUOTES).'">'
@@ -255,6 +245,21 @@ case 'turn':
            .'<select id="actionSelect" name="action">';
             echo '<option value="pass">Passar Iniciativa</option>';
             echo '<option value="fim">Terminar Batalha</option>';
+
+            $concentrando = false;
+            $agarrando = false;
+            $agarrado = false;
+            if($notes['concentrado'] > 0){
+                $concentrando = true;
+            }
+            if(!empty($b['agarrao'][$cur]['agarrando'])){
+                $agarrando = true;
+            }
+            if(!empty($b['agarrao'][$cur]['agarrado'])){
+                $agarrado = true;
+            }
+
+
 
 
             if (in_array('energia_vital', listPlayerTraits($cur), true)) {
@@ -289,73 +294,75 @@ case 'turn':
                 }
             }
 
-            if ($notes['concentrado'] == 0) {
+            if (!$concentrando && !$agarrado && !$agarrando) {
                 echo '<option value="start_concentrar">Iniciar Concentração</option>';
-            } else {
+            } else if ($notes['concentrado'] > 0){
                 echo '<option value="start_concentrar">Continuar Concentração (+1)</option>';
-                echo '<option value="release_concentrar" data-bonus="'.$notes['concentrado'].'">'
-                   .'Liberar Concentração (bônus: +'.$notes['concentrado'].')</option>';
+                echo '<option value="release_concentrar">Liberar Concentração (bônus: +'.$notes['concentrado'].')</option>';
             }
 
-            if (in_array('energia_extra', listPlayerTraits($cur), true)) {
+            if (in_array('energia_extra', listPlayerTraits($cur), true) && !$concentrando && !$agarrado && !$agarrando) {
                 echo '<option value="extra_energy">Usar Energia Extra</option>';
             } 
 
-            if (in_array('aliado', listPlayerTraits($cur), true) && empty($_SESSION['battle']['playingAlly']) && empty($_SESSION['battle']['playingPartner'][$cur])){
+            if (in_array('aliado', listPlayerTraits($cur), true) && empty($b['playingAlly']) && empty($b['playingPartner'][$cur]) && !$cocentrado){
                 echo '<option value="use_ally">Jogar com Aliado</option>';
             }            
 
-            if ($cur == $_SESSION['battle']['playingAlly']) {
+            if ($cur == $b['playingAlly']) {
                 echo '<option value="back_to_owner">Voltar ao Dono</option>';   
             }  
             
-            if (in_array('parceiro', listPlayerTraits($cur), true) && empty($_SESSION['battle']['playingPartner'][$cur]) && in_array('aliado', listPlayerTraits($cur), true)) {
+            if (in_array('parceiro', listPlayerTraits($cur), true) && empty($b['playingPartner'][$cur]) && in_array('aliado', listPlayerTraits($cur), true) && !$concentrado && !$agarrado && !$agarrando) {
                 echo '<option value="start_partner">Formar Dupla com Parceiro</option>';
             }
 
-            if(!empty($_SESSION['battle']['playingPartner'][$cur]) && in_array('parceiro', listPlayerTraits($cur), true)){
+            if(!empty($b['playingPartner'][$cur]) && in_array('parceiro', listPlayerTraits($cur), true)){
                 echo '<option value="end_partner">Separar Dupla</option>';
             }
 
 
-            if (!empty($_SESSION['battle']['agarrao'][$cur]['agarrando'])){
-                 echo '<option value="soltar_agarrao">Soltar agarrão ('.$_SESSION['battle']['agarrao'][$cur]['agarrando'].')</option>';
+            if (!empty($b['agarrao'][$cur]['agarrando'])){
+                 echo '<option value="soltar_agarrao">Soltar agarrão ('.$b['agarrao'][$cur]['agarrando'].')</option>';
             }
 
-            if (!empty($_SESSION['battle']['agarrao'][$cur]['agarrado'])){
-                echo '<option value="se_soltar_agarrao">Se soltar do agarrão ('.$_SESSION['battle']['agarrao'][$cur]['agarrado'].')</option>';
+            if (!empty($b['agarrao'][$cur]['agarrado'])){
+                echo '<option value="se_soltar_agarrao">Se soltar do agarrão ('.$b['agarrao'][$cur]['agarrado'].')</option>';
             }
 
-
-            echo '<option value="ataque">Atacar</option>';
-            echo '<option value="multiple">Múltiplo</option>';
-            if (in_array('tiro_multiplo', listPlayerTraits($cur)) || 
-            (in_array('tiro_multiplo', listPlayerTraits(getAlliePlayer($cur))) && 
-            in_array('ligacao_natural', listPlayerTraits(getAlliePlayer($cur)))) ||
-            (!empty($_SESSION['battle']['playingPartner'][$cur]) &&
-            in_array('tiro_multiplo', listPlayerTraits($_SESSION['battle']['playingPartner'][$cur]['name']))))
-            {
-                echo '<option value="tiro_multiplo">Tiro Múltiplo</option>';
-            }
+            if (!$concentrando && !$agarrado && !$agarrando){
+                echo '<option value="ataque">Atacar</option>';
+                echo '<option value="multiple">Múltiplo</option>';
             
-            if (in_array('agarrao', listPlayerTraits($cur)) || 
-            (in_array('agarrao', listPlayerTraits(getAlliePlayer($cur))) && 
-            in_array('ligacao_natural', listPlayerTraits(getAlliePlayer($cur)))) ||
-            (!empty($_SESSION['battle']['playingPartner'][$cur]) &&
-            in_array('agarrao', listPlayerTraits($_SESSION['battle']['playingPartner'][$cur]['name']))))
-            {
-                echo '<option value="agarrao">Agarrão</option>';
-            }
+            
+                if (in_array('tiro_multiplo', listPlayerTraits($cur)) || 
+                (in_array('tiro_multiplo', listPlayerTraits(getAlliePlayer($cur))) && 
+                in_array('ligacao_natural', listPlayerTraits(getAlliePlayer($cur)))) ||
+                (!empty($b['playingPartner'][$cur]) &&
+                in_array('tiro_multiplo', listPlayerTraits($b['playingPartner'][$cur]['name']))))
+                {
+                    echo '<option value="tiro_multiplo">Tiro Múltiplo</option>';
+                }
 
-            if (in_array('ataque_debilitante', listPlayerTraits($cur)) || 
-            (in_array('ataque_debilitante', listPlayerTraits(getAlliePlayer($cur))) && 
-            in_array('ligacao_natural', listPlayerTraits(getAlliePlayer($cur)))) ||
-            (!empty($_SESSION['battle']['playingPartner'][$cur]) &&
-            in_array('ataque_debilitante', listPlayerTraits($_SESSION['battle']['playingPartner'][$cur]['name']))))
-            {
-                echo '<option value="ataque_debilitante">Ataque Debilitante</option>';
-            }
+                if (in_array('agarrao', listPlayerTraits($cur)) || 
+                (in_array('agarrao', listPlayerTraits(getAlliePlayer($cur))) && 
+                in_array('ligacao_natural', listPlayerTraits(getAlliePlayer($cur)))) ||
+                (!empty($b['playingPartner'][$cur]) &&
+                in_array('agarrao', listPlayerTraits($b['playingPartner'][$cur]['name']))))
+                {
+                    echo '<option value="agarrao">Agarrão</option>';
+                }
 
+                if (in_array('ataque_debilitante', listPlayerTraits($cur)) || 
+                (in_array('ataque_debilitante', listPlayerTraits(getAlliePlayer($cur))) && 
+                in_array('ligacao_natural', listPlayerTraits(getAlliePlayer($cur)))) ||
+                (!empty($b['playingPartner'][$cur]) &&
+                in_array('ataque_debilitante', listPlayerTraits($b['playingPartner'][$cur]['name']))))
+                {
+                    echo '<option value="ataque_debilitante">Ataque Debilitante</option>';
+                }
+                
+            }
             echo '</select><br>';
 
 
@@ -388,10 +395,7 @@ case 'turn':
                 .'Tipo: <select name="atkType"><option>F</option><option>PdF</option></select><br>'
                 .'Roll FA: <input id="dadoFA" type="number" name="dadoFA" required><br>'
                 .'Alvo: <select name="target">';
-                foreach ($validTargets as $tgt) if ($tgt !== $cur) {
-                    $isFuria = ! empty($b['notes'][$tgt]['furia']);
-                    echo '<option value="'.htmlspecialchars($tgt).'" data-furia="'.($isFuria ? '1' : '0').'">'.htmlspecialchars($tgt).'</option>';                               
-                }
+                selectTarget($cur, $validTargets);
                 echo '</select><br>'
                 .'Reação: <select id="def" name="defesa">'
                 .'<option value="defender">Defender</option>'
@@ -409,10 +413,7 @@ case 'turn':
                 .'Quantidade (2-'.$maxMulti.'): <input id="quant" type="number" name="quant" '
                 .'min="2" max="'.$maxMulti.'" value="2"><br>'
                 .'Alvo: <select name="targetMulti">';
-                foreach ($validTargets as $tgt) if ($tgt !== $cur) {
-                    $isFuria = ! empty($b['notes'][$tgt]['furia']);
-                    echo '<option value="'.htmlspecialchars($tgt).'" data-furia="'.($isFuria ? '1' : '0').'">'.htmlspecialchars($tgt).'</option>';                               
-                }
+                selectTarget($cur, $validTargets);
                 echo '</select><br>'
                 .'Reação: <select id="defM" name="defesaMulti">'
                 .'<option value="defender">Defender</option>'
@@ -430,10 +431,7 @@ case 'turn':
                 .'Quantidade (1-'.$stats['H'].'): <input id="quantTiro" type="number" name="quantTiro" '
                 .'min="1" max="'.$stats['H'].'" value="1"><br>'
                 .'Alvo: <select name="targetTiroMulti">';
-                foreach ($validTargets as $tgt) if ($tgt !== $cur) {
-                    $isFuria = ! empty($b['notes'][$tgt]['furia']);
-                    echo '<option value="'.htmlspecialchars($tgt).'" data-furia="'.($isFuria ? '1' : '0').'">'.htmlspecialchars($tgt).'</option>';                               
-                }
+                selectTarget($cur, $validTargets);
                 echo '</select><br>'
                 .'Reação: <select id="defTiro" name="defesaTiroMulti">'
                 .'<option value="defender">Defender</option>'
@@ -446,6 +444,33 @@ case 'turn':
                 .'</label><br>'
                 .'</fieldset></div>';
             }
+
+            //Ataque Debilitante
+            if($hasTargets){
+                //Selecionar um alvo e qual a caracteristica do mesmo será debilitada; Atk sempre do tipo F; Se a FA for maior que a FD
+                //, alvo faz teste de armadura (além de tomar o dano normalmente); Se falhar no teste de armadura, recebe a penalidade na caracteristica selecionada
+                // (A penalidade é defeita no final da batalha).
+            }
+
+            //Agarrão
+            if($hasTargets){
+                echo '<div id="atkAgarrao" style="display:none;"><fieldset><legend>Agarrão</legend>'
+                .'Alvo: <select name="targetAgarrao">';
+                foreach ($validTargets as $tgt) if ($tgt !== $cur) {
+                    echo '<option value="'.htmlspecialchars($tgt).'">'
+                    .htmlspecialchars($tgt)
+                    .'</option>';
+                }
+                echo '</select><br>'
+                .'Roll Teste de Força: <input id="rollAgarrao" type="number" name="rollAgarrao" required><br>'
+                .'</fieldset></div>';
+            }           
+
+            //Se soltar de um agarrão
+            echo '<div id="soltarAgarrao" style="display:none;"><fieldset><legend>Teste para se Soltar do Agarrão</legend>'
+            .'Roll Teste de Força: <input id="rollSoltarAgarrao" type="number" name="rollSoltarAgarrao" required><br>'
+            .'</fieldset></div>';
+
 
             //Aliado
             echo '<div id="allySelect" style="display:none;margin-top:0.5em;">'
@@ -475,27 +500,6 @@ case 'turn':
             . '</div>';
 
 
-            //Agarrão
-            if($hasTargets){
-                echo '<div id="atkAgarrao" style="display:none;"><fieldset><legend>Agarrão</legend>'
-                .'Alvo: <select name="targetAgarrao">';
-                foreach ($validTargets as $tgt) if ($tgt !== $cur) {
-                    echo '<option value="'.htmlspecialchars($tgt).'">'
-                    .htmlspecialchars($tgt)
-                    .'</option>';
-                }
-                echo '</select><br>'
-                .'Roll Teste de Força: <input id="rollAgarrao" type="number" name="rollAgarrao" required><br>'
-                .'</fieldset></div>';
-            }           
-
-
-            //Se soltar de um agarrão
-            echo '<div id="soltarAgarrao" style="display:none;"><fieldset><legend>Teste para se Soltar do Agarrão</legend>'
-            .'Roll Teste de Força: <input id="rollSoltarAgarrao" type="number" name="rollSoltarAgarrao" required><br>'
-            .'</fieldset></div>';
-
-
 
             echo '<button type="submit">Executar</button> ';
             echo '<button type="button" onclick="history.back()">Voltar</button>';
@@ -508,7 +512,13 @@ case 'turn':
             // Resumo Parcial
             echo '<h2>Resumo Parcial da Batalha</h2>';
             echo '<form method="post" action="?step=save_partial">';
-            $lutadores = array_merge($b['players'], getAllAllies());
+            $lutadores = $b['players'];
+
+            foreach ($b['players'] as $hasAlly){
+                if (getPlayerAllies($hasAlly)){
+                    $lutadores = array_merge($lutadores, getPlayerAllies($hasAlly));
+                }
+            }   
             foreach ($lutadores as $pl) {
                 if ($pl === $cur) continue;
                 $ps   = getPlayer($pl);
@@ -561,6 +571,7 @@ case 'turn':
 echo <<<JS
 <script>
 document.addEventListener('DOMContentLoaded', () => {
+  //Seletores de Elementos
   const actionSel   = document.getElementById('actionSelect');
   
   const atkSimple   = document.getElementById('atkSimple');
@@ -574,7 +585,6 @@ document.addEventListener('DOMContentLoaded', () => {
   const defTiro     = document.getElementById('defTiro');
   
   const fdLblSimple = document.getElementById('fdLbl');
-  const fdLblMulti  = document.getElementById('dadoFDMulti')?.parentNode;
   const fdLblTiro   = document.getElementById('fdTiroLbl');
  
   const faInput     = document.getElementById('dadoFA');
@@ -599,23 +609,47 @@ document.addEventListener('DOMContentLoaded', () => {
   const esqTi    = document.getElementById('opt-esquiva-tiro');
   
 
-  function atualizaEsquiva(sel, esq) {
+  //Funções Auxiliares
+
+  function atualizaReacao(sel, esq) {
     if (!sel || !esq) return;
-    const furia = sel.selectedOptions[0].dataset.furia;
-    esq.style.display = (furia === '1') ? 'none' : '';
+
+    const furia = sel.selectedOptions[0].dataset.furia   === '1';
+    const agar  = sel.selectedOptions[0].dataset.agarrao === '1';
+    esq.style.display = (furia || agar) ? 'none' : '';
+
+    let reactSelId;
+    if (esq.id === 'opt-esquiva-simples')   reactSelId = 'def';
+    if (esq.id === 'opt-esquiva-multi')     reactSelId = 'defM';
+    if (esq.id === 'opt-esquiva-tiro')      reactSelId = 'defTiro';
+
+    const reactSel = document.getElementById(reactSelId);
+    if (!reactSel) return;
+
+    const defOpt = reactSel.querySelector('option[value="defender"]');
+    if (defOpt) defOpt.style.display = agar ? 'none' : '';
+
+    if (agar) {
+      reactSel.value = 'indefeso';
+      if (reactSelId === 'def')    onDef();
+      if (reactSelId === 'defM')   onDefM();
+      if (reactSelId === 'defTiro') onAct();
+    }
   }
-  
+
   function genMulti() {
+    if (!quant || !dCont) return;
     let cnt = parseInt(quant.value, 10) || 0;
     let html = '';
     for (let i = 1; i <= cnt; i++) {
       html += '<label>Roll FA ' + i + ': <input type="number" name="dadosMulti[]" required></label><br>';
     }
-    html += '<label>Roll FD/Esq.: <input type="number" name="dadoFDMulti" id="dadoFDMulti" required></label><br>';
+    html += '<label id="fdLblMulti">Roll FD/Esq.: <input type="number" name="dadoFDMulti" id="dadoFDMulti" required></label><br>';
     dCont.innerHTML = html;
   }
 
   function genTiro() {
+    if (!quantTiro || !dContTiro) return;
     let cnt = parseInt(quantTiro.value, 10) || 0;
     let html = '';
     for (let i = 1; i <= cnt; i++) {
@@ -626,120 +660,95 @@ document.addEventListener('DOMContentLoaded', () => {
 
   window.toggleSection = function(id) {
     const el = document.getElementById(id);
-    if (!el) return;
-    el.style.display = (el.style.display === 'none') ? 'block' : 'none';
+    if (el) {
+      el.style.display = (el.style.display === 'none') ? 'block' : 'none';
+    }
   };
 
   function onAct() {
     const act = actionSel.value;
-    const tiroDiv   = document.getElementById('atkTiroMulti');
-    const tiroInput = document.getElementById('dadoFDTiro');
 
-    atkSimple.style.display = (act === 'ataque' || act === 'release_concentrar') ? 'block' : 'none';
-    atkMulti.style.display  = (act === 'multiple')   ? 'block' : 'none';
-    atkAgarrao.style.display = (act === 'agarrao') ? 'block' : 'none';
-    soltarAgarr.style.display = (act === 'se_soltar_agarrao') ? 'block' : 'none';
+    if (atkSimple) atkSimple.style.display = (act === 'ataque' || act === 'release_concentrar') ? 'block' : 'none';
+    if (atkMulti) atkMulti.style.display  = (act === 'multiple') ? 'block' : 'none';
+    if (atkTiro) atkTiro.style.display = (act === 'tiro_multiplo') ? 'block' : 'none';
+    if (atkAgarrao) atkAgarrao.style.display = (act === 'agarrao') ? 'block' : 'none';
+    if (soltarAgarr) soltarAgarr.style.display = (act === 'se_soltar_agarrao') ? 'block' : 'none';
 
-    if (act === 'tiro_multiplo') {
-        tiroDiv.style.display  = 'block';
-        tiroInput.disabled     = false;
-    } else {
-        tiroDiv.style.display  = 'none';
-        tiroInput.disabled     = true;
-    }
-
-    if (act === 'tiro_multiplo') {
-      const modo = defTiro.value;
-      if (modo === 'indefeso') {
-        fdLblTiro.style.display  = 'none';
-        dadoFDTiro.required      = false;
-        dadoFDTiro.readOnly      = true;
-      }
-      else {
-        fdLblTiro.style.display  = 'block';
-        dadoFDTiro.required      = true;
-        dadoFDTiro.readOnly      = false;
-      }
-    }
-
-
-    rollAgarrao.required = false;  // garante que não esteja marcado por engano
-    if (act === 'agarrao') {
-      dadoAgarrao.required = true;
-      dadoAgarrao.disabled = false;
-    } else {
-      dadoAgarrao.required = false;
-      dadoAgarrao.disabled = true;
-    }
-
-    // Soltar agarrão
-    if (act === 'se_soltar_agarrao') {
-      dSoltAgarra.required = true;
-      dSoltAgarra.disabled = false;
-    } else {
-      dSoltAgarra.required = false;
-      dSoltAgarra.disabled = true;
-    }
-
+    //Habilitar/desabilitar inputs e torná-los required/not-required
+    if (faInput) faInput.required = (act === 'ataque' || act === 'release_concentrar');
     
-
-    rollAgarrao.required     = (act === 'agarrao');
-    dSoltAgarra.required     = (act === 'agarrao');
-    faInput.required = (act === 'ataque' || act === 'release_concentrar');
-    const needFDSimple = (['ataque', 'release_concentrar'].includes(act) && defSimple.value !== 'indefeso');
-    fdInput.required           = needFDSimple;
-    fdLblSimple.style.display  = needFDSimple ? 'block' : 'none';
-
-    if (act === 'multiple') { genMulti(); } else { dCont.innerHTML = ''; }
-    if (fdLblMulti) {
-      fdLblMulti.style.display = (act === 'multiple' && defMulti.value !== 'indefeso') ? 'block' : 'none';
+    if (dadoAgarrao) {
+        dadoAgarrao.required = (act === 'agarrao');
+        dadoAgarrao.disabled = (act !== 'agarrao');
+    }
+    if (dSoltAgarra) {
+        dSoltAgarra.required = (act === 'se_soltar_agarrao');
+        dSoltAgarra.disabled = (act !== 'se_soltar_agarrao');
     }
 
-    if (act === 'tiro_multiplo') { genTiro(); } else { dContTiro.innerHTML = ''; }
-        fdLblTiro.style.display = (act === 'tiro_multiplo' && defTiro.value !== 'indefeso') ? 'block' : 'none';
+    if (dadoFDTiro) {
+        const isTiroVisible = atkTiro && atkTiro.style.display === 'block';
+        dadoFDTiro.disabled = !isTiroVisible;
+        dadoFDTiro.required = isTiroVisible && defTiro && defTiro.value !== 'indefeso';
+        if(fdLblTiro) fdLblTiro.style.display = (dadoFDTiro.required) ? 'block' : 'none';
+    }
+
+    const needFDSimple = faInput && faInput.required && defSimple && defSimple.value !== 'indefeso';
+    if (fdInput) fdInput.required = needFDSimple;
+    if (fdLblSimple) fdLblSimple.style.display = needFDSimple ? 'block' : 'none';
+
+    if (act === 'multiple') { genMulti(); } else if (dCont) { dCont.innerHTML = ''; }
+    if (act === 'tiro_multiplo') { genTiro(); } else if (dContTiro) { dContTiro.innerHTML = ''; }
+
+    onDefM();
   }
 
   function onDef() {
+      if (!defSimple || !fdLblSimple || !fdInput) return;
       const modo = defSimple.value;
       const needFD = (modo !== 'indefeso');
       fdLblSimple.style.display = needFD ? 'block' : 'none';
-      fdInput.required         = needFD;
+      fdInput.required = needFD;
   }
-  function onDefM() {
-      const modo = defMulti.value;
-      if (!fdLblMulti) return;
-      fdLblMulti.style.display = (modo !== 'indefeso') ? 'block' : 'none';
-  }
-
-
-  actionSel.addEventListener('change', e => {
-    document.getElementById('partnerSelect').style.display = (e.target.value === 'start_partner') ? 'block' : 'none';
-    document.getElementById('allySelect').style.display = (e.target.value === 'use_ally') ? 'block' : 'none';
-    onAct();
-  });
-
-
-
-  actionSel.addEventListener('change', onAct);
-
-  selAlvoSi.addEventListener('change', () => atualizaEsquiva(selAlvoSi, esqSi));
-  selAlvoMu.addEventListener('change', () => atualizaEsquiva(selAlvoMu, esqMu));
-  selAlvoTi.addEventListener('change', () => atualizaEsquiva(selAlvoTi, esqTi));
   
-  defSimple.addEventListener('change', onDef);
-  defMulti.addEventListener('change', onDefM);
-  defTiro.addEventListener('change', onAct);
+  function onDefM() {
+      const fdLblMulti = document.getElementById('fdLblMulti');
+      if (!defMulti || !fdLblMulti) return;
+      const modo = defMulti.value;
+      fdLblMulti.style.display = (modo !== 'indefeso') ? 'block' : 'none';
+      const fdInputMulti = document.getElementById('dadoFDMulti');
+      if (fdInputMulti) fdInputMulti.required = (modo !== 'indefeso');
+  }
 
-  quant.addEventListener('input', () => { genMulti(); onAct(); });
-  quantTiro.addEventListener('input', () => { genTiro(); onAct(); });
+  //Event Listeners
 
-    
-  atualizaEsquiva(selAlvoSi, esqSi);
-  atualizaEsquiva(selAlvoMu, esqMu);
-  atualizaEsquiva(selAlvoTi, esqTi);
+  if (actionSel) {
+    actionSel.addEventListener('change', e => {
+      const partnerDiv = document.getElementById('partnerSelect');
+      const allyDiv = document.getElementById('allySelect');
+      if(partnerDiv) partnerDiv.style.display = (e.target.value === 'start_partner') ? 'block' : 'none';
+      if(allyDiv) allyDiv.style.display = (e.target.value === 'use_ally') ? 'block' : 'none';
+      onAct();
+    });
+  }
 
-  onDef();
-  onDefM();
+  if (selAlvoSi) selAlvoSi.addEventListener('change', () => atualizaReacao(selAlvoSi, esqSi));
+  if (selAlvoMu) selAlvoMu.addEventListener('change', () => atualizaReacao(selAlvoMu, esqMu));
+  if (selAlvoTi) selAlvoTi.addEventListener('change', () => atualizaReacao(selAlvoTi, esqTi));
+  
+  if (defSimple) defSimple.addEventListener('change', onDef);
+  if (defMulti) defMulti.addEventListener('change', onDefM);
+  if (defTiro) defTiro.addEventListener('change', onAct);
+
+  if (quant) quant.addEventListener('input', () => { genMulti(); onDefM(); });
+  if (quantTiro) quantTiro.addEventListener('input', genTiro);
+
+  //Inicialização
+  
+  atualizaReacao(selAlvoSi, esqSi);
+  atualizaReacao(selAlvoMu, esqMu);
+  atualizaReacao(selAlvoTi, esqTi);
+  
   onAct();
 });
 </script>
@@ -749,7 +758,6 @@ JS;
     // 4) Processar ação
     case 'act':
         if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-            $b  = &$_SESSION['battle'];
             $pl = $_POST['player'] ?? '';
             $out = '';
             if ($pl && in_array($pl, $b['players'], true)) {
@@ -763,13 +771,13 @@ JS;
 
             switch ($_POST['action'] ?? '') {
 
-
                 case 'pass':
                     $out = "<strong>{$pl}</strong> passou seu turno.";
+                    unset($b['playingAlly']);
+                    $b['needs_reload'] = true;
                     $b['init_index']++;
-                    unset($_SESSION['battle']['playingAlly']);
-                    $_SESSION['battle']['needs_reload'] = true;
                 break;
+
 
                 
                 case 'ataque':
@@ -779,6 +787,10 @@ JS;
                     $dFD  = (int)($_POST['dadoFD'] ?? 0);
                     $def  = $_POST['defesa']   ?? 'defender';
 
+                    if (!empty($b['agarrao'][$tgt]['agarrado'])){
+                        $def = 'indefeso';
+                    }
+
                     if ($def === 'indefeso') {
                         $dano = FAFDindefeso($pl, $tgt, $dFA, $tipo);
                     } elseif ($def === 'defender_esquiva') {
@@ -787,13 +799,14 @@ JS;
                         $dano = FAFDresult($pl, $tgt, $dFA, $dFD, $tipo);
                     }
 
-                    $out = "<strong>{$pl}</strong> atacou <strong>{$tgt}</strong> ({$tipo}): dano = {$dano}";
-                    $out .= applyDamage($pl, $tgt, $dano, $tipo, $out);
+                    $out = "<strong>{$pl}</strong> atacou <strong>{$tgt}</strong> ({$tipo}): dano = {$dano}"
+                    .applyDamage($pl, $tgt, $dano, $tipo, $out);
 
+                    unset($b['playingAlly']);
+                    $b['needs_reload'] = true;
                     $b['init_index']++;
-                    unset($_SESSION['battle']['playingAlly']);
-                    $_SESSION['battle']['needs_reload'] = true;
                 break;
+
 
 
                 case 'multiple':
@@ -806,6 +819,10 @@ JS;
                     
                     $faTot = FAmulti($pl, $q, $tipo, $dados);
 
+                    if (!empty($b['agarrao'][$tgt]['agarrado'])){
+                        $def = 'indefeso';
+                    }
+ 
                     if ($def === 'indefeso') {
                         $dano = max($faTot - FDindefeso($tgt), 0);
                     }
@@ -823,10 +840,11 @@ JS;
                     $out = "<strong>{$pl}</strong> fez ataque múltiplo em <strong>{$tgt}</strong> ({$q}x{$tipo}): FA total = {$faTot}, dano = {$dano}";
                     $out .= applyDamage($pl, $tgt, $dano, $tipo, $out);
 
+                    unset($b['playingAlly']);
+                    $b['needs_reload'] = true;
                     $b['init_index']++;
-                    unset($_SESSION['battle']['playingAlly']);
-                    $_SESSION['battle']['needs_reload'] = true;
                 break;
+
 
 
                 case 'start_concentrar':
@@ -834,32 +852,40 @@ JS;
                         $b['notes'][$pl]['concentrado'] = 1;
                     }
                     $out = "<strong>{$pl}</strong> iniciou/concentra (rodada atual: +{$b['notes'][$pl]['concentrado']})";
+                    unset($b['playingAlly']);
+                    $b['needs_reload'] = true;
                     $b['init_index']++;
-                    unset($_SESSION['battle']['playingAlly']);
-                    $_SESSION['battle']['needs_reload'] = true;
                 break;         
                 case 'release_concentrar':
                     $bonus = $b['notes'][$pl]['concentrado'] ?? 0;
-                    $dado  = (int)($_POST['dadoFA'] ?? 0);
-                    $tipo  = $_POST['atkType']   ?? 'F';
-                    $tgt   = $_POST['target']    ?? '';
+                    $dFA  = (int)($_POST['dadoFA'] ?? 0) + $bonus;
+                    $tipo = $_POST['atkType'] ?? 'F';
+                    $tgt  = $_POST['target']  ?? '';
+                    $dFD  = (int)($_POST['dadoFD'] ?? 0);
+                    $def  = $_POST['defesa']   ?? 'defender';
 
-                    $fa_normal = FA($pl, $tipo, $dado);
+                    if (!empty($b['agarrao'][$tgt]['agarrado'])){
+                        $def = 'indefeso';
+                    }
 
-                    $fa_total = $fa_normal + $bonus;
-                                    
-                    $defesa = (int)($_POST['dadoFD'] ?? 0);
-                    $dano   = max($fa_total - FD($tgt, $defesa), 0);
+                    if ($def === 'indefeso') {
+                        $dano = FAFDindefeso($pl, $tgt, $dFA, $tipo);
+                    } elseif ($def === 'defender_esquiva') {
+                        $dano = FAFDesquiva($pl, $tgt, $dFD, $dFA, $tipo);
+                    } else {
+                        $dano = FAFDresult($pl, $tgt, $dFA, $dFD, $tipo);
+                    }
 
 
-                    $out = "<strong>{$pl}</strong> liberou ataque (FA={$fa_normal} + bônus {$bonus} = {$fa_total}): dano = {$dano}";
-                    $out .= applyDamage($pl, $tgt, $dano, $tipo, $out);
+                    $out = "<strong>{$pl}</strong> atacou <strong>{$tgt}</strong> ({$tipo}): dano = {$dano} (Bonus de concentração = {$bonus})"
+                    .applyDamage($pl, $tgt, $dano, $tipo, $out);
 
                     $b['notes'][$pl]['concentrado'] = 0;
+                    unset($b['playingAlly']);
+                    $b['needs_reload'] = true;
                     $b['init_index']++;
-                    unset($_SESSION['battle']['playingAlly']);
-                    $_SESSION['battle']['needs_reload'] = true;
                 break;
+
 
 
                 case 'tiro_multiplo':
@@ -869,6 +895,10 @@ JS;
                     $dadoFD = (int)($_POST['dadoFDTiro']  ?? 0);
                     $def    = $_POST['defesaTiroMulti']   ?? 'defender'; 
                 
+                    if (!empty($b['agarrao'][$tgt]['agarrado'])){
+                        $def = 'indefeso';
+                    }
+
                     if ($def === 'defender_esquiva') {
                         $resultadoEsq = esquivaMulti($pl, $tgt, $dadoFD);
                         if ($resultadoEsq === 'defender_esquiva_success') {
@@ -884,10 +914,11 @@ JS;
                     $out = "<strong>{$pl}</strong> usou <em>Tiro Múltiplo</em> em <strong>{$tgt}</strong>\n({$q}xPdF): dano total = {$dano}";
                     applyDamage($pl, $tgt, $dano, $tipo, $out);
                     
+                    unset($b['playingAlly']);
+                    $b['needs_reload'] = true;
                     $b['init_index']++;
-                    unset($_SESSION['battle']['playingAlly']);
-                    $_SESSION['battle']['needs_reload'] = true;
                 break;
+
 
 
                 case 'agarrao':
@@ -896,34 +927,44 @@ JS;
 
                     $r = agarrao($pl, $tgt, $dF);
                     if ($r){
-                        $_SESSION['battle']['agarrao'][$pl]['agarrando'] = $tgt;
-                        $_SESSION['battle']['agarrao'][$tgt]['agarrado'] = $pl;
-                        $_SESSION['battle']['agarrao'][$tgt]['flag'] = 0;
+                        $b['agarrao'][$pl]['agarrando'] = $tgt;
+                        $b['agarrao'][$tgt]['agarrado'] = $pl;
+                        $b['agarrao'][$tgt]['flag'] = 0;
                         $out = "<strong>{$pl}</strong> agarrou <strong>{$tgt}</strong>!";  
                     } else {
                         $out = "<strong>{$pl}</strong> falhou em agarrar <strong>{$tgt}</strong>!";                         
                     }
                     $b['notes'][$tgt]['efeito'] .= "\nAgarrado por um inimigo (Pode apenas tentar se soltar)(Indefeso).";
                     $b['notes'][$pl]['efeito'] .= "\nAgarrando um inimigo (Não pode realizar ações por si mesmo).";
+                    unset($b['playingAlly']);
+                    if (!empty($b['playingPartner'][$pl])){
+                        if (!empty($b['statsBackup'][$pl])) {
+                          foreach ($b['statsBackup'][$pl] as $campo => $valor) {
+                            setPlayerStat($pl, $campo, $valor);
+                          }
+                          unset($b['statsBackup'][$pl]);
+                        }
+                        unset($b['statsBackup'][$pl]);
+                        unset($b['playingPartner'][$pl]);
+                    }
+                    $b['needs_reload'] = true;
                     $b['init_index']++;
-                    unset($_SESSION['battle']['playingAlly']);
-                    $_SESSION['battle']['needs_reload'] = true;
                 break;
                 case 'soltar_agarrao':
-                    $tgt = $_SESSION['battle']['agarrao'][$pl]['agarrando'];
+                    $tgt = $b['agarrao'][$pl]['agarrando'];
                     $itensARemover = [
                         'Agarrado por um inimigo (Pode apenas tentar se soltar)(Indefeso).',
                         'Agarrando um inimigo (Não pode realizar ações por si mesmo).'
                     ];
                     $b['notes'][$pl]['efeito'] = removeEffect($b['notes'][$pl]['efeito'], $itensARemover);
                     $b['notes'][$tgt]['efeito'] = removeEffect($b['notes'][$tgt]['efeito'], $itensARemover);
-                    unset($_SESSION['battle']['agarrao'][$tgt]);
-                    unset( $_SESSION['battle']['agarrao'][$pl]);
+                    unset($b['agarrao'][$tgt]);
+                    unset( $b['agarrao'][$pl]);
                     $out = "<strong>{$pl}</strong> soltou <strong>{$tgt}</strong> de seu agarrão!";                                     
                 break;
                 case 'se_soltar_agarrao':
-                    $dF   = (int)($_POST['rollSoltarAgarrao'] ?? 0) + $_SESSION['battle']['agarrao'][$pl]['flag'];
-                    $tgt = $_SESSION['battle']['agarrao'][$pl]['agarrado'];
+                    $dF   = (int)($_POST['rollSoltarAgarrao'] ?? 0) + $b['agarrao'][$pl]['flag'];
+                    $tgt = $b['agarrao'][$pl]['agarrado'];
                     $r = agarrao($pl, $tgt, $dF);
 
                     if ($r){
@@ -933,16 +974,17 @@ JS;
                         ];
                         $b['notes'][$pl]['efeito'] = removeEffect($b['notes'][$pl]['efeito'], $itensARemover);
                         $b['notes'][$tgt]['efeito'] = removeEffect($b['notes'][$tgt]['efeito'], $itensARemover); 
-                        unset($_SESSION['battle']['agarrao'][$pl]);
-                        unset( $_SESSION['battle']['agarrao'][$tgt]);
+                        unset($b['agarrao'][$pl]);
+                        unset( $b['agarrao'][$tgt]);
                         $out = "<strong>{$pl}</strong> se soltou do agarrão de <strong>{$tgt}</strong>!";  
                     } else {
                         $out = "<strong>{$pl}</strong> tentou se soltar do agarrão de <strong>{$tgt}</strong> mas falhou!";                         
                     }
+                    unset($b['playingAlly']);
+                    $b['needs_reload'] = true;
                     $b['init_index']++;
-                    unset($_SESSION['battle']['playingAlly']);
-                    $_SESSION['battle']['needs_reload'] = true;
                 break;
+
 
 
 
@@ -969,10 +1011,11 @@ JS;
                         ], true);
                     });
                     $b['notes'][$pl]['efeito'] = implode("\n", $linhas_filtradas);                                     
+                    unset($b['playingAlly']);
+                    $b['needs_reload'] = true;
                     $b['init_index']++;
-                    unset($_SESSION['battle']['playingAlly']);
-                    $_SESSION['battle']['needs_reload'] = true;
                 break;
+
 
 
                 case 'activate_fusao':
@@ -1009,6 +1052,7 @@ JS;
                 break;
 
 
+
                 case 'activate_incorp':
                     $pm = getPlayerStat($pl,'PM');
                     if (spendPM($pl, 2)) {
@@ -1031,6 +1075,7 @@ JS;
                 break;
 
 
+
                 case 'enable_use_pv':
                     $b['notes'][$pl]['use_pv'] = true;
                     $out = "<strong>{$pl}</strong> ativou uso de PV no lugar de PM.";
@@ -1041,39 +1086,42 @@ JS;
                 break;                
                 
 
+
                 case 'extra_energy':
                     if (spendPM($pl, 2)){
                         $b['notes'][$pl]['extra_energy_next'] = true;
                         $out = "<strong>{$pl}</strong> irá recuperar todos seus PVs até o próximo turno.";
+                        unset($b['playingAlly']);
+                        $b['needs_reload'] = true;
                         $b['init_index']++;
-                        unset($_SESSION['battle']['playingAlly']);
-                        $_SESSION['battle']['needs_reload'] = true;
                     } else {
                         $out = "<strong>{$pl}</strong> não tem PMs o suficiente.";
                     }
                 break;   
                 
                 
+
                 case 'use_ally':
-                    $_SESSION['battle']['playingAlly'] = $_POST['ally'];
+                    $b['playingAlly'] = $_POST['ally'];
                     header('Location: battle.php?step=turn');
                 exit;
                 case 'back_to_owner':
-                    unset($_SESSION['battle']['playingAlly']);
+                    unset($b['playingAlly']);
                     header('Location: battle.php?step=turn');
                 exit;  
 
 
+
                 case 'start_partner':
                     $chosen = $_POST['partner'] ?? '';
-                    $_SESSION['battle']['statsBackup'][$pl] = [
+                    $b['statsBackup'][$pl] = [
                         'F'=>getPlayerStat($pl,'F'),
                         'H'=>getPlayerStat($pl,'H'),
                         'R'=>getPlayerStat($pl,'R'),
                         'A'=>getPlayerStat($pl,'A'),
                         'PdF'=>getPlayerStat($pl,'PdF'),
                     ];
-                    $_SESSION['battle']['playingPartner'][$pl] = [
+                    $b['playingPartner'][$pl] = [
                         'name'  => $chosen,
                         'owner' => $pl,
                         'stats' => [
@@ -1084,30 +1132,32 @@ JS;
                             'PdF' => max(getPlayerStat($chosen, 'PdF'), getPlayerStat($pl, 'PdF'))
                         ]
                     ];
-                    foreach ($_SESSION['battle']['playingPartner'][$pl]['stats'] as $campo=>$valor) {
+                    foreach ($b['playingPartner'][$pl]['stats'] as $campo=>$valor) {
                         setPlayerStat($pl, $campo, $valor);
                     }
                     header('Location: battle.php?step=turn');
                 exit;
                 case 'end_partner':
-                    if (!empty($_SESSION['battle']['statsBackup'][$pl])) {
-                      foreach ($_SESSION['battle']['statsBackup'][$pl] as $campo => $valor) {
+                    if (!empty($b['statsBackup'][$pl])) {
+                      foreach ($b['statsBackup'][$pl] as $campo => $valor) {
                         setPlayerStat($pl, $campo, $valor);
                       }
-                      unset($_SESSION['battle']['statsBackup'][$pl]);
+                      unset($b['statsBackup'][$pl]);
                     }
-                    unset($_SESSION['battle']['statsBackup'][$pl]);
-                    unset($_SESSION['battle']['playingPartner'][$pl]);
+                    unset($b['statsBackup'][$pl]);
+                    unset($b['playingPartner'][$pl]);
                     header('Location: battle.php?step=turn');
                 exit;
 
 
+
                 case 'fim':
                     header('Location: battle.php?step=final');
+                    unset($b['playingAlly']);
+                    $b['needs_reload'] = true;
                     $b['init_index']++;
-                    unset($_SESSION['battle']['playingAlly']);
-                    $_SESSION['battle']['needs_reload'] = true;
                 exit;
+
 
 
                 default:
@@ -1155,10 +1205,10 @@ JS;
                         }
                     }
                     if (isset($partialStats[$pl]['efeito'])) {
-                        $_SESSION['battle']['notes'][$pl]['efeito'] = $partialStats[$pl]['efeito'];
+                        $b['notes'][$pl]['efeito'] = $partialStats[$pl]['efeito'];
                     }
                     if (isset($partialStats[$pl]['posição'])) {
-                        $_SESSION['battle']['notes'][$pl]['posição'] = $partialStats[$pl]['posição'];
+                        $b['notes'][$pl]['posição'] = $partialStats[$pl]['posição'];
                     }
                 }
             }
@@ -1167,8 +1217,6 @@ JS;
 
     // 5) Tela Final
     case 'final':
-        $b       = &$_SESSION['battle'];
-        $players = $b['players'];
 
         if (!empty($b['orig'])) {
             foreach ($b['orig'] as $pl => $origStats) {
@@ -1179,7 +1227,7 @@ JS;
             $b['orig'] = [];
         }
 
-        // 2) Exibe o formulário de resumo final
+        // formulário de resumo final
         echo '<h1>Resumo da Batalha</h1>';
         echo '<form method="post" action="battle.php?step=save_final">';
         foreach ($players as $pl) {
@@ -1206,9 +1254,9 @@ JS;
             echo '</fieldset>';
         }
         // Reseta sessão de batalha
-        $_SESSION['battle']['init_index'] = 0;
-        $_SESSION['battle']['round']      = 1;
-        $_SESSION['battle']['notes']      = [];
+        $b['init_index'] = 0;
+        $b['round']      = 1;
+        $b['notes']      = [];
         echo '<button type="submit">Salvar Alterações</button> '
            . '<a href="index.php">Nova Batalha</a></form>';
     exit;
@@ -1229,11 +1277,11 @@ JS;
             echo '<p>Alterações salvas com sucesso!</p>';
             echo '<p><a href="index.php">Nova Batalha</a></p>';
         }
-        exit;
+    exit;
 
     default:
         header('Location: battle.php');
-        exit;
+    exit;
 
 
 }      

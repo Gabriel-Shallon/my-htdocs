@@ -1,19 +1,9 @@
 <?php
 
-// traitList.php
+include_once 'generalFuncs.php';
+include_once 'battleFuncs.php';
+$pdo = conecta();
 
-require_once 'func.php';
-
-function slugify(string $str): string {
-    if (class_exists('Normalizer')) {
-        $str = Normalizer::normalize($str, Normalizer::FORM_D);
-    }
-    $str = preg_replace('/\pM+/u', '', $str);
-    $str = iconv('UTF-8', 'ASCII//TRANSLIT//IGNORE', $str);
-    $str = preg_replace('/[^A-Za-z0-9 ]/', '', $str);
-    $str = strtolower(str_replace(' ', '_', $str));
-    return $str;
-}
 
 function listPlayerTraits(string $player): array {
     $pdo = conecta();
