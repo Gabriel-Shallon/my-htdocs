@@ -17,10 +17,10 @@ if (!isset($_SESSION['battle'])) {
 }
 $b = &$_SESSION['battle'];
 
+
 // Passos
 $step = $_GET['step'] ?? 'select';
 switch ($step) {
-
 
     // 1) Seleção de players
     case 'select':
@@ -61,9 +61,10 @@ switch ($step) {
     // 2) Iniciativa
     case 'initiative':
         $rolls = $_POST['rolls'] ?? [];
-
+        
         if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-            foreach ($b['players'] as $i => $pl) {    
+            foreach ($b['players'] as $i => $pl) { 
+                syncEquipBuffs($pl);  
                 if (!isset($b['orig'][$pl])) {
                     $b['orig'][$pl] = [];
                     foreach (['F', 'H', 'R', 'A', 'PdF'] as $s) {
@@ -124,15 +125,10 @@ switch ($step) {
         header('Location: battle.php?step=turn');
         exit;
 
+
         // 3) initiative atual
     case 'turn':
-
-        if (!empty($b['needs_reload'])) {
-            $b['needs_reload'] = false;
-            echo '<script>window.location.reload();</script>';
-            exit;
-        }
-
+        
         $order = $b['order'];
         if (count($order) === 0) {
             echo "<p>Nenhum lutador na batalha.</p>";
@@ -144,8 +140,12 @@ switch ($step) {
         } else {
             $cur = $order[$b['init_index'] % count($order)];
         }
-
-
+          
+        if (!empty($b['needs_reload'])) {
+            unset($b['needs_reload']);
+            header("Refresh:0");
+        }
+        syncEquipBuffs($cur);
         $stats = getPlayer($cur);
         $notes = array_merge(
             ['efeito' => '', 'posicao' => '', 'concentrado' => 0, 'draco_active' => false, 'incorp_active' => false],
@@ -154,10 +154,19 @@ switch ($step) {
         $b['notes'][$cur] = $notes;
         $maxMulti = 1 + intdiv(max($stats['H'], 0), 2);
         $isIncorp = ! empty($notes['incorp_active']);
+        
 
+        if (!empty($b['notes'][$cur]['use_pv'])){
+            $efeitoUsePV = "\nUsando PVs invés de PMs.";
+            if (strpos($b['notes'][$cur]['efeito'], trim($efeitoUsePV)) === false) {
+                $b['notes'][$cur]['efeito'] .= $efeitoUsePV;
+            }
+        } else {
+            $b['notes'][$cur]['efeito'] = removeEffect($b['notes'][$cur]['efeito'], ['Usando PVs invés de PMs.']);
+        }
 
-
-        if ($notes['draco_active']) {
+        if ($b['notes'][$cur]['draco_active'] && !empty($b['notes'][$cur]['draco_flag'])) {
+            unset($b['notes'][$cur]['draco_flag']);
             if (!spendPM($cur, 1)) {
                 draconificacao($cur, false);
                 $b['notes'][$cur]['draco_active'] = false;
@@ -166,6 +175,8 @@ switch ($step) {
                     $b['notes'][$cur]['efeito'] .= $efeitoDraco;
                 }
             }
+        } else {
+            $b['notes'][$cur]['efeito'] = removeEffect($b['notes'][$cur]['efeito'], ['Draconificação desativada (PM esgotado) e Instável.']);
         }
 
         if (!empty($notes['fusao_active'])) {
@@ -182,16 +193,35 @@ switch ($step) {
 
         if (!empty($notes['extra_energy_next'])) {
             energiaExtra($cur);
-            $efeitoEnergia = "\nEnergia extra aplicada: PVs restaurados ao máximo.";
-            if (strpos($b['notes'][$cur]['efeito'], trim($efeitoEnergia)) === false) {
-                $b['notes'][$cur]['efeito'] .= $efeitoEnergia;
-            }
+            $b['notes'][$cur]['efeito'] .= "\nEnergia extra aplicada: PVs restaurados ao máximo.";
             unset($b['notes'][$cur]['extra_energy_next']);
         } else {
             $b['notes'][$cur]['efeito'] = removeEffect($b['notes'][$cur]['efeito'], ['Energia extra aplicada: PVs restaurados ao máximo.']);
         }
 
-        // Efeitos estáticos
+        if (!empty($notes['magia_extra_next'])) {
+            magiaExtra($cur, 'apply');
+            $b['notes'][$cur]['efeito'] .= "\nMagia extra aplicada: PMs restaurados ao máximo.";
+            unset($b['notes'][$cur]['magia_extra_next']);
+        } else {
+            $b['notes'][$cur]['efeito'] = removeEffect($b['notes'][$cur]['efeito'], ['Magia extra aplicada: PMs restaurados ao máximo.']);
+        }
+
+        if (!empty($b['notes'][$cur]['invisivel']) && !empty($b['notes'][$cur]['invisivel_flag'])){
+            unset($b['notes'][$cur]['invisivel_flag']);
+            if (!spendPM($cur, 1)){
+                unset($b['notes'][$cur]['invisivel']);
+                $efeitoInvisibilidade = "\nInvisibilidade desativada por falta de PMs.";
+                if (strpos($b['notes'][$cur]['efeito'], trim($efeitoInvisibilidade )) === false) {
+                    $b['notes'][$cur]['efeito'] .= $efeitoInvisibilidade;
+                }
+                $b['notes'][$cur]['efeito'] = removeEffect($b['notes'][$cur]['efeito'], ['Você está invisível.']);
+            }
+        } else if(empty($notes['invisivel'])){
+            $b['notes'][$cur]['efeito'] = removeEffect($b['notes'][$cur]['efeito'], ['Você está invisível.']);
+        }
+
+
         if (in_array('furia', listPlayerTraits($cur), true)) {
             $curPV = getPlayerStat($cur, 'PV');
             $curR  = getPlayerStat($cur, 'R');
@@ -204,6 +234,7 @@ switch ($step) {
             }
         }
 
+        // Efeitos estáticos
         if (in_array('invulnerabilidade_fogo', listPlayerTraits($cur), true)) {
             $efeitoInvuln = "\nInvulnerabilidade a fogo (dano por fogo dividido por 10).";
             if (strpos($b['notes'][$cur]['efeito'], trim($efeitoInvuln)) === false) {
@@ -247,16 +278,16 @@ switch ($step) {
         }
 
         if (in_array('aceleracao_i', listPlayerTraits($cur), true)) {
-            $efeitoAcel = "\nAceleração I: H +1 situações de perseguição/fuga & Movimento extra.";
-            if (strpos($b['notes'][$cur]['efeito'], trim($efeitoAcel)) === false) {
-                $b['notes'][$cur]['efeito'] .= $efeitoAcel;
+            $efeitoAceli = "\nAceleração I: H +1 situações de perseguição/fuga & Movimento extra.";
+            if (strpos($b['notes'][$cur]['efeito'], trim($efeitoAceli)) === false) {
+                $b['notes'][$cur]['efeito'] .= $efeitoAceli;
             }
         }  
 
         if (in_array('aceleracao_ii', listPlayerTraits($cur), true)) {
-            $efeitoAcel = "\nAceleração I: H +1 situações de perseguição/fuga & Movimento extra.";
-            if (strpos($b['notes'][$cur]['efeito'], trim($efeitoAcel)) === false) {
-                $b['notes'][$cur]['efeito'] .= $efeitoAcel;
+            $efeitoAcelii = "\nAceleração II: H +2 situações de perseguição/fuga & 2 Movimentos extras ou 1 ação extra.";
+            if (strpos($b['notes'][$cur]['efeito'], trim($efeitoAcelii)) === false) {
+                $b['notes'][$cur]['efeito'] .= $efeitoAcelii;
             }
         }
 
@@ -289,88 +320,142 @@ switch ($step) {
         }
 
         if (in_array('pericia_manipulacao', listPlayerTraits($cur), true)) {
-            $efeitoFaro = "\nManipulação: Habilidades de manipulação, hipnose, interrogatório, intimidação, lábia e sedução";
-            if (strpos($b['notes'][$cur]['efeito'], trim($efeitoFaro)) === false) {
-                $b['notes'][$cur]['efeito'] .= $efeitoFaro;
+            $efeitoManipul = "\nManipulação: Habilidades de manipulação, hipnose, interrogatório, intimidação, lábia e sedução";
+            if (strpos($b['notes'][$cur]['efeito'], trim($efeitoManipul)) === false) {
+                $b['notes'][$cur]['efeito'] .= $efeitoManipul;
             }
         }
 
         if (in_array('sentido_de_perigo', listPlayerTraits($cur), true)) {
-            $efeitoFaro = "\nSentido de Perigo: Capaz de pressentir o perigo, assim nunca pode ser surpreendido";
-            if (strpos($b['notes'][$cur]['efeito'], trim($efeitoFaro)) === false) {
-                $b['notes'][$cur]['efeito'] .= $efeitoFaro;
-            }
-        }
-
-        if (in_array('senso_de_direcao', listPlayerTraits($cur), true)) {
-            $efeitoFaro = "\nSenso de Direção: Tem um ótimo senso de direção e consegue voltar por qualquer caminho de onde tenha vindo.";
-            if (strpos($b['notes'][$cur]['efeito'], trim($efeitoFaro)) === false) {
-                $b['notes'][$cur]['efeito'] .= $efeitoFaro;
-            }
-        }
-
-        if (in_array('furto', listPlayerTraits($cur), true)) {
-            $efeitoFaro = "\nFurto: Tem facilidade em furtar objetos sem ser detectado.";
-            if (strpos($b['notes'][$cur]['efeito'], trim($efeitoFaro)) === false) {
-                $b['notes'][$cur]['efeito'] .= $efeitoFaro;
+            $efeitoSentidoPerig = "\nSentido de Perigo: Capaz de pressentir o perigo, assim nunca pode ser surpreendido";
+            if (strpos($b['notes'][$cur]['efeito'], trim($efeitoSentidoPerig)) === false) {
+                $b['notes'][$cur]['efeito'] .= $efeitoSentidoPerig;
             }
         }
 
         if (in_array('domar', listPlayerTraits($cur), true)) {
-            $efeitoFaro = "\nDomar: Tem facilidade domesticar animais selvagens.";
-            if (strpos($b['notes'][$cur]['efeito'], trim($efeitoFaro)) === false) {
-                $b['notes'][$cur]['efeito'] .= $efeitoFaro;
-            }
-        }
-
-        if (in_array('rastreio', listPlayerTraits($cur), true)) {
-            $efeitoFaro = "\nRasstreio: Consegue rastrear pessoas facilmente.";
-            if (strpos($b['notes'][$cur]['efeito'], trim($efeitoFaro)) === false) {
-                $b['notes'][$cur]['efeito'] .= $efeitoFaro;
+            $efeitoDomar = "\nDomar: Tem facilidade domesticar animais selvagens.";
+            if (strpos($b['notes'][$cur]['efeito'], trim($efeitoDomar)) === false) {
+                $b['notes'][$cur]['efeito'] .= $efeitoDomar;
             }
         }
 
         if (in_array('furtividade', listPlayerTraits($cur), true)) {
-            $efeitoFaro = "\nFurtividade: Consegue se esconder facilmente, e agir de maneira quase que silenciosa.";
-            if (strpos($b['notes'][$cur]['efeito'], trim($efeitoFaro)) === false) {
-                $b['notes'][$cur]['efeito'] .= $efeitoFaro;
-            }
-        }
-
-        if (in_array('arrombamento', listPlayerTraits($cur), true)) {
-            $efeitoFaro = "\nArrombamento: Facilidade em destrancar fechaduras e cadeados.";
-            if (strpos($b['notes'][$cur]['efeito'], trim($efeitoFaro)) === false) {
-                $b['notes'][$cur]['efeito'] .= $efeitoFaro;
+            $efeitoFurtividade = "\nFurtividade: Consegue se esconder facilmente, e agir de maneira quase que silenciosa.";
+            if (strpos($b['notes'][$cur]['efeito'], trim($efeitoFurtividade)) === false) {
+                $b['notes'][$cur]['efeito'] .= $efeitoFurtividade;
             }
         }
 
         if (in_array('emocoes', listPlayerTraits($cur), true)) {
-            $efeitoFaro = "\nEmoções: Consegue se fingir de coitadinho e controlar emocionalmente outros com facilidade.";
-            if (strpos($b['notes'][$cur]['efeito'], trim($efeitoFaro)) === false) {
-                $b['notes'][$cur]['efeito'] .= $efeitoFaro;
+            $efeitoEmocoes = "\nEmoções: Consegue se fingir de coitadinho e controlar emocionalmente outros com facilidade.";
+            if (strpos($b['notes'][$cur]['efeito'], trim($efeitoEmocoes)) === false) {
+                $b['notes'][$cur]['efeito'] .= $efeitoEmocoes;
             }
         }
 
         if (in_array('inimigo_humanos', listPlayerTraits($cur), true)) {
-            $efeitoFaro = "\nInimigo (Humanos): H+2 quando lutando contra humanos.";
-            if (strpos($b['notes'][$cur]['efeito'], trim($efeitoFaro)) === false) {
-                $b['notes'][$cur]['efeito'] .= $efeitoFaro;
+            $efeitoInimigoHuman = "\nInimigo (Humanos): H+2 quando lutando contra humanos.";
+            if (strpos($b['notes'][$cur]['efeito'], trim($efeitoInimigoHuman)) === false) {
+                $b['notes'][$cur]['efeito'] .= $efeitoInimigoHuman;
             }
         }
 
         if (in_array('item_de_poder', listPlayerTraits($cur), true)) {
-            $efeitoFaro = "\nItem de Poder: Reduz gasto de PM em 2, custando no minimo 1, enquanto estiver com item de poder.";
-            if (strpos($b['notes'][$cur]['efeito'], trim($efeitoFaro)) === false) {
-                $b['notes'][$cur]['efeito'] .= $efeitoFaro;
+            $efeitoItemPod = "\nItem de Poder: Reduz gasto de PM em 2, custando no minimo 1, enquanto estiver com item de poder.";
+            if (strpos($b['notes'][$cur]['efeito'], trim($efeitoItemPod)) === false) {
+                $b['notes'][$cur]['efeito'] .= $efeitoItemPod;
             }
         }
 
         if (in_array('resistencia_a_magia', listPlayerTraits($cur), true)) {
-            $efeitoFaro = "\nResistência a Magia: Recebe +2 em testes de defesa contra magia.";
-            if (strpos($b['notes'][$cur]['efeito'], trim($efeitoFaro)) === false) {
-                $b['notes'][$cur]['efeito'] .= $efeitoFaro;
+            $efeitoResistenMagia = "\nResistência a Magia: Recebe +2 em testes de defesa contra magia.";
+            if (strpos($b['notes'][$cur]['efeito'], trim($efeitoResistenMagia)) === false) {
+                $b['notes'][$cur]['efeito'] .= $efeitoResistenMagia;
             }
         }
+
+        if (in_array('terreno_desfavoravel', listPlayerTraits($cur), true)) {
+            $efeitoTerrDesfavAgua = "\nTerreno Desfavorável (Água): H-2 em ambientes encharcados.";
+            if (strpos($b['notes'][$cur]['efeito'], trim($efeitoTerrDesfavAgua)) === false) {
+                $b['notes'][$cur]['efeito'] .= $efeitoTerrDesfavAgua;
+            }
+        }
+
+        if (in_array('fetiche', listPlayerTraits($cur), true)) {
+            $efeitoFetiche = "\nFetiche: Não pode fazer mágica sem um objeto especial.";
+            if (strpos($b['notes'][$cur]['efeito'], trim($efeitoFetiche)) === false) {
+                $b['notes'][$cur]['efeito'] .= $efeitoFetiche;
+            }
+        }
+
+        if (in_array('grito_arcano', listPlayerTraits($cur), true)) {
+            $efeitoGritoArcano = "\nGrito Arcano: Sempre que lança uma magia a profere gritando.";
+            if (strpos($b['notes'][$cur]['efeito'], trim($efeitoGritoArcano)) === false) {
+                $b['notes'][$cur]['efeito'] .= $efeitoGritoArcano;
+            }
+        }
+
+        if (in_array('ponto_fraco', listPlayerTraits($cur), true)) {
+            $efeitoPontoFraco = "\nPonto Fraco: Se um inimigo sabe seu ponto fraco ele ganha H+1 lutando contra você.";
+            if (strpos($b['notes'][$cur]['efeito'], trim($efeitoPontoFraco)) === false) {
+                $b['notes'][$cur]['efeito'] .= $efeitoPontoFraco;
+            }
+        }
+
+        if (in_array('teleporte', listPlayerTraits($cur), true)) {
+            $efeitoTelep = "\nTeleporte: H+3 para esquiva. Alcance do teleporte = ".getPlayerStat($cur, 'H')*10;
+            if (strpos($b['notes'][$cur]['efeito'], trim($efeitoTelep)) === false) {
+                $b['notes'][$cur]['efeito'] .= $efeitoTelep;
+            }
+        } else {
+            $b['notes'][$cur]['efeito'] = removeEffect($b['notes'][$cur]['efeito'], ["Teleporte: H+3 para esquiva. Alcance do teleporte = ".getPlayerStat($cur, 'H')*10]);
+        }
+
+        if (in_array('armadura_extra_fogo', listPlayerTraits($cur), true)) {
+            $efeitoPontoFraco = "\nArmadura Extra (Fogo): A x2 contra ataques de fogo.";
+            if (strpos($b['notes'][$cur]['efeito'], trim($efeitoPontoFraco)) === false) {
+                $b['notes'][$cur]['efeito'] .= $efeitoPontoFraco;
+            }
+        }
+
+        if (in_array('magia_branca', listPlayerTraits($cur), true)) {
+            $efeitoMagiaBranca = "\nMagia Branca.";
+            if (strpos($b['notes'][$cur]['efeito'], trim($efeitoMagiaBranca)) === false) {
+                $b['notes'][$cur]['efeito'] .= $efeitoMagiaBranca;
+            }
+        }
+
+        if (in_array('magia_elemental', listPlayerTraits($cur), true)) {
+            $efeitoMagiaElemental = "\nMagia elemental.";
+            if (strpos($b['notes'][$cur]['efeito'], trim($efeitoMagiaElemental)) === false) {
+                $b['notes'][$cur]['efeito'] .= $efeitoMagiaElemental;
+            }
+        }
+
+        if (in_array('magia_negra', listPlayerTraits($cur), true)) {
+            $efeitoMagiaNegra = "\nMagia negra.";
+            if (strpos($b['notes'][$cur]['efeito'], trim($efeitoMagiaNegra)) === false) {
+                $b['notes'][$cur]['efeito'] .= $efeitoMagiaNegra;
+            }
+        }
+
+        if (in_array('arcano', listPlayerTraits($cur), true)) {
+            $efeitoArcano = "\nArcano: Pode utilizar magias de todas as escolas de magia.";
+            if (strpos($b['notes'][$cur]['efeito'], trim($efeitoArcano)) === false) {
+                $b['notes'][$cur]['efeito'] .= $efeitoArcano;
+            }
+        }
+
+        if (in_array('pericia_medicina', listPlayerTraits($cur), true)) {
+            $efeitoMedicina = "\nPericia Medicina: Conhecimentos gerais sobre medicina, primeiros socorros, cirurgia, etc.";
+            if (strpos($b['notes'][$cur]['efeito'], trim($efeitoMedicina)) === false) {
+                $b['notes'][$cur]['efeito'] .= $efeitoMedicina;
+            }
+        }
+
+
+
 
         // Limpa os espaços em branco.
         $b['notes'][$cur]['efeito'] = ltrim($b['notes'][$cur]['efeito']);
@@ -465,6 +550,10 @@ switch ($step) {
             echo '<option value="extra_energy">Usar Energia Extra</option>';
         }
 
+        if (in_array('magia_extra', listPlayerTraits($cur), true) && !$concentrando && !$agarrado && !$agarrando) {
+            echo '<option value="magia_extra">Usar Magia Extra</option>';
+        }
+
         if (in_array('aliado', listPlayerTraits($cur), true) && empty($b['playingAlly']) && empty($b['playingPartner'][$cur]) && !$cocentrado) {
             echo '<option value="use_ally">Jogar com Aliado</option>';
         }
@@ -490,17 +579,20 @@ switch ($step) {
             echo '<option value="se_soltar_agarrao">Se soltar do agarrão (' . $b['agarrao'][$cur]['agarrado'] . ')</option>';
         }
 
-        if (in_array('aceleracao_ii', listPlayerTraits($cur), true) && empty($b['notes'][$cur]['aceleracao_ii_active'])) {
-            echo '<option value="activate_aceleracao_ii">Usar Aceleração II (+1 ação)(2PM)</option>';
-        }        
+        if (in_array('invisibilidade', listPlayerTraits($cur), true) && empty($b['notes'][$cur]['invisivel'])) {
+            echo '<option value="activate_invisibilidade">Ficar invisível (1PM/turno)</option>';
+        }      
+        
+        if (in_array('invisibilidade', listPlayerTraits($cur), true) && !empty($b['notes'][$cur]['invisivel'])) {
+            echo '<option value="deactivate_invisibilidade">Voltar a ser visível</option>';
+        }  
 
         if (!$concentrando && !$agarrado && !$agarrando) {
             echo '<option value="ataque">Atacar</option>';
             echo '<option value="multiple">Múltiplo</option>';
 
 
-            if (
-                in_array('tiro_multiplo', listPlayerTraits($cur)) ||
+            if (in_array('tiro_multiplo', listPlayerTraits($cur)) ||
                 (in_array('tiro_multiplo', listPlayerTraits(getAlliePlayer($cur))) &&
                     in_array('ligacao_natural', listPlayerTraits(getAlliePlayer($cur)))) ||
                 (!empty($b['playingPartner'][$cur]) &&
@@ -509,8 +601,7 @@ switch ($step) {
                 echo '<option value="tiro_multiplo">Tiro Múltiplo</option>';
             }
 
-            if (
-                in_array('agarrao', listPlayerTraits($cur)) ||
+            if (in_array('agarrao', listPlayerTraits($cur)) ||
                 (in_array('agarrao', listPlayerTraits(getAlliePlayer($cur))) &&
                     in_array('ligacao_natural', listPlayerTraits(getAlliePlayer($cur)))) ||
                 (!empty($b['playingPartner'][$cur]) &&
@@ -519,8 +610,7 @@ switch ($step) {
                 echo '<option value="agarrao">Agarrão</option>';
             }
 
-            if (
-                in_array('ataque_debilitante', listPlayerTraits($cur)) ||
+            if (in_array('ataque_debilitante', listPlayerTraits($cur)) ||
                 (in_array('ataque_debilitante', listPlayerTraits(getAlliePlayer($cur))) &&
                     in_array('ligacao_natural', listPlayerTraits(getAlliePlayer($cur)))) ||
                 (!empty($b['playingPartner'][$cur]) &&
@@ -585,23 +675,27 @@ switch ($step) {
 
         // Ataque múltiplo
         if ($hasTargets) {
-            echo '<div id="atkMulti" style="display:none"><fieldset><legend>Múltiplo</legend>'
-                . 'Tipo: <select name="atkTypeMulti"><option>F</option><option>PdF</option></select><br>'
-                . 'Tipo de Dano: <select name="dmgType">'; 
-            selectDmgType($cur); 
-            echo '</select><br>'
-                . 'Quantidade (2-' . $maxMulti . '): <input id="quant" type="number" name="quant" '
-                . 'min="2" max="' . $maxMulti . '" value="2"><br>'
-                . 'Alvo: <select name="targetMulti">';
-            selectTarget($cur, $validTargets);
-            echo '</select><br>'
-                . 'Reação: <select id="defM" name="defesaMulti">'
-                . '<option value="defender">Defender</option>'
-                . '<option id="opt-esquiva-multi" value="defender_esquiva">Esquivar</option>'
-                . '<option value="indefeso">Indefeso</option>'
-                . '</select><br>'
-                . '<div id="dCont"></div>'
-                . '</fieldset></div>';
+                echo '<div id="atkMulti" style="display:none"><fieldset><legend>Múltiplo</legend>';
+                if ($maxMulti >= 2){
+                    echo 'Tipo: <select name="atkTypeMulti"><option>F</option><option>PdF</option></select><br>'
+                        . 'Tipo de Dano: <select name="dmgType">'; 
+                    selectDmgType($cur); 
+                    echo '</select><br>'
+                        . 'Quantidade (2-' . $maxMulti . '): <input id="quant" type="number" name="quant" '
+                        . 'min="2" max="' . $maxMulti . '" value="2"><br>'
+                        . 'Alvo: <select name="targetMulti">';
+                    selectTarget($cur, $validTargets);
+                    echo '</select><br>'
+                        . 'Reação: <select id="defM" name="defesaMulti">'
+                        . '<option value="defender">Defender</option>'
+                        . '<option id="opt-esquiva-multi" value="defender_esquiva">Esquivar</option>'
+                        . '<option value="indefeso">Indefeso</option>'
+                        . '</select><br>'
+                        . '<div id="dCont"></div>';
+                } else {
+                    echo 'Este personagem não tem H o suficiente para usar ataque múltiplo.';
+                }
+                echo '</fieldset></div>';
         }
 
         //Tiro múltiplo
@@ -945,13 +1039,12 @@ JS;
                 $b['notes'][$pl]['concentrado'] = (int)($_POST['concentrado'] ?? 0);
             }
             $origInitIndex = $b['init_index'];
-
+            syncEquipBuffs($pl); 
             switch ($_POST['action'] ?? '') {
 
                 case 'pass':
                     $out = "<strong>{$pl}</strong> passou seu turno.";
                     unset($b['playingAlly']);
-                    $b['needs_reload'] = true;
                     $b['init_index']++;
                     break;
 
@@ -971,7 +1064,6 @@ JS;
                         . applyDamage($pl, $tgt, $dano, $tipo, $out);
 
                     unset($b['playingAlly']);
-                    $b['needs_reload'] = true;
                     $b['init_index']++;
                     break;
 
@@ -992,7 +1084,6 @@ JS;
                     $out .= applyDamage($pl, $tgt, $dano, $tipo, $out);
 
                     unset($b['playingAlly']);
-                    $b['needs_reload'] = true;
                     $b['init_index']++;
                     break;
 
@@ -1012,7 +1103,6 @@ JS;
                     applyDamage($pl, $tgt, $dano, $tipo, $out);
 
                     unset($b['playingAlly']);
-                    $b['needs_reload'] = true;
                     $b['init_index']++;
                     break;
 
@@ -1025,7 +1115,6 @@ JS;
                     }
                     $out = "<strong>{$pl}</strong> iniciou/concentra (rodada atual: +{$b['notes'][$pl]['concentrado']})";
                     unset($b['playingAlly']);
-                    $b['needs_reload'] = true;
                     $b['init_index']++;
                     break;
                 case 'release_concentrar':
@@ -1044,7 +1133,6 @@ JS;
 
                     $b['notes'][$pl]['concentrado'] = 0;
                     unset($b['playingAlly']);
-                    $b['needs_reload'] = true;
                     $b['init_index']++;
                     break;
 
@@ -1076,7 +1164,6 @@ JS;
                         unset($b['statsBackup'][$pl]);
                         unset($b['playingPartner'][$pl]);
                     }
-                    $b['needs_reload'] = true;
                     $b['init_index']++;
                     break;
                 case 'soltar_agarrao':
@@ -1108,9 +1195,8 @@ JS;
                         $out = "<strong>{$pl}</strong> se soltou do agarrão de <strong>{$tgt}</strong>!";
                     } else {
                         $out = "<strong>{$pl}</strong> tentou se soltar do agarrão de <strong>{$tgt}</strong> mas falhou!";
-                    }
+                    } 
                     unset($b['playingAlly']);
-                    $b['needs_reload'] = true;
                     $b['init_index']++;
                     break;
 
@@ -1136,7 +1222,6 @@ JS;
                         . $result;
 
                     unset($b['playingAlly']);
-                    $b['needs_reload'] = true;
                     $b['init_index']++;
                     break;
 
@@ -1158,16 +1243,8 @@ JS;
                 case 'deactivate_draco':
                     draconificacao($pl, false);
                     $b['notes'][$pl]['draco_active'] = false;
-                    $out = "<strong>{$pl}</strong> desativou Draconificação e ficou instável.";
-                    $linhas = explode("\n", $b['notes'][$pl]['efeito']);
-                    $linhas_filtradas = array_filter($linhas, function ($linha) {
-                        return ! in_array(trim($linha), [
-                            'Dracônico: (+1PdF,+1R,+2H; Voo={$voo}m/s)'
-                        ], true);
-                    });
-                    $b['notes'][$pl]['efeito'] = implode("\n", $linhas_filtradas);
+                    $out = "<strong>{$pl}</strong> desativou draconificação.";
                     unset($b['playingAlly']);
-                    $b['needs_reload'] = true;
                     $b['init_index']++;
                     break;
 
@@ -1178,7 +1255,7 @@ JS;
                     if ($pm >= 3) {
                         fusaoEterna($pl, $b['orig'][$pl]['PdF'], true);
                         $b['notes'][$pl]['fusao_active'] = true;
-                        $out = "<strong>{$pl}</strong> ativou Fusão Eterna (F = PdFx2; PdF = 0; -3 PMs.)";
+                        $out = "<strong>{$pl}</strong> ativou Fusão Eterna (F = ".($b['orig'][$pl]['PdF']*2)."; PdF = 0; -3 PMs.)";
                         $b['notes'][$pl]['efeito'] .= "\nForma Demoníaca:";
                         $b['notes'][$pl]['efeito'] .= "\nInvulnerável a fogo.(dano de fogo dividido por 10)";
                         $b['notes'][$pl]['efeito'] .= "\nVulnerável a Sônico e Elétrico.(Ignora sua armadura na FD)";
@@ -1243,12 +1320,22 @@ JS;
                         $b['notes'][$pl]['extra_energy_next'] = true;
                         $out = "<strong>{$pl}</strong> irá recuperar todos seus PVs até o próximo turno.";
                         unset($b['playingAlly']);
-                        $b['needs_reload'] = true;
                         $b['init_index']++;
                     } else {
                         $out = "<strong>{$pl}</strong> não tem PMs o suficiente.";
                     }
                     break;
+
+                case 'magia_extra':
+                    if (magiaExtra($pl, 'spend')) {
+                        $b['notes'][$pl]['magia_extra_next'] = true;
+                        $out = "<strong>{$pl}</strong> irá recuperar todos seus PMs até o próximo turno.";
+                        unset($b['playingAlly']);
+                        $b['init_index']++;
+                    } else {
+                        $out = "<strong>{$pl}</strong> não está perto da morte para usar Magia Extra.";
+                    }
+                    break;                    
 
 
 
@@ -1310,16 +1397,31 @@ JS;
                     }
                     break;
 
+                case 'activate_invisibilidade':
+                    if (spendPM($pl, 1)) { 
+                        setPlayerStat($pl, 'PM', getPlayerStat($pl, 'PM')+1);
+                        $b['notes'][$pl]['invisivel'] = true;
+                        $efeitoInvisibilidade = "\nVocê está invisível.";
+                        if (strpos($b['notes'][$pl]['efeito'], trim($efeitoInvisibilidade )) === false) {
+                            $b['notes'][$pl]['efeito'] .= $efeitoInvisibilidade;
+                        }
+                        $out = "<strong>{$pl}</strong> está invisível (1PM/turno)";
+                    } else {
+                        $out = "<strong>{$pl}</strong> não tem PMs suficientes para usar Invisibilidade.";
+                    }
+                    break;
+                case 'deactivate_invisibilidade':
+                    unset($b['notes'][$pl]['invisivel']);
+                    $out = "<strong>{$pl}</strong> está visível novamente.";
+                    break;
 
 
 
                 case 'fim':
                     header('Location: battle.php?step=final');
                     unset($b['playingAlly']);
-                    $b['needs_reload'] = true;
                     $b['init_index']++;
                     exit;
-
 
 
                 default:
@@ -1329,14 +1431,24 @@ JS;
 
 
 
+
+
+            if ($b['notes'][$pl]['draco_active'] && empty($b['notes'][$pl]['draco_flag'])){
+                $b['notes'][$pl]['draco_flag'] = true;
+            }
+            if (!empty($b['notes'][$pl]['invisivel']) && empty($b['notes'][$pl]['invisivel_flag'])){
+                $b['notes'][$pl]['invisivel_flag'] = true;
+            }
+
+
             if ($origInitIndex != $b['init_index'] && !empty($b['notes'][$pl]['aceleracao_ii_active'])){
                 $b['init_index']--;
                 unset($b['notes'][$pl]['aceleracao_ii_active']);
             }
 
+            $b['needs_reload'] = true;
 
             $total   = count($b['order']);
-
             if ($b['init_index'] % $total === 0) {
                 $b['round']++;
                 foreach ($b['notes'] as $player => &$note) {
@@ -1384,14 +1496,14 @@ JS;
         // 5) Tela Final
     case 'final':
 
-
-        foreach ($b['orig'] as $pl => $origStats) {
-            foreach ($origStats as $stat => $valor) {
-                setPlayerStat($pl, $stat, $valor);
+        if (!empty($b['orig'])){
+            foreach ($b['orig'] as $pl => $origStats) {
+                foreach ($origStats as $stat => $valor) {
+                    setPlayerStat($pl, $stat, $valor);
+                }
             }
+            unset($b['orig']);
         }
-        unset($b['orig']);
-
         // formulário de resumo final
         echo '<h1>Resumo da Batalha</h1>';
         echo '<form method="post" action="battle.php?step=save_final">';

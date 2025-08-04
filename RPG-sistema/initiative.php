@@ -1,7 +1,7 @@
 <?php
-// initiative.php - Calculadora de Iniciativa 3D&T com seleção checkbox e navegação
-session_start();
-include 'inc/func.php';
+// initiative.php - Calculadora de Iniciativa 3D&T
+
+include 'inc/traitFuncs.php';
 
 // Lista todos os jogadores
 $allPlayers = getAllPlayers();
@@ -9,21 +9,18 @@ $allPlayers = getAllPlayers();
 // Participantes escolhidos
 $participants = $_POST['participants'] ?? [];
 $orderResult = null;
+$step = 'select'; // Etapa inicial
 
-// Processa rolagens
-if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['step']) && $_POST['step'] === 'roll') {
-    $inic = [];
-    foreach ($participants as $nome) {
-        $H = (int) getPlayerStat($nome, 'H');
-        $dado = (int) ($_POST['dado'][$nome] ?? 0);
-        $inic[$nome] = ['total' => $H + $dado, 'H' => $H];
+if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    if (!empty($participants)) {
+        if (isset($_POST['roll_dice'])) {
+            $dados = $_POST['dado'] ?? [];
+            $orderResult = iniciativa($participants, $dados);
+            $step = 'result';
+        } else {
+            $step = 'roll';
+        }
     }
-    uasort($inic, function($a, $b) {
-        if ($b['total'] !== $a['total']) return $b['total'] <=> $a['total'];
-        if ($b['H'] !== $a['H']) return $b['H'] <=> $a['H'];
-        return rand(-1,1);
-    });
-    $orderResult = $inic;
 }
 ?>
 <!DOCTYPE html>
@@ -36,66 +33,67 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['step']) && $_POST['st
     form, table{width:100%;border:1px solid #ccc;padding:1em;margin-bottom:1em;}
     label{display:block;margin:.5em 0;}
     .inline {display:flex;align-items:center;}
-    .inline input {margin-right:.5em;}
+    .inline input[type=checkbox] {margin-right:.5em;}
     input[type=number]{width:60px;}
     th, td{padding:.4em;border:1px solid #ccc;text-align:left;}
     .nav {margin-top:1em;}
+    .formula {font-size: 0.8em; color: #555;}
   </style>
 </head>
 <body>
   <h1>Calculadora de Iniciativa</h1>
 
-  <!-- Etapa 1: seleção de participantes via checkboxes -->
-  <?php if (empty($participants) || (isset($_POST['step']) && $_POST['step'] !== 'roll')): ?>
-  <form method="post" action="initiative.php">
-    <input type="hidden" name="step" value="select">
-    <p>Selecione participantes:</p>
-    <?php foreach ($allPlayers as $p): 
+  <!-- Etapa 1: Seleção -->
+  <?php if ($step === 'select'): ?>
+  <form method="post">
+    <p>Selecione os participantes:</p>
+    <?php foreach ($allPlayers as $p):
       $n = htmlspecialchars($p['nome'], ENT_QUOTES);
-      $checked = in_array($n, $participants) ? ' checked' : '';
     ?>
       <label class="inline">
-        <input type="checkbox" name="participants[]" value="<?= $n ?>"<?= $checked ?> required>
-        <?= $n ?> (H = <?= getPlayerStat($n,'H') ?>)
+        <input type="checkbox" name="participants[]" value="<?= $n ?>">
+        <?= $n ?> (H = <?= (int)getPlayerStat($n,'H') ?>)
       </label>
     <?php endforeach; ?>
     <button type="submit">Continuar</button>
-    <div class="nav"><a href="index.php">Voltar ao Início</a></div>
+    <div class="nav"><a href="index.php">Voltar</a></div>
   </form>
   <?php endif; ?>
 
-  <!-- Etapa 2: rolagem de dados -->
-  <?php if (!empty($participants) && (!isset($_POST['step']) || $_POST['step'] === 'select')): ?>
-  <form method="post" action="initiative.php">
-    <input type="hidden" name="step" value="roll">
-    <?php foreach ($participants as $nome): ?>
-      <?php $H = (int)getPlayerStat($nome,'H'); ?>
+  <!-- Etapa 2: Rolagem -->
+  <?php if ($step === 'roll'): ?>
+  <form method="post">
+    <p>Insira os dados da rolagem:</p>
+    <?php foreach ($participants as $nome):
+        $safe_name = htmlspecialchars($nome, ENT_QUOTES);
+        $H = (int)getPlayerStat($nome,'H');
+    ?>
+      <input type="hidden" name="participants[]" value="<?= $safe_name ?>">
       <label class="inline">
-        <?= htmlspecialchars($nome,ENT_QUOTES) ?> (H = <?= $H ?>):
-        <input type="number" name="dado[<?= htmlspecialchars($nome,ENT_QUOTES) ?>]" required>
+        <?= $safe_name ?> (H = <?= $H ?>):
+        <input type="number" name="dado[]" min="1" max="6" required>
       </label>
     <?php endforeach; ?>
-    <?php foreach ($participants as $nome): ?>
-      <input type="hidden" name="participants[]" value="<?= htmlspecialchars($nome,ENT_QUOTES) ?>">
-    <?php endforeach; ?>
-    <button type="submit">Calcular Iniciativa</button>
-    <div class="nav"><a href="index.php">Voltar ao Início</a></div>
+    <button type="submit" name="roll_dice">Calcular Iniciativa</button>
+    <div class="nav"><a href="initiative.php">Voltar</a></div>
   </form>
   <?php endif; ?>
 
   <!-- Resultado -->
-  <?php if ($orderResult): ?>
+  <?php if ($step === 'result' && $orderResult): ?>
     <h2>Ordem de Iniciativa</h2>
     <table>
-      <tr><th>Posição</th><th>Nome</th><th>Total (H + Dado)</th><th>H</th></tr>
-      <?php $pos = 1; foreach ($orderResult as $nome => $data): ?>
+      <thead><tr><th>Pos.</th><th>Nome</th><th>Total</th><th>Cálculo</th></tr></thead>
+      <tbody>
+      <?php $pos = 1; foreach ($orderResult as $data): ?>
         <tr>
-          <td><?= $pos ?></td>
-          <td><?= htmlspecialchars($nome,ENT_QUOTES) ?></td>
-          <td><?= $data['total'] ?></td>
-          <td><?= $data['H'] ?></td>
+          <td><?= $pos++ ?></td>
+          <td><?= htmlspecialchars($data['nome'], ENT_QUOTES) ?></td>
+          <td><strong><?= $data['total'] ?></strong></td>
+          <td class="formula">(H: <?= $data['habilidade'] ?> + Dado: <?= $data['dado'] ?> + Bônus: <?= $data['bonus'] ?>)</td>
         </tr>
-      <?php $pos++; endforeach; ?>
+      <?php endforeach; ?>
+      </tbody>
     </table>
     <div class="nav">
       <a href="initiative.php">Nova Iniciativa</a> |

@@ -88,6 +88,13 @@
         ]);
     }
 
+    function getAllVulnerabilities(): array {
+        $pdo = conecta();
+        return $pdo->query("SELECT name FROM RPG.vulnerabilities ORDER BY name")->fetchAll(PDO::FETCH_COLUMN, 0);
+    }
+
+
+
 
     function addPlayerInvulnerability(string $playerName, string $invulnerabilityName){
         $pdo = conecta();
@@ -116,6 +123,12 @@
             ':invulnerabilityId' => $invulnerability['id']
         ]);
     }
+
+    function getAllInvulnerabilities(): array {
+        $pdo = conecta();
+        return $pdo->query("SELECT name FROM RPG.invulnerabilities ORDER BY name")->fetchAll(PDO::FETCH_COLUMN, 0);
+    }    
+
 
 
 
@@ -146,6 +159,16 @@
             ':extraArmorId' => $extraArmor['id']
         ]);
     }
+
+    function getAllExtraArmorTypes(): array {
+        $pdo = conecta();
+        return $pdo->query("SELECT name FROM RPG.extra_armor_types ORDER BY name")->fetchAll(PDO::FETCH_COLUMN, 0);
+    }
+
+
+
+
+
 
 
     function listPlayerVulnerabilities(string $playerName): array{
@@ -263,6 +286,10 @@
 
     //VANTAGENS//
 
+    
+    function resistenciaMagia ($player){
+        //atualizar quando houver magias
+    }
 
     function PMextra(string $player){
         setPlayerStat($player, 'PM_max', (getPlayerStat($player, 'PM_max')+10));
@@ -316,7 +343,7 @@
             $def = 'indefeso';
         }
         if ($def === 'defender_esquiva') {
-            $resultadoEsq = esquivaMulti($pl, $tgt, $dadoFD);
+            $resultadoEsq = esquivaMulti($pl, $tgt, $dadoFD, invisivel_debuff($b, $pl, $tgt, 'PdF'));
             if ($resultadoEsq === 'defender_esquiva_success') {
                 return 0;
             } else {
@@ -351,12 +378,14 @@
             addPlayerInvulnerability($player, 'Fogo');
             addPlayerVulnerability($player, 'Sônico');
             addPlayerVulnerability($player, 'Elétrico');
-            setPlayerStat($player, 'F', getPlayerStat($player, 'F')+getPlayerStat($player, 'PdF')*2);
+            addPlayerTrait($player,66, 'advantage');
+            setPlayerStat($player, 'F', getPlayerStat($player, 'PdF')*2);
             setPlayerStat($player, 'PdF', 0);
         } else {
             removePlayerInvulnerability($player, 'Fogo');
             removePlayerVulnerability($player, 'Sônico');
             removePlayerVulnerability($player, 'Elétrico');
+            removePlayerTrait($player,66, 'advantage');
             setPlayerStat($player, 'F', (getPlayerStat($player, 'F')-$PdFOriginal*2));
             setPlayerStat($player, 'PdF', $PdFOriginal);
         }
@@ -367,6 +396,20 @@
         setPlayerStat($player, 'PV', getPlayerStat($player, 'PV_max'));
     }
 
+
+
+
+    function addPlayerAlly(string $owner, string $allyName): bool {
+        $pdo = conecta();
+        $stmt = $pdo->prepare("INSERT IGNORE INTO RPG.allies (dono, aliado) VALUES (:owner, :ally)");
+        return $stmt->execute([':owner' => $owner, ':ally' => $allyName]);
+    }
+
+    function removePlayerAlly(string $owner, string $allyName): bool {
+        $pdo = conecta();
+        $stmt = $pdo->prepare("DELETE FROM RPG.allies WHERE dono = :owner AND aliado = :ally");
+        return $stmt->execute([':owner' => $owner, ':ally' => $allyName]);
+    }
 
     function getPlayerAllies(string $player){
         $pdo = conecta();
@@ -405,7 +448,6 @@
 
     function agarrao(string $player, string $alvo, int $dF){
         $result = ($dF + getPlayerStat($player, 'F')) - getPlayerStat($alvo, 'F');
-
         if ($result <= 0){
             return false;
         }
@@ -422,5 +464,56 @@
             return $alvo.' não foi debilitado.';
         }
     }
+
+
+    function magiaExtra($player, $act){
+        if ($act == 'spend'){
+            $pv   = getPlayerStat($player, 'PV');
+            $R    = getPlayerStat($player, 'R');
+            if ($pv <= $R) {
+                setPlayerStat($player, 'PV', $pv - 2);
+                return true;
+            }
+            return false;
+        }
+        if ($act == 'apply'){
+            setPlayerStat($player, 'PM', getPlayerStat($player, 'PM_max'));
+        }
+            
+    }
+    
+    function itemDePoder($player){
+        $inventario = getPlayerStat($player, 'inventario');
+        $equipado = getPlayerStat($player, 'equipado');
+        $itens = $equipado.$inventario;
+        if(strpos($itens, '(Item de Poder)')){
+            return 2;
+        } else {
+            return 0;
+        }
+    }
+
+
+    function fetiche($player){
+        // Atualizar quando houver magias
+    }
+
+
+    function invisivel_debuff($b, $pl, $tgt, $tipo){
+        $h = getPlayerStat($pl, 'H');
+        if (!empty($b['notes'][$tgt]['invisivel']) && !in_array('ver_o_invisivel', listPlayerTraits($pl), true)){
+            if (in_array('invisibilidade', listPlayerTraits($tgt), true) && $b['notes'][$tgt]['invisivel'] && $tipo == 'F' && !in_array('faro_augucado', listPlayerTraits($pl), true) && !in_array('audicao_agucada', listPlayerTraits($pl), true)) {
+                $h -= 1;
+            }
+            if (in_array('invisibilidade', listPlayerTraits($tgt), true) && $b['notes'][$tgt]['invisivel'] && $tipo == 'PdF' && !in_array('faro_augucado', listPlayerTraits($pl), true) && !in_array('audicao_agucada', listPlayerTraits($pl), true)) {
+                $h -= 3;
+            } 
+            if (in_array('invisibilidade', listPlayerTraits($tgt), true) && $b['notes'][$tgt]['invisivel'] && $tipo == 'PdF' && in_array('faro_augucado', listPlayerTraits($pl), true) || in_array('audicao_agucada', listPlayerTraits($pl), true)) {
+                $h -= 2;
+            }
+        }
+        return $h;
+    }
+
 
 ?>

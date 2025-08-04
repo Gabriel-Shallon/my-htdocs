@@ -22,6 +22,8 @@ include_once 'traitFuncs.php';
                 'total'      => $total,
                 'habilidade' => $H,
                 'indice'     => $idx,
+                'dado'       => $dado,
+                'bonus'      => $bonus
             ];
         }
         usort($inicList, function($a, $b) {
@@ -41,8 +43,8 @@ include_once 'traitFuncs.php';
 
 
     
-    function FA (string $atacante, string $atkType, int $dado){
-        return getPlayerStat($atacante, $atkType) + getPlayerStat($atacante, 'H') + $dado + applyCrit($atacante, $atkType, $dado);
+    function FA (string $atacante, string $atkType, int $dado, $H){
+        return getPlayerStat($atacante, $atkType) + $H + $dado + applyCrit($atacante, $atkType, $dado);
     }
 
 
@@ -55,9 +57,7 @@ include_once 'traitFuncs.php';
         return vulnerabilitieExtraArmorTest($defensor, $dmgType);
     }
     
-    function FAmulti(string $atacante, int $quant, string $atkType, array $dados) {
-        $H = (int) getPlayerStat($atacante, 'H');
-    
+    function FAmulti(string $atacante, int $quant, string $atkType, array $dados, $H) {
         $maxExtras  = intdiv(max($H, 0), 2);
         $quant = min($quant, $maxExtras + 1);
     
@@ -78,32 +78,33 @@ include_once 'traitFuncs.php';
 
 
 
-    function FAFDresult(string $atacante, string $defensor, int $dadoFA, int $dadoFD, string $atkType, string $dmgType){
-        return max(invulnerabilitieTest($defensor, $dmgType,FA($atacante, $atkType, $dadoFA)) - FD($defensor,$dadoFD, $dmgType),0);
+    function FAFDresult(string $atacante, string $defensor, int $dadoFA, int $dadoFD, string $atkType, string $dmgType, $H){
+        return max(invulnerabilitieTest($defensor, $dmgType,FA($atacante, $atkType, $dadoFA, $H)) - FD($defensor,$dadoFD, $dmgType),0);
     }
 
 
     
-    function FAFDindefeso(string $atacante, string $defensor, int $dadoFA, string $atkType, string $dmgType){
-        return max(invulnerabilitieTest($defensor, $dmgType,FA($atacante, $atkType, $dadoFA)) - FDindefeso($defensor, $dmgType),0);
+    function FAFDindefeso(string $atacante, string $defensor, int $dadoFA, string $atkType, string $dmgType, $H){  
+        return max(invulnerabilitieTest($defensor, $dmgType,FA($atacante, $atkType, $dadoFA, $H)) - FDindefeso($defensor, $dmgType),0);
     }
 
 
 
 
-    function FAFDesquiva(string $atacante, string $defensor,int $dadoFD, int $dadoFA, string $atkType, $dmgType){
+    function FAFDesquiva(string $atacante, string $defensor,int $dadoFD, int $dadoFA, string $atkType, $dmgType, $H){
         $bonus = 0;
         if (in_array('aceleracao_i', listPlayerTraits($defensor), true)) {$bonus = 1;};
-        if (in_array('teleporte', listPlayerTraits($defensor), true)) {$bonus = 2;};
-        $meta = (getPlayerStat($defensor, 'H') + $bonus) - getPlayerStat($atacante, 'H');
+        if (in_array('aceleracao_ii', listPlayerTraits($defensor), true)) {$bonus = 2;};
+        if (in_array('teleporte', listPlayerTraits($defensor), true)) {$bonus = 3;};
+        $meta = (getPlayerStat($defensor, 'H') + $bonus) - $H;
         if ($meta <= 0){
-            return FAFDindefeso($atacante, $defensor, $dadoFA, $atkType, $dmgType);
+            return FAFDindefeso($atacante, $defensor, $dadoFA, $atkType, $dmgType, $H);
         }
         if ($meta > 0 && $meta < 6){
             if($dadoFD <= $meta){
                 return 0;
             }else{
-                return FAFDindefeso($atacante, $defensor, $dadoFA, $atkType, $dmgType);
+                return FAFDindefeso($atacante, $defensor, $dadoFA, $atkType, $dmgType, $H);
             }
         }
         if ($meta>6){
@@ -111,7 +112,7 @@ include_once 'traitFuncs.php';
         }
     }
 
-    function esquivaMulti(string $atacante, string $defensor, int $dado): string {
+    function esquivaMulti(string $atacante, string $defensor, int $dado, $H): string {
         $bonus = 0;
         if (in_array('aceleracao_i', listPlayerTraits($defensor), true)) {$bonus = 1;};
         if (in_array('teleporte', listPlayerTraits($defensor), true)) {$bonus = 2;};
@@ -137,24 +138,26 @@ include_once 'traitFuncs.php';
         if (!empty($b['agarrao'][$tgt]['agarrado'])) {
             $def = 'indefeso';
         }
+        $H = invisivel_debuff($b, $pl, $tgt, $tipo);
         if ($def === 'indefeso') {
-            return FAFDindefeso($pl, $tgt, $dFA, $tipo, $dmgType);
+            return FAFDindefeso($pl, $tgt, $dFA, $tipo, $dmgType, $H);
         } elseif ($def === 'defender_esquiva') {
-            return FAFDesquiva($pl, $tgt, $dFD, $dFA, $tipo, $dmgType);
+            return FAFDesquiva($pl, $tgt, $dFD, $dFA, $tipo, $dmgType, $H);
         } else {
-            return FAFDresult($pl, $tgt, $dFA, $dFD, $tipo, $dmgType);
+            return FAFDresult($pl, $tgt, $dFA, $dFD, $tipo, $dmgType, $H);
         }
     }
 
     function atkMultiReactionTreatment($b, $q, $tgt, $pl, $dados, $dFD, $def, $tipo, $dmgType){
-        $faTot = FAmulti($pl, $q, $tipo, $dados);
+        $H = invisivel_debuff($b, $pl, $tgt, $tipo);
+        $faTot = FAmulti($pl, $q, $tipo, $dados, $H);
         if (!empty($b['agarrao'][$tgt]['agarrado'])) {
             $def = 'indefeso';
         }
         if ($def === 'indefeso') {
             return max(invulnerabilitieTest($tgt, $dmgType, $faTot) - FD($tgt, $dFD, $dmgType), 0);
         } else if ($def === 'defender_esquiva') {
-            $resEsq = esquivaMulti($pl, $tgt, $dFD);
+            $resEsq = esquivaMulti($pl, $tgt, $dFD, $H);
             if ($resEsq === 'defender_esquiva_success') {
                 return 0;
             } else {
@@ -230,6 +233,7 @@ include_once 'traitFuncs.php';
 
 
     function spendPM(string $player, int $cost): bool {
+        $cost -= itemDePoder($player); if ($cost < 1){$cost = 1;}
         $pm   = getPlayerStat($player, 'PM');
         $pv   = getPlayerStat($player, 'PV');
         $traits = listPlayerTraits($player);
@@ -259,10 +263,9 @@ include_once 'traitFuncs.php';
             setPlayerStat($player, 'PV', $pv - $pvNeeded);
             return true;
         }
-        setPlayerStat($player, 'PV', $pv);
-        setPlayerStat($player, 'PM', $pm);
         return false;
     }
+
 
 
     function applyCrit($pl, $critType, $dado){
@@ -299,7 +302,56 @@ include_once 'traitFuncs.php';
 
 
 
+    function parseBuffs(string $equipString): array {
+        $pattern = '/\b(F|H|R|A|PdF)([+-])(\d+)\b/';
+        $buffs = [];
+        if (preg_match_all($pattern, $equipString, $matches, PREG_SET_ORDER)) {
+            foreach ($matches as $m) {
+                [$full, $stat, $sign, $val] = $m;
+                $delta = (int)$val * ($sign === '+' ? +1 : -1);
+                $buffs[$stat] = ($buffs[$stat] ?? 0) + $delta;
+            }
+        }
+        return $buffs;
+    }
 
+
+    function syncEquipBuffs($pl){
+        // 1) Leitura
+        $equipString = getPlayerStat($pl, 'equipado');
+        $currentBuffs = parseBuffs($equipString);
+        // 2) Guarda referência a notes
+        if (! isset($_SESSION['battle']['notes'][$pl]['buffs'])) {
+            $_SESSION['battle']['notes'][$pl]['buffs'] = [];
+        }
+        $oldBuffs = $_SESSION['battle']['notes'][$pl]['buffs'];
+
+        // 3) Aplicar buffs novos ou maiores
+        foreach ($currentBuffs as $stat => $newDelta) {
+            $oldDelta = $oldBuffs[$stat] ?? 0;
+            if ($newDelta !== $oldDelta) {
+                $diff = $newDelta - $oldDelta; // se new > old, diff é positivo
+                $base = (int) $_SESSION['battle']['orig'][$pl][$stat];
+                setPlayerStat($pl, $stat, $base + $diff);
+            }
+        }
+
+        // 4) Reverter buffs que sumiram (ou reduzir valores)
+        foreach ($oldBuffs as $stat => $oldDelta) {
+            $newDelta = $currentBuffs[$stat] ?? 0;
+            if ($oldDelta !== $newDelta) {
+                // diferença negativa: tirar do stat
+                $diff = $newDelta - $oldDelta; // se new < old, diff é negativo
+                $base  = (int) getPlayerStat($pl, $stat);
+                setPlayerStat($pl, $stat, $base + $diff);
+            }
+        }
+
+        // 5) Atualiza notes com o estado atual
+        $_SESSION['battle']['notes'][$pl]['buffs'] = $currentBuffs;
+    }
+
+    
 
 
     function removeEffect(string $efeito, array $remover): string {
@@ -345,3 +397,4 @@ include_once 'traitFuncs.php';
             echo '</optgroup>';
         }
     }
+
