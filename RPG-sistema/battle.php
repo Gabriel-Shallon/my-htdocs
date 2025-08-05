@@ -454,6 +454,27 @@ switch ($step) {
             }
         }
 
+        if (in_array('escalar', listPlayerTraits($cur), true)) {
+            $efeitoEscalar = "\nEscalar: consegue escalar paredes, árvores, tetos e quaisquer superfícies, à velocidade normal e sem precisar fazer testes de perícia.";
+            if (strpos($b['notes'][$cur]['efeito'], trim($efeitoEscalar)) === false) {
+                $b['notes'][$cur]['efeito'] .= $efeitoEscalar;
+            }
+        }
+
+        if (in_array('queda_lenta', listPlayerTraits($cur), true)) {
+            $efeitoQuedaLenta = "\nQueda Lenta: pode cair de qualquer distância sem se machucar, usando saliências para desacelerar a queda. Precisa estar consciente para usar este movimento.";
+            if (strpos($b['notes'][$cur]['efeito'], trim($efeitoQuedaLenta)) === false) {
+                $b['notes'][$cur]['efeito'] .= $efeitoQuedaLenta;
+            }
+        }
+
+        if (in_array('constancia', listPlayerTraits($cur), true)) {
+            $efeitoConstancia = "\nConstância: não sofre os efeitos de terrenos difíceis ou obstáculos que possam dificultar o movimento. Sempre pode se mover à velocidade máxima total sem nenhuma penalidade.";
+            if (strpos($b['notes'][$cur]['efeito'], trim($efeitoConstancia)) === false) {
+                $b['notes'][$cur]['efeito'] .= $efeitoConstancia;
+            }
+        }
+
 
 
 

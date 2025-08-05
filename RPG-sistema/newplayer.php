@@ -1,12 +1,16 @@
 <?php
-// newplayer.php - Formulário para criar um novo personagem
+// newplayer.php - Formulário completo para criar um novo personagem
 include 'inc/generalFuncs.php';
 include 'inc/traitFuncs.php';
 
 $pdo = conecta();
 $advantages = $pdo->query('SELECT id, name, effect_text FROM RPG.advantages ORDER BY name')->fetchAll(PDO::FETCH_ASSOC);
 $disadvantages = $pdo->query('SELECT id, name, effect_text FROM RPG.disadvantages ORDER BY name')->fetchAll(PDO::FETCH_ASSOC);
+$allPlayers = getAllPlayers();
 $allDamageTypes = getAllDmgTypes();
+$allVulnerabilities = getAllVulnerabilities();
+$allInvulnerabilities = getAllInvulnerabilities();
+$allExtraArmorTypes = getAllExtraArmorTypes();
 
 // Processa a criação
 if (isset($_POST['submit'])) {
@@ -18,21 +22,22 @@ if (isset($_POST['submit'])) {
         $_POST['equipado']   ?? ''
     );
 
-    // Associa vantagens e desvantagens (com contagem)
+    // Associa vantagens, desvantagens (com contagem)
     foreach ($_POST['traits'] ?? [] as $key => $count) {
-        $count = (int)$count;
-        if ($count > 0) {
+        if (($count = (int)$count) > 0) {
             list($type, $id) = explode(':', $key);
-            for ($i = 0; $i < $count; $i++) {
-                addPlayerTrait($nome, (int)$id, $type);
-            }
+            for ($i = 0; $i < $count; $i++) addPlayerTrait($nome, (int)$id, $type);
         }
     }
 
-    // Associa tipos de dano
-    foreach ($_POST['damage_types'] ?? [] as $dmgTypeName) {
-        addPlayerDmgType($nome, $dmgTypeName);
-    }
+    // Associa tipos de dano e modificadores
+    foreach ($_POST['damage_types'] ?? [] as $name) addPlayerDmgType($nome, $name);
+    foreach ($_POST['vulnerabilities'] ?? [] as $name) addPlayerVulnerability($nome, $name);
+    foreach ($_POST['invulnerabilities'] ?? [] as $name) addPlayerInvulnerability($nome, $name);
+    foreach ($_POST['extra_armors'] ?? [] as $name) addPlayerExtraArmor($nome, $name);
+    
+    // Associa aliados
+    foreach ($_POST['allies'] ?? [] as $allyName) addPlayerAlly($nome, $allyName);
     
     header('Location: newplayer.php?msg=Personagem ' . urlencode($nome) . ' criado com sucesso!');
     exit;
@@ -44,17 +49,7 @@ if (isset($_POST['submit'])) {
   <meta charset="UTF-8">
   <title>Criar Novo Personagem</title>
   <style>
-    body{font-family:sans-serif;max-width:800px;margin:2em auto;}
-    form{border:1px solid #ccc;padding:1em;}
-    fieldset{margin:1.5em 0;padding:1em;border:1px solid #aaa;}
-    legend{font-weight:bold;font-size:1.2em;}
-    label{display:block;margin:0.5em 0;}
-    input[type=text], input[type=number]{width:100%;padding:0.4em;box-sizing:border-box;}
-    textarea{width:100%;min-height:80px;padding:.4em;box-sizing:border-box;}
-    button{margin-top:1em;padding:0.5em 1.5em;}
-    .msg{background:#eef;padding:.8em;margin-bottom:1em;border-left:4px solid #44d;}
-    .traits-grid{display:grid;grid-template-columns:1fr 1fr;gap:1em;}
-    .count{width:4em;margin-left:.5em;}
+    body{font-family:sans-serif;max-width:800px;margin:2em auto;} form{border:1px solid #ccc;padding:1em;} fieldset{margin:1.5em 0;padding:1em;border:1px solid #aaa;} legend{font-weight:bold;font-size:1.2em;} label{display:block;margin:0.5em 0;} input[type=text], input[type=number]{width:100%;padding:0.4em;box-sizing:border-box;} textarea{width:100%;min-height:80px;padding:.4em;box-sizing:border-box;} button{margin-top:1em;padding:0.5em 1.5em;} .msg{background:#eef;padding:.8em;margin-bottom:1em;border-left:4px solid #44d;} .traits-grid{display:grid;grid-template-columns:repeat(auto-fit, minmax(250px, 1fr));gap:1em;} .count{width:4em;margin-left:.5em;}
   </style>
 </head>
 <body>
@@ -82,6 +77,14 @@ if (isset($_POST['submit'])) {
         </div>
     </fieldset>
 
+    <fieldset><legend>Modificadores de Dano</legend>
+        <div class="traits-grid" style="grid-template-columns: 1fr 1fr 1fr;">
+            <div><strong>Vulnerabilidades</strong><?php foreach($allVulnerabilities as $type): $safe_type=htmlspecialchars($type,ENT_QUOTES); ?><label><input type="checkbox" name="vulnerabilities[]" value="<?=$safe_type?>"> <?=$safe_type?></label><?php endforeach; ?></div>
+            <div><strong>Invulnerabilidades</strong><?php foreach($allInvulnerabilities as $type): $safe_type=htmlspecialchars($type,ENT_QUOTES); ?><label><input type="checkbox" name="invulnerabilities[]" value="<?=$safe_type?>"> <?=$safe_type?></label><?php endforeach; ?></div>
+            <div><strong>Armadura Extra</strong><?php foreach($allExtraArmorTypes as $type): $safe_type=htmlspecialchars($type,ENT_QUOTES); ?><label><input type="checkbox" name="extra_armors[]" value="<?=$safe_type?>"> <?=$safe_type?></label><?php endforeach; ?></div>
+        </div>
+    </fieldset>
+
     <fieldset><legend>Vantagens</legend>
         <div class="traits-grid">
         <?php foreach ($advantages as $a): $key = "advantage:{$a['id']}"; ?>
@@ -102,6 +105,15 @@ if (isset($_POST['submit'])) {
             </label>
         <?php endforeach; ?>
         </div>
+    </fieldset>
+
+    <fieldset><legend>Aliados</legend>
+        <label>Selecione os aliados deste personagem:</label>
+        <select name="allies[]" multiple size="8">
+            <?php foreach($allPlayers as $p): $n=htmlspecialchars($p['nome'],ENT_QUOTES); ?>
+            <option value="<?=$n?>"><?=$n?></option>
+            <?php endforeach; ?>
+        </select>
     </fieldset>
 
     <fieldset><legend>Equipamentos</legend>
