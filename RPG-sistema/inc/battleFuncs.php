@@ -371,9 +371,11 @@ include_once 'traitFuncs.php';
         foreach ($validTargets as $tgt) if ($tgt !== $cur) {
             $isFuria    = ! empty($_SESSION['battle']['notes'][$tgt]['furia']);
             $isAgarrado = ! empty($_SESSION['battle']['agarrao'][$tgt]['agarrado']);
+            $hasDeflexao = in_array('deflexao', listPlayerTraits($tgt), true);
             echo '<option value="'.htmlspecialchars($tgt).'" '
-            .'data-furia="'.($isFuria    ? '1' : '0').'" '
-            .'data-agarrao="'.($isAgarrado? '1' : '0').'">'
+            .'data-furia="'.($isFuria? '1' : '0').'" '
+            .'data-agarrao="'.($isAgarrado? '1' : '0').'" '
+            .'data-tem-deflexao="'.($hasDeflexao? '1' : '0').'">'
             .htmlspecialchars($tgt).'</option>';                              
         }
     }

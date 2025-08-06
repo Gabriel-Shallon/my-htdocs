@@ -669,9 +669,9 @@ switch ($step) {
         // Ataque simples
         if ($hasTargets) {
             echo '<div id="atkSimple" style="display: none;"><fieldset><legend>Ataque</legend>'
-                . 'Tipo de Ataque: <select name="atkType"><option>F</option><option>PdF</option></select><br>'
+                . 'Tipo de Ataque: <select name="atkType" id="atkTypeSimple"><option value="F">F</option><option value="PdF">PdF</option></select><br>'
                 . 'Tipo de Dano: <select name="dmgType">'; 
-            selectDmgType($cur); 
+            selectDmgType($cur);
             echo '</select><br>'
                 . 'Roll FA: <input id="dadoFA" type="number" name="dadoFA" required><br>'
                 . 'Alvo: <select name="target">';
@@ -679,8 +679,9 @@ switch ($step) {
             echo '</select><br>'
                 . 'Reação: <select id="def" name="defesa">'
                 . '<option value="defender">Defender</option>'
-                . '<option id="opt-esquiva-simples" value="defender_esquiva">Esquivar</option>'
+                . '<option value="defender_esquiva">Esquivar</option>'
                 . '<option value="indefeso">Indefeso</option>'
+                . '<option id="opt-deflexao-simples" value="defender_esquiva_deflexao">Deflexão (2 PM)</option>'
                 . '</select><br>'
                 . '<label>'
                 . 'Roll FD/Esq.: <input id="dadoFD" type="number" name="dadoFD" required>'
@@ -698,7 +699,7 @@ switch ($step) {
         if ($hasTargets) {
                 echo '<div id="atkMulti" style="display:none"><fieldset><legend>Múltiplo</legend>';
                 if ($maxMulti >= 2){
-                    echo 'Tipo: <select name="atkTypeMulti"><option>F</option><option>PdF</option></select><br>'
+                    echo 'Tipo de Ataque: <select name="atkType" id="atkTypeMulti"><option value="F">F</option><option value="PdF">PdF</option></select><br>'
                         . 'Tipo de Dano: <select name="dmgType">'; 
                     selectDmgType($cur); 
                     echo '</select><br>'
@@ -711,6 +712,7 @@ switch ($step) {
                         . '<option value="defender">Defender</option>'
                         . '<option id="opt-esquiva-multi" value="defender_esquiva">Esquivar</option>'
                         . '<option value="indefeso">Indefeso</option>'
+                        . '<option id="opt-deflexao-multi" value="defender_esquiva_deflexao">Deflexão (2 PM)</option>'
                         . '</select><br>'
                         . '<div id="dCont"></div>';
                 } else {
@@ -734,6 +736,7 @@ switch ($step) {
                 . '<option value="defender">Defender</option>'
                 . '<option id="opt-esquiva-tiro" value="defender_esquiva">Esquivar</option>'
                 . '<option value="indefeso">Indefeso</option>'
+                . '<option id="opt-deflexao-tiro" value="defender_esquiva_deflexao">Deflexão (2 PM)</option>'
                 . '</select><br>'
                 . '<div id="dContTiro"></div>'
                 . '<label>Roll FD/Esq.: '
@@ -874,10 +877,13 @@ document.addEventListener('DOMContentLoaded', () => {
   const atkAgarrao  = document.getElementById('atkAgarrao');
   const soltarAgarr = document.getElementById('soltarAgarrao');
 
+  const atkTypeSimp = document.getElementById('atkTypeSimple');
+  const atkTypeMult = document.getElementById('atkTypeMulti');
+
   const defSimple   = document.getElementById('def');
   const defMulti    = document.getElementById('defM');
   const defTiro     = document.getElementById('defTiro');
- 
+
   const faInput     = document.getElementById('dadoFA');
   const fdInput     = document.getElementById('dadoFD');
 
@@ -899,6 +905,10 @@ document.addEventListener('DOMContentLoaded', () => {
   const esqMu    = document.getElementById('opt-esquiva-multi');
   const esqTi    = document.getElementById('opt-esquiva-tiro');
   
+  const deflexSim   = document.getElementById('opt-deflexao-simples');
+  const deflexMulti = document.getElementById('opt-deflexao-multi');
+  const deflexTiro  = document.getElementById('opt-deflexao-tiro');
+
   const selStatDebi = document.getElementById('stat_debili');
 
   //Funções Auxiliares
@@ -956,6 +966,42 @@ document.addEventListener('DOMContentLoaded', () => {
       el.style.display = (el.style.display === 'none') ? 'block' : 'none';
     }
   };
+
+
+  function manageDeflexaoSimple() {
+    if (!atkTypeSimp || !selAlvoSi || !deflexSim) return;
+
+    const showDeflexaoSim = atkTypeSimp.value == 'PdF' &&
+                         selAlvoSi.selectedOptions[0]?.dataset.temDeflexao === '1';
+
+    deflexSim.style.display = showDeflexaoSim ? 'block' : 'none';
+    if (!showDeflexaoSim && defSimple.value === 'defender_esquiva_deflexao') {
+        defSimple.value = 'defender_esquiva';
+    }
+  }
+
+  function manageDeflexaoMulti() {
+    if (!atkTypeMult || !selAlvoMu || !deflexMulti) return;
+
+    const showDeflexaoMulti = atkTypeMult.value == 'PdF' &&
+                           selAlvoMu.selectedOptions[0]?.dataset.temDeflexao === '1';
+
+    deflexMulti.style.display = showDeflexaoMulti ? 'block' : 'none';
+    if (!showDeflexaoMulti && defMulti.value === 'defender_esquiva_deflexao') {
+        defMulti.value = 'defender_esquiva';
+    }
+  }
+
+  function manageDeflexaoTiro() {
+    if (!selAlvoTi || !deflexTiro) return;
+
+    const showDeflexaoTiro = selAlvoTi.selectedOptions[0]?.dataset.temDeflexao === '1';
+
+    deflexTiro.style.display = showDeflexaoTiro ? 'block' : 'none';
+    if (!showDeflexaoTiro && defTiro.value === 'defender_esquiva_deflexao') {
+        defTiro.value = 'defender_esquiva';
+    }
+  }
 
   function onAct() {
     const act = actionSel.value;
@@ -1019,6 +1065,9 @@ document.addEventListener('DOMContentLoaded', () => {
       const allyDiv = document.getElementById('allySelect');
       if(partnerDiv) partnerDiv.style.display = (e.target.value === 'start_partner') ? 'block' : 'none';
       if(allyDiv) allyDiv.style.display = (e.target.value === 'use_ally') ? 'block' : 'none';
+      manageDeflexaoSimple();
+      manageDeflexaoMulti()
+      manageDeflexaoTiro()
       onAct();
     });
   }
@@ -1034,12 +1083,21 @@ document.addEventListener('DOMContentLoaded', () => {
   if (quant) quant.addEventListener('input', () => { genMulti(); onDefM(); });
   if (quantTiro) quantTiro.addEventListener('input', genTiro);
 
+  if (atkTypeSimp) atkTypeSimp.addEventListener('change', manageDeflexaoSimple);
+  if (selAlvoSi)  selAlvoSi.addEventListener('change', manageDeflexaoSimple);
+  if (atkTypeMulti) atkTypeMulti.addEventListener('change', manageDeflexaoMulti);
+  if (selAlvoMu)  selAlvoMu.addEventListener('change', manageDeflexaoMulti);
+  if (selAlvoTi)  selAlvoTi.addEventListener('change', manageDeflexaoTiro);
+
   //Inicialização
-  
   atualizaReacao(selAlvoSi, esqSi);
   atualizaReacao(selAlvoMu, esqMu);
   atualizaReacao(selAlvoTi, esqTi);
   
+  manageDeflexaoTiro();
+  manageDeflexaoMulti();
+  manageDeflexaoSimple();
+
   onAct();
 });
 </script>

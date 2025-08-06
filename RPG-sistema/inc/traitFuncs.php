@@ -516,4 +516,13 @@
     }
 
 
+    function deflexao($tgt, $atkType){
+        if (in_array('deflexao', listPlayerTraits($tgt), true) && $atkType == 'PdF'){
+            '<option value="defender_esquiva_deflexao">Deflexão</option>';
+        }
+    }
+
+
+
+
 ?>
