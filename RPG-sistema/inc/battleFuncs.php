@@ -97,9 +97,8 @@ include_once 'traitFuncs.php';
         if (in_array('aceleracao_ii', listPlayerTraits($defensor), true)) {$bonus = 2;};
         if (in_array('teleporte', listPlayerTraits($defensor), true)) {$bonus = 3;};
         
-        if ($deflex) if (spendPM($defensor, 2)){
-               {$defH = getPlayerStat($defensor, 'H')*2;}
-        } else {$defH = getPlayerStat($defensor, 'H');}
+        $defH = getPlayerStat($defensor, 'H');
+        if ($deflex) { if (spendPM($defensor, 2)) {$defH *= 2;}}
         $meta = ($defH + $bonus) - $H;
         if ($meta <= 0){
             return FAFDindefeso($atacante, $defensor, $dadoFA, $atkType, $dmgType, $H);
@@ -122,9 +121,8 @@ include_once 'traitFuncs.php';
         if (in_array('aceleracao_ii', listPlayerTraits($defensor), true)) {$bonus = 2;};
         if (in_array('teleporte', listPlayerTraits($defensor), true)) {$bonus = 3;};
         
-        if ($deflex) if (spendPM($defensor, 2)){
-               {$defH = getPlayerStat($defensor, 'H')*2;}
-        } else {$defH = getPlayerStat($defensor, 'H');}
+        $defH = getPlayerStat($defensor, 'H');
+        if ($deflex) { if (spendPM($defensor, 2)) {$defH *= 2;}}
         $meta = ($defH + $bonus) - $H;
         if ($meta <= 0) {
             return 'defender_esquiva_fail';
