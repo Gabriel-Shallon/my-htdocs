@@ -311,8 +311,7 @@
     };
 
 
-    function FAtiroMultiplo(string $atacante, int $quant, array $dados, string $tgt, string $defesa, int $dadoFD, $dmgType): int {
-        $H      = (int) getPlayerStat($atacante, 'H');
+    function FAtiroMultiplo(string $atacante, int $quant, array $dados, string $tgt, string $defesa, int $dadoFD, $dmgType, $H): int {
         $PdF    = (int) getPlayerStat($atacante, 'PdF');
         $maxT   = max($H, 0);
         $q      = min($quant, $maxT);
@@ -326,8 +325,6 @@
 
             if ($defesa === 'indefeso') {
                 $FDval = FDindefeso($tgt, $dmgType);
-            } else if ($defesa === 'defender_esquiva_success') {
-               continue;
             } else {
                $FDval = FD($tgt, $dadoFD, $dmgType);
             }
@@ -339,19 +336,22 @@
 
 
     function tiroMultiReactionTreatment($b, $q, $tgt, $pl, $dados, $dadoFD, $def, $dmgType){
+        $H = invisivel_debuff($b, $pl, $tgt, 'PdF');
         if (!empty($b['agarrao'][$tgt]['agarrado'])) {
             $def = 'indefeso';
         }
-        if ($def === 'defender_esquiva') {
-            $resultadoEsq = esquivaMulti($pl, $tgt, $dadoFD, invisivel_debuff($b, $pl, $tgt, 'PdF'));
-            if ($resultadoEsq === 'defender_esquiva_success') {
+        if ($def === 'defender_esquiva' || $def === 'defender_esquiva_deflexao' ) {
+            if ($def == 'defender_esquiva_deflexao') 
+                 {$resEsq = esquivaMulti($pl, $tgt, $dadoFD, $H, true);} 
+            else {$resEsq = esquivaMulti($pl, $tgt, $dadoFD, $H);}
+            if ($resEsq === 'defender_esquiva_success') {
                 return 0;
             } else {
-                return FAtiroMultiplo($pl, $q, $dados, $tgt, 'indefeso', $dadoFD, $dmgType);
+                return FAtiroMultiplo($pl, $q, $dados, $tgt, 'indefeso', $dadoFD, $dmgType, $H);
             }
         } else {
             $tipoDef = $def === 'indefeso' ? 'indefeso' : 'defender';
-            return FAtiroMultiplo($pl, $q, $dados, $tgt, $tipoDef, $dadoFD, $dmgType);
+            return FAtiroMultiplo($pl, $q, $dados, $tgt, $tipoDef, $dadoFD, $dmgType, $H);
         }
     }
 
@@ -446,6 +446,9 @@
     }
 
 
+
+
+
     function agarrao(string $player, string $alvo, int $dF){
         $result = ($dF + getPlayerStat($player, 'F')) - getPlayerStat($alvo, 'F');
         if ($result <= 0){
@@ -514,14 +517,6 @@
         }
         return $h;
     }
-
-
-    function deflexao($tgt, $atkType){
-        if (in_array('deflexao', listPlayerTraits($tgt), true) && $atkType == 'PdF'){
-            '<option value="defender_esquiva_deflexao">Deflexão</option>';
-        }
-    }
-
 
 
 

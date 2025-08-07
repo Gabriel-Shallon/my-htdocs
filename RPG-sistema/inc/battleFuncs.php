@@ -91,12 +91,16 @@ include_once 'traitFuncs.php';
 
 
 
-    function FAFDesquiva(string $atacante, string $defensor,int $dadoFD, int $dadoFA, string $atkType, $dmgType, $H){
+    function FAFDesquiva(string $atacante, string $defensor, int $dadoFD, int $dadoFA, string $atkType, $dmgType, $H, $deflex = false){
         $bonus = 0;
         if (in_array('aceleracao_i', listPlayerTraits($defensor), true)) {$bonus = 1;};
         if (in_array('aceleracao_ii', listPlayerTraits($defensor), true)) {$bonus = 2;};
         if (in_array('teleporte', listPlayerTraits($defensor), true)) {$bonus = 3;};
-        $meta = (getPlayerStat($defensor, 'H') + $bonus) - $H;
+        
+        if ($deflex) if (spendPM($defensor, 2)){
+               {$defH = getPlayerStat($defensor, 'H')*2;}
+        } else {$defH = getPlayerStat($defensor, 'H');}
+        $meta = ($defH + $bonus) - $H;
         if ($meta <= 0){
             return FAFDindefeso($atacante, $defensor, $dadoFA, $atkType, $dmgType, $H);
         }
@@ -112,11 +116,16 @@ include_once 'traitFuncs.php';
         }
     }
 
-    function esquivaMulti(string $atacante, string $defensor, int $dado, $H): string {
+    function esquivaMulti(string $atacante, string $defensor, int $dado, $H, $deflex = false): string {
         $bonus = 0;
         if (in_array('aceleracao_i', listPlayerTraits($defensor), true)) {$bonus = 1;};
-        if (in_array('teleporte', listPlayerTraits($defensor), true)) {$bonus = 2;};
-        $meta = (getPlayerStat($defensor, 'H') + $bonus) - getPlayerStat($atacante, 'H');
+        if (in_array('aceleracao_ii', listPlayerTraits($defensor), true)) {$bonus = 2;};
+        if (in_array('teleporte', listPlayerTraits($defensor), true)) {$bonus = 3;};
+        
+        if ($deflex) if (spendPM($defensor, 2)){
+               {$defH = getPlayerStat($defensor, 'H')*2;}
+        } else {$defH = getPlayerStat($defensor, 'H');}
+        $meta = ($defH + $bonus) - $H;
         if ($meta <= 0) {
             return 'defender_esquiva_fail';
         }
@@ -141,8 +150,10 @@ include_once 'traitFuncs.php';
         $H = invisivel_debuff($b, $pl, $tgt, $tipo);
         if ($def === 'indefeso') {
             return FAFDindefeso($pl, $tgt, $dFA, $tipo, $dmgType, $H);
-        } elseif ($def === 'defender_esquiva') {
+        } else if ($def === 'defender_esquiva') {
             return FAFDesquiva($pl, $tgt, $dFD, $dFA, $tipo, $dmgType, $H);
+        } else if ($def === 'defender_esquiva_deflexao'){
+            return FAFDesquiva($pl, $tgt, $dFD, $dFA, $tipo, $dmgType, $H, true);
         } else {
             return FAFDresult($pl, $tgt, $dFA, $dFD, $tipo, $dmgType, $H);
         }
@@ -156,8 +167,10 @@ include_once 'traitFuncs.php';
         }
         if ($def === 'indefeso') {
             return max(invulnerabilitieTest($tgt, $dmgType, $faTot) - FD($tgt, $dFD, $dmgType), 0);
-        } else if ($def === 'defender_esquiva') {
-            $resEsq = esquivaMulti($pl, $tgt, $dFD, $H);
+        } else if ($def === 'defender_esquiva' || $def === 'defender_esquiva_deflexao' ) {
+            if ($def == 'defender_esquiva_deflexao') 
+                 {$resEsq = esquivaMulti($pl, $tgt, $dFD, $H, true);} 
+            else {$resEsq = esquivaMulti($pl, $tgt, $dFD, $H);}
             if ($resEsq === 'defender_esquiva_success') {
                 return 0;
             } else {
