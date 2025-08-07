@@ -315,9 +315,7 @@
         $PdF    = (int) getPlayerStat($atacante, 'PdF');
         $maxT   = max($H, 0);
         $q      = min($quant, $maxT);
-        if (!spendPM($atacante, $q)) {
-            throw new Exception("PM/PVs insuficientes para {$q} tiros.");
-        }
+
         $danoTotal = 0;
         for ($i = 0; $i < $q; $i++) {
             $rollFA = isset($dados[$i]) ? (int)$dados[$i] : 0;
@@ -337,6 +335,9 @@
 
     function tiroMultiReactionTreatment($b, $q, $tgt, $pl, $dados, $dadoFD, $def, $dmgType){
         $H = invisivel_debuff($b, $pl, $tgt, 'PdF');
+        if (!spendPM($pl, $q)) {
+            throw new Exception("PM/PVs insuficientes para {$q} tiros.");
+        }
         if (!empty($b['agarrao'][$tgt]['agarrado'])) {
             $def = 'indefeso';
         }

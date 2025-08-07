@@ -1179,7 +1179,7 @@ JS;
                     $dano = tiroMultiReactionTreatment($b, $q, $tgt, $pl, $dados, $dadoFD, $def, $dmgType);
 
                     $out = "<strong>{$pl}</strong> usou <em>Tiro Múltiplo</em> em <strong>{$tgt}</strong>\n({$q}xPdF): dano total = {$dano}";
-                    applyDamage($pl, $tgt, $dano, $tipo, $out);
+                    applyDamage($pl, $tgt, $dano, "PdF", $out);
 
                     unset($b['playingAlly']);
                     $b['init_index']++;
