@@ -342,8 +342,8 @@
         }
         if ($def === 'defender_esquiva' || $def === 'defender_esquiva_deflexao' ) {
             if ($def == 'defender_esquiva_deflexao') 
-                 {$resEsq = esquivaMulti($pl, $tgt, $dadoFD, $H, true);} 
-            else {$resEsq = esquivaMulti($pl, $tgt, $dadoFD, $H);}
+                 {$resEsq = esquivaMulti($tgt, $dadoFD, $H, true);} 
+            else {$resEsq = esquivaMulti($tgt, $dadoFD, $H);}
             if ($resEsq === 'defender_esquiva_success') {
                 return 0;
             } else {

@@ -116,7 +116,7 @@ include_once 'traitFuncs.php';
         }
     }
 
-    function esquivaMulti(string $atacante, string $defensor, int $dado, $H, $deflex = false): string {
+    function esquivaMulti(string $defensor, int $dado, $H, $deflex = false) {
         $bonus = 0;
         if (in_array('aceleracao_i', listPlayerTraits($defensor), true)) {$bonus = 1;};
         if (in_array('aceleracao_ii', listPlayerTraits($defensor), true)) {$bonus = 2;};
@@ -169,12 +169,12 @@ include_once 'traitFuncs.php';
             return max(invulnerabilitieTest($tgt, $dmgType, $faTot) - FD($tgt, $dFD, $dmgType), 0);
         } else if ($def === 'defender_esquiva' || $def === 'defender_esquiva_deflexao' ) {
             if ($def == 'defender_esquiva_deflexao') 
-                 {$resEsq = esquivaMulti($pl, $tgt, $dFD, $H, true);} 
-            else {$resEsq = esquivaMulti($pl, $tgt, $dFD, $H);}
+                 {$resEsq = esquivaMulti($tgt, $dFD, $H, true);} 
+            else {$resEsq = esquivaMulti($tgt, $dFD, $H);}
             if ($resEsq === 'defender_esquiva_success') {
                 return 0;
             } else {
-                return max(invulnerabilitieTest($tgt, $dmgType, $faTot) - FD($tgt, $dFD, $dmgType), 0);
+                return max(invulnerabilitieTest($tgt, $dmgType, $faTot) - FDindefeso($tgt, $dmgType), 0);
             }
         } else {
             return max(invulnerabilitieTest($tgt, $dmgType, $faTot) - FD($tgt, $dFD, $dmgType), 0);
