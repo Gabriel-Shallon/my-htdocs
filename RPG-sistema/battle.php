@@ -4,6 +4,7 @@ session_start();
 include_once 'inc/generalFuncs.php';
 include_once 'inc/traitFuncs.php';
 include_once 'inc/battleFuncs.php';
+include_once 'inc/magicFuncs.php';
 
 // Inicializa sessão
 if (!isset($_SESSION['battle'])) {
@@ -13,6 +14,7 @@ if (!isset($_SESSION['battle'])) {
         'init_index'  => 0,
         'round'       => 1,
         'notes'       => [],
+        'arena'       => '',
     ];
 }
 $b = &$_SESSION['battle'];
@@ -36,6 +38,7 @@ switch ($step) {
                 'init_index'  => 0,
                 'round'       => 1,
                 'notes'       => [],
+                'arena'       => '',
             ];
             $b['hasAlly'] = [];
 
@@ -110,7 +113,7 @@ switch ($step) {
           </form>';
         break;
 
-    // 2.5) Atualizar stats
+    // 2.1) Atualizar stats
     case 'update_stats':
         if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $pl = $_GET['player'] ?? '';
@@ -124,6 +127,15 @@ switch ($step) {
         }
         header('Location: battle.php?step=turn');
         exit;
+
+    // 2.2) Atualizar arena    
+    case 'update_arena':
+        if ($_SERVER['REQUEST_METHOD'] === 'POST'){
+            $_SESSION['battle']['arena'] = trim($_POST['arena'] ?? '');
+        }
+        header('Location: battle.php?step=turn');
+        exit;
+
 
 
         // 3) initiative atual
@@ -504,8 +516,8 @@ switch ($step) {
 
         echo '<form method="post" action="battle.php?step=act" id="actionForm">'
             . '<input type="hidden" name="player" value="' . htmlspecialchars($cur, ENT_QUOTES) . '">'
-            . 'Efeito:<br><textarea name="efeito" rows="4" cols="60">' . htmlspecialchars($notes['efeito'], ENT_QUOTES) . '</textarea><br>'
-            . 'Posição:<br><textarea name="posicao" rows="2" cols="30">' . htmlspecialchars($notes['posicao'], ENT_QUOTES) . '</textarea><br>'
+            . 'Efeito:<br><textarea name="efeito" rows="8" cols="60">' . htmlspecialchars($notes['efeito'], ENT_QUOTES) . '</textarea><br>'
+            . 'Posição:<br><textarea name="posicao" rows="2" cols="60">' . htmlspecialchars($notes['posicao'], ENT_QUOTES) . '</textarea><br>'
             . 'Concentrado: <input type="number" name="concentrado" min=0 value="' . htmlspecialchars($notes['concentrado'], ENT_QUOTES) . '"><br>'
             . '<select id="actionSelect" name="action">';
         echo '<option value="pass">Passar Iniciativa</option>';
@@ -514,273 +526,273 @@ switch ($step) {
         $isDefeated = ($stats['PV'] <= 0);
         if (!$isDefeated){
 
-        $concentrando = false;
-        $agarrando = false;
-        $agarrado = false;
-        if ($notes['concentrado'] > 0) {
-            $concentrando = true;
-        }
-        if (!empty($b['agarrao'][$cur]['agarrando'])) {
-            $agarrando = true;
-        }
-        if (!empty($b['agarrao'][$cur]['agarrado'])) {
-            $agarrado = true;
-        }
-
-        //Select de ações
-        if (in_array('energia_vital', listPlayerTraits($cur), true)) {
-            if (empty($notes['use_pv'])) {
-                echo '<option value="enable_use_pv">Usar PV em vez de PM</option>';
-            } else {
-                echo '<option value="disable_use_pv">Voltar a usar PM normalmente</option>';
+            $concentrando = false;
+            $agarrando = false;
+            $agarrado = false;
+            if ($notes['concentrado'] > 0) {
+                $concentrando = true;
             }
-        }
-
-        if (in_array('incorporeo', listPlayerTraits($cur), true)) {
-            if (!$notes['incorp_active']) {
-                echo '<option value="activate_incorp">Tornar‑se Incorpóreo (2 PM)</option>';
-            } else {
-                echo '<option value="deactivate_incorp">Reverter Incorporeo</option>';
+            if (!empty($b['agarrao'][$cur]['agarrando'])) {
+                $agarrando = true;
             }
-        }
-
-        if (in_array('draconificacao', listPlayerTraits($cur), true)) {
-            if (!$notes['draco_active']) {
-                echo '<option value="activate_draco">Ativar Draconificação (1PM/turno)</option>';
-            } else {
-                echo '<option value="deactivate_draco">Desativar Draconificação (ação extra)</option>';
-            }
-        }
-
-        if (in_array('fusao_eterna', listPlayerTraits($cur), true)) {
-            if (empty($notes['fusao_active'])) {
-                echo '<option value="activate_fusao">Ativar Fusão Eterna (3PM)</option>';
-            } else {
-                echo '<option value="deactivate_fusao">Desativar Fusão Eterna</option>';
-            }
-        }
-
-        if (!$concentrando && !$agarrado && !$agarrando) {
-            echo '<option value="start_concentrar">Iniciar Concentração</option>';
-        } else if ($notes['concentrado'] > 0) {
-            echo '<option value="start_concentrar">Continuar Concentração (+1)</option>';
-            echo '<option value="release_concentrar">Liberar Concentração (bônus: +' . $notes['concentrado'] . ')</option>';
-        }
-
-        if (in_array('energia_extra', listPlayerTraits($cur), true) && !$concentrando && !$agarrado && !$agarrando) {
-            echo '<option value="extra_energy">Usar Energia Extra</option>';
-        }
-
-        if (in_array('magia_extra', listPlayerTraits($cur), true) && !$concentrando && !$agarrado && !$agarrando) {
-            echo '<option value="magia_extra">Usar Magia Extra</option>';
-        }
-
-        if (in_array('aliado', listPlayerTraits($cur), true) && empty($b['playingAlly']) && empty($b['playingPartner'][$cur]) && !$cocentrado) {
-            echo '<option value="use_ally">Jogar com Aliado</option>';
-        }
-
-        if ($cur == $b['playingAlly']) {
-            echo '<option value="back_to_owner">Voltar ao Dono</option>';
-        }
-
-        if (in_array('parceiro', listPlayerTraits($cur), true) && empty($b['playingPartner'][$cur]) && in_array('aliado', listPlayerTraits($cur), true) && !$concentrado && !$agarrado && !$agarrando) {
-            echo '<option value="start_partner">Formar Dupla com Parceiro</option>';
-        }
-
-        if (!empty($b['playingPartner'][$cur]) && in_array('parceiro', listPlayerTraits($cur), true)) {
-            echo '<option value="end_partner">Separar Dupla</option>';
-        }
-
-
-        if (!empty($b['agarrao'][$cur]['agarrando'])) {
-            echo '<option value="soltar_agarrao">Soltar agarrão (' . $b['agarrao'][$cur]['agarrando'] . ')</option>';
-        }
-
-        if (!empty($b['agarrao'][$cur]['agarrado'])) {
-            echo '<option value="se_soltar_agarrao">Se soltar do agarrão (' . $b['agarrao'][$cur]['agarrado'] . ')</option>';
-        }
-
-        if (in_array('invisibilidade', listPlayerTraits($cur), true) && empty($b['notes'][$cur]['invisivel'])) {
-            echo '<option value="activate_invisibilidade">Ficar invisível (1PM/turno)</option>';
-        }      
-        
-        if (in_array('invisibilidade', listPlayerTraits($cur), true) && !empty($b['notes'][$cur]['invisivel'])) {
-            echo '<option value="deactivate_invisibilidade">Voltar a ser visível</option>';
-        }  
-
-        if (!$concentrando && !$agarrado && !$agarrando) {
-            echo '<option value="ataque">Atacar</option>';
-            echo '<option value="multiple">Múltiplo</option>';
-
-
-            if (in_array('tiro_multiplo', listPlayerTraits($cur)) ||
-                (in_array('tiro_multiplo', listPlayerTraits(getAlliePlayer($cur))) &&
-                    in_array('ligacao_natural', listPlayerTraits(getAlliePlayer($cur)))) ||
-                (!empty($b['playingPartner'][$cur]) &&
-                    in_array('tiro_multiplo', listPlayerTraits($b['playingPartner'][$cur]['name'])))
-            ) {
-                echo '<option value="tiro_multiplo">Tiro Múltiplo</option>';
+            if (!empty($b['agarrao'][$cur]['agarrado'])) {
+                $agarrado = true;
             }
 
-            if (in_array('agarrao', listPlayerTraits($cur)) ||
-                (in_array('agarrao', listPlayerTraits(getAlliePlayer($cur))) &&
-                    in_array('ligacao_natural', listPlayerTraits(getAlliePlayer($cur)))) ||
-                (!empty($b['playingPartner'][$cur]) &&
-                    in_array('agarrao', listPlayerTraits($b['playingPartner'][$cur]['name'])))
-            ) {
-                echo '<option value="agarrao">Agarrão</option>';
-            }
-
-            if (in_array('ataque_debilitante', listPlayerTraits($cur)) ||
-                (in_array('ataque_debilitante', listPlayerTraits(getAlliePlayer($cur))) &&
-                    in_array('ligacao_natural', listPlayerTraits(getAlliePlayer($cur)))) ||
-                (!empty($b['playingPartner'][$cur]) &&
-                    in_array('ataque_debilitante', listPlayerTraits($b['playingPartner'][$cur]['name'])))
-            ) {
-                echo '<option value="ataque_debilitante">Ataque Debilitante</option>';
-            }
-        }
-        echo '</select><br>';
-
-
-        $validTargets = [];
-        foreach ($order as $o) {
-            if ($o === $cur) continue;
-            $targetNotes   = $b['notes'][$o] ?? [];
-            $targetIncorp  = !empty($targetNotes['incorp_active']);
-            if ($isIncorp === $targetIncorp) {
-                $validTargets[] = $o;
-            }
-        }
-
-        $allies = getAllAllies();
-        foreach ($allies as $ally) {
-            if ($ally === $cur || !in_array(getAlliePlayer($ally), $order)) continue;
-            $targetNotes  = $b['notes'][$ally] ?? [];
-            $targetIncorp = !empty($targetNotes['incorp_active']);
-            if ($isIncorp === $targetIncorp) {
-                $validTargets[] = $ally;
-            }
-        }
-
-        $hasTargets = count($validTargets) > 0;
-
-
-        // Ataque simples
-        if ($hasTargets) {
-            echo '<div id="atkSimple" style="display: none;"><fieldset><legend>Ataque</legend>'
-                . 'Tipo de Ataque: <select name="atkType" id="atkTypeSimple"><option value="F">F</option><option value="PdF">PdF</option></select><br>'
-                . 'Tipo de Dano: <select name="dmgType">'; 
-            selectDmgType($cur);
-            echo '</select><br>'
-                . 'Roll FA: <input id="dadoFA" type="number" name="dadoFA" required><br>'
-                . 'Alvo: <select name="target">';
-            selectTarget($cur, $validTargets);
-            echo '</select><br>'
-                . 'Reação: <select id="def" name="defesa">'
-                . '<option value="defender">Defender</option>'
-                . '<option value="defender_esquiva">Esquivar</option>'
-                . '<option value="indefeso">Indefeso</option>'
-                . '<option id="opt-deflexao-simples" value="defender_esquiva_deflexao">Deflexão (2 PM)</option>'
-                . '</select><br>'
-                . '<label>'
-                . 'Roll FD/Esq.: <input id="dadoFD" type="number" name="dadoFD" required>'
-                . '</label><br>'
-            //Ataque debilitante
-                . '<div id="stat_debili">'
-                . '<label>Stat a ser debilitado: '
-                . '<select name="stat"> ' 
-                . '<option value="F">F</option> <option value="H">H</option> <option value="R">R</option> <option value="A">A</option> <option value="PdF">PdF</option>'
-                . '</select></label></div>'
-                . '</div></div>';
-        }
-
-        // Ataque múltiplo
-        if ($hasTargets) {
-                echo '<div id="atkMulti" style="display:none"><fieldset><legend>Múltiplo</legend>';
-                if ($maxMulti >= 2){
-                    echo 'Tipo de Ataque: <select name="atkType" id="atkTypeMulti"><option value="F">F</option><option value="PdF">PdF</option></select><br>'
-                        . 'Tipo de Dano: <select name="dmgType">'; 
-                    selectDmgType($cur); 
-                    echo '</select><br>'
-                        . 'Quantidade (2-' . $maxMulti . '): <input id="quant" type="number" name="quant" '
-                        . 'min="2" max="' . $maxMulti . '" value="2"><br>'
-                        . 'Alvo: <select name="targetMulti">';
-                    selectTarget($cur, $validTargets);
-                    echo '</select><br>'
-                        . 'Reação: <select id="defM" name="defesaMulti">'
-                        . '<option value="defender">Defender</option>'
-                        . '<option id="opt-esquiva-multi" value="defender_esquiva">Esquivar</option>'
-                        . '<option value="indefeso">Indefeso</option>'
-                        . '<option id="opt-deflexao-multi" value="defender_esquiva_deflexao">Deflexão (2 PM)</option>'
-                        . '</select><br>'
-                        . '<div id="dCont"></div>';
+            //Select de ações
+            if (in_array('energia_vital', listPlayerTraits($cur), true)) {
+                if (empty($notes['use_pv'])) {
+                    echo '<option value="enable_use_pv">Usar PV em vez de PM</option>';
                 } else {
-                    echo 'Este personagem não tem H o suficiente para usar ataque múltiplo.';
+                    echo '<option value="disable_use_pv">Voltar a usar PM normalmente</option>';
                 }
-                echo '</fieldset></div>';
-        }
+            }
 
-        //Tiro múltiplo
-        if ($hasTargets) {
-            echo '<div id="atkTiroMulti" style="display:none"><fieldset><legend>Tiro Múltiplo</legend>'
-                . 'Tipo de Dano: <select name="dmgType">'; 
-            selectDmgType($cur); 
-            echo '</select><br>'
-                . 'Quantidade (1-' . $stats['H'] . '): <input id="quantTiro" type="number" name="quantTiro" '
-                . 'min="1" max="' . $stats['H'] . '" value="1"><br>'
-                . 'Alvo: <select name="targetTiroMulti">';
-            selectTarget($cur, $validTargets);
-            echo '</select><br>'
-                . 'Reação: <select id="defTiro" name="defesaTiroMulti">'
-                . '<option value="defender">Defender</option>'
-                . '<option id="opt-esquiva-tiro" value="defender_esquiva">Esquivar</option>'
-                . '<option value="indefeso">Indefeso</option>'
-                . '<option id="opt-deflexao-tiro" value="defender_esquiva_deflexao">Deflexão (2 PM)</option>'
-                . '</select><br>'
-                . '<div id="dContTiro"></div>'
-                . '<label>Roll FD/Esq.: '
-                . '<input id="dadoFDTiro" type="number" name="dadoFDTiro" required>'
-                . '</label><br>'
+            if (in_array('incorporeo', listPlayerTraits($cur), true)) {
+                if (!$notes['incorp_active']) {
+                    echo '<option value="activate_incorp">Tornar‑se Incorpóreo (2 PM)</option>';
+                } else {
+                    echo '<option value="deactivate_incorp">Reverter Incorporeo</option>';
+                }
+            }
+
+            if (in_array('draconificacao', listPlayerTraits($cur), true)) {
+                if (!$notes['draco_active']) {
+                    echo '<option value="activate_draco">Ativar Draconificação (1PM/turno)</option>';
+                } else {
+                    echo '<option value="deactivate_draco">Desativar Draconificação (ação extra)</option>';
+                }
+            }
+
+            if (in_array('fusao_eterna', listPlayerTraits($cur), true)) {
+                if (empty($notes['fusao_active'])) {
+                    echo '<option value="activate_fusao">Ativar Fusão Eterna (3PM)</option>';
+                } else {
+                    echo '<option value="deactivate_fusao">Desativar Fusão Eterna</option>';
+                }
+            }
+
+            if (!$concentrando && !$agarrado && !$agarrando) {
+                echo '<option value="start_concentrar">Iniciar Concentração</option>';
+            } else if ($notes['concentrado'] > 0) {
+                echo '<option value="start_concentrar">Continuar Concentração (+1)</option>';
+                echo '<option value="release_concentrar">Liberar Concentração (bônus: +' . $notes['concentrado'] . ')</option>';
+            }
+
+            if (in_array('energia_extra', listPlayerTraits($cur), true) && !$concentrando && !$agarrado && !$agarrando) {
+                echo '<option value="extra_energy">Usar Energia Extra</option>';
+            }
+
+            if (in_array('magia_extra', listPlayerTraits($cur), true) && !$concentrando && !$agarrado && !$agarrando) {
+                echo '<option value="magia_extra">Usar Magia Extra</option>';
+            }
+
+            if (in_array('aliado', listPlayerTraits($cur), true) && empty($b['playingAlly']) && empty($b['playingPartner'][$cur]) && !$cocentrado) {
+                echo '<option value="use_ally">Jogar com Aliado</option>';
+            }
+
+            if ($cur == $b['playingAlly']) {
+                echo '<option value="back_to_owner">Voltar ao Dono</option>';
+            }
+
+            if (in_array('parceiro', listPlayerTraits($cur), true) && empty($b['playingPartner'][$cur]) && in_array('aliado', listPlayerTraits($cur), true) && !$concentrado && !$agarrado && !$agarrando) {
+                echo '<option value="start_partner">Formar Dupla com Parceiro</option>';
+            }
+
+            if (!empty($b['playingPartner'][$cur]) && in_array('parceiro', listPlayerTraits($cur), true)) {
+                echo '<option value="end_partner">Separar Dupla</option>';
+            }
+
+
+            if (!empty($b['agarrao'][$cur]['agarrando'])) {
+                echo '<option value="soltar_agarrao">Soltar agarrão (' . $b['agarrao'][$cur]['agarrando'] . ')</option>';
+            }
+
+            if (!empty($b['agarrao'][$cur]['agarrado'])) {
+                echo '<option value="se_soltar_agarrao">Se soltar do agarrão (' . $b['agarrao'][$cur]['agarrado'] . ')</option>';
+            }
+
+            if (in_array('invisibilidade', listPlayerTraits($cur), true) && empty($b['notes'][$cur]['invisivel'])) {
+                echo '<option value="activate_invisibilidade">Ficar invisível (1PM/turno)</option>';
+            }      
+
+            if (in_array('invisibilidade', listPlayerTraits($cur), true) && !empty($b['notes'][$cur]['invisivel'])) {
+                echo '<option value="deactivate_invisibilidade">Voltar a ser visível</option>';
+            }  
+
+            if (!$concentrando && !$agarrado && !$agarrando) {
+                echo '<option value="ataque">Atacar</option>';
+                echo '<option value="multiple">Múltiplo</option>';
+
+
+                if (in_array('tiro_multiplo', listPlayerTraits($cur)) ||
+                    (in_array('tiro_multiplo', listPlayerTraits(getAlliePlayer($cur))) &&
+                        in_array('ligacao_natural', listPlayerTraits(getAlliePlayer($cur)))) ||
+                    (!empty($b['playingPartner'][$cur]) &&
+                        in_array('tiro_multiplo', listPlayerTraits($b['playingPartner'][$cur]['name'])))
+                ) {
+                    echo '<option value="tiro_multiplo">Tiro Múltiplo</option>';
+                }
+
+                if (in_array('agarrao', listPlayerTraits($cur)) ||
+                    (in_array('agarrao', listPlayerTraits(getAlliePlayer($cur))) &&
+                        in_array('ligacao_natural', listPlayerTraits(getAlliePlayer($cur)))) ||
+                    (!empty($b['playingPartner'][$cur]) &&
+                        in_array('agarrao', listPlayerTraits($b['playingPartner'][$cur]['name'])))
+                ) {
+                    echo '<option value="agarrao">Agarrão</option>';
+                }
+
+                if (in_array('ataque_debilitante', listPlayerTraits($cur)) ||
+                    (in_array('ataque_debilitante', listPlayerTraits(getAlliePlayer($cur))) &&
+                        in_array('ligacao_natural', listPlayerTraits(getAlliePlayer($cur)))) ||
+                    (!empty($b['playingPartner'][$cur]) &&
+                        in_array('ataque_debilitante', listPlayerTraits($b['playingPartner'][$cur]['name'])))
+                ) {
+                    echo '<option value="ataque_debilitante">Ataque Debilitante</option>';
+                }
+            }
+            echo '</select><br>';
+
+
+            $validTargets = [];
+            foreach ($order as $o) {
+                if ($o === $cur) continue;
+                $targetNotes   = $b['notes'][$o] ?? [];
+                $targetIncorp  = !empty($targetNotes['incorp_active']);
+                if ($isIncorp === $targetIncorp) {
+                    $validTargets[] = $o;
+                }
+            }
+
+            $allies = getAllAllies();
+            foreach ($allies as $ally) {
+                if ($ally === $cur || !in_array(getAlliePlayer($ally), $order)) continue;
+                $targetNotes  = $b['notes'][$ally] ?? [];
+                $targetIncorp = !empty($targetNotes['incorp_active']);
+                if ($isIncorp === $targetIncorp) {
+                    $validTargets[] = $ally;
+                }
+            }
+
+            $hasTargets = count($validTargets) > 0;
+
+
+            // Ataque simples
+            if ($hasTargets) {
+                echo '<div id="atkSimple" style="display: none;"><fieldset><legend>Ataque</legend>'
+                    . 'Tipo de Ataque: <select name="atkType" id="atkTypeSimple"><option value="F">F</option><option value="PdF">PdF</option></select><br>'
+                    . 'Tipo de Dano: <select name="dmgType">'; 
+                selectDmgType($cur);
+                echo '</select><br>'
+                    . 'Roll FA: <input id="dadoFA" type="number" name="dadoFA" required><br>'
+                    . 'Alvo: <select name="target">';
+                selectTarget($cur, $validTargets);
+                echo '</select><br>'
+                    . 'Reação: <select id="def" name="defesa">'
+                    . '<option value="defender">Defender</option>'
+                    . '<option value="defender_esquiva">Esquivar</option>'
+                    . '<option value="indefeso">Indefeso</option>'
+                    . '<option id="opt-deflexao-simples" value="defender_esquiva_deflexao">Deflexão (2 PM)</option>'
+                    . '</select><br>'
+                    . '<label>'
+                    . 'Roll FD/Esq.: <input id="dadoFD" type="number" name="dadoFD" required>'
+                    . '</label><br>'
+                //Ataque debilitante
+                    . '<div id="stat_debili">'
+                    . '<label>Stat a ser debilitado: '
+                    . '<select name="stat"> ' 
+                    . '<option value="F">F</option> <option value="H">H</option> <option value="R">R</option> <option value="A">A</option> <option value="PdF">PdF</option>'
+                    . '</select></label></div>'
+                    . '</div></div>';
+            }
+
+            // Ataque múltiplo
+            if ($hasTargets) {
+                    echo '<div id="atkMulti" style="display:none"><fieldset><legend>Múltiplo</legend>';
+                    if ($maxMulti >= 2){
+                        echo 'Tipo de Ataque: <select name="atkType" id="atkTypeMulti"><option value="F">F</option><option value="PdF">PdF</option></select><br>'
+                            . 'Tipo de Dano: <select name="dmgType">'; 
+                        selectDmgType($cur); 
+                        echo '</select><br>'
+                            . 'Quantidade (2-' . $maxMulti . '): <input id="quant" type="number" name="quant" '
+                            . 'min="2" max="' . $maxMulti . '" value="2"><br>'
+                            . 'Alvo: <select name="targetMulti">';
+                        selectTarget($cur, $validTargets);
+                        echo '</select><br>'
+                            . 'Reação: <select id="defM" name="defesaMulti">'
+                            . '<option value="defender">Defender</option>'
+                            . '<option id="opt-esquiva-multi" value="defender_esquiva">Esquivar</option>'
+                            . '<option value="indefeso">Indefeso</option>'
+                            . '<option id="opt-deflexao-multi" value="defender_esquiva_deflexao">Deflexão (2 PM)</option>'
+                            . '</select><br>'
+                            . '<div id="dCont"></div>';
+                    } else {
+                        echo 'Este personagem não tem H o suficiente para usar ataque múltiplo.';
+                    }
+                    echo '</fieldset></div>';
+            }
+
+            //Tiro múltiplo
+            if ($hasTargets) {
+                echo '<div id="atkTiroMulti" style="display:none"><fieldset><legend>Tiro Múltiplo</legend>'
+                    . 'Tipo de Dano: <select name="dmgType">'; 
+                selectDmgType($cur); 
+                echo '</select><br>'
+                    . 'Quantidade (1-' . $stats['H'] . '): <input id="quantTiro" type="number" name="quantTiro" '
+                    . 'min="1" max="' . $stats['H'] . '" value="1"><br>'
+                    . 'Alvo: <select name="targetTiroMulti">';
+                selectTarget($cur, $validTargets);
+                echo '</select><br>'
+                    . 'Reação: <select id="defTiro" name="defesaTiroMulti">'
+                    . '<option value="defender">Defender</option>'
+                    . '<option id="opt-esquiva-tiro" value="defender_esquiva">Esquivar</option>'
+                    . '<option value="indefeso">Indefeso</option>'
+                    . '<option id="opt-deflexao-tiro" value="defender_esquiva_deflexao">Deflexão (2 PM)</option>'
+                    . '</select><br>'
+                    . '<div id="dContTiro"></div>'
+                    . '<label>Roll FD/Esq.: '
+                    . '<input id="dadoFDTiro" type="number" name="dadoFDTiro" required>'
+                    . '</label><br>'
+                    . '</fieldset></div>';
+            }
+
+
+            //Agarrão
+            if ($hasTargets) {
+                echo '<div id="atkAgarrao" style="display:none;"><fieldset><legend>Agarrão</legend>'
+                    . 'Alvo: <select name="targetAgarrao">';
+                foreach ($validTargets as $tgt) if ($tgt !== $cur) {
+                    echo '<option value="' . htmlspecialchars($tgt) . '">'
+                        . htmlspecialchars($tgt)
+                        . '</option>';
+                }
+                echo '</select><br>'
+                    . 'Roll Teste de Força: <input id="rollAgarrao" type="number" name="rollAgarrao" required><br>'
+                    . '</fieldset></div>';
+            }
+
+            //Se soltar de um agarrão
+            echo '<div id="soltarAgarrao" style="display:none;"><fieldset><legend>Teste para se Soltar do Agarrão</legend>'
+                . 'Roll Teste de Força: <input id="rollSoltarAgarrao" type="number" name="rollSoltarAgarrao" required><br>'
                 . '</fieldset></div>';
-        }
 
 
-        //Agarrão
-        if ($hasTargets) {
-            echo '<div id="atkAgarrao" style="display:none;"><fieldset><legend>Agarrão</legend>'
-                . 'Alvo: <select name="targetAgarrao">';
-            foreach ($validTargets as $tgt) if ($tgt !== $cur) {
-                echo '<option value="' . htmlspecialchars($tgt) . '">'
-                    . htmlspecialchars($tgt)
+
+                    //Parceiro
+            echo '<div id="partnerSelect" style="display:none;margin-top:0.5em;">'
+                . '<fieldset><legend>Selecione o Parceiro</legend>'
+                . '<select name="partner">';
+            foreach (getPlayerPartner($cur) as $p) {
+                echo '<option value="' . htmlspecialchars($p, ENT_QUOTES) . '">'
+                    . htmlspecialchars($p, ENT_QUOTES)
                     . '</option>';
             }
-            echo '</select><br>'
-                . 'Roll Teste de Força: <input id="rollAgarrao" type="number" name="rollAgarrao" required><br>'
-                . '</fieldset></div>';
+            echo '</select>'
+                . '</fieldset>'
+                . '</div>';
+
         }
-
-        //Se soltar de um agarrão
-        echo '<div id="soltarAgarrao" style="display:none;"><fieldset><legend>Teste para se Soltar do Agarrão</legend>'
-            . 'Roll Teste de Força: <input id="rollSoltarAgarrao" type="number" name="rollSoltarAgarrao" required><br>'
-            . '</fieldset></div>';
-
-
-
-                //Parceiro
-        echo '<div id="partnerSelect" style="display:none;margin-top:0.5em;">'
-            . '<fieldset><legend>Selecione o Parceiro</legend>'
-            . '<select name="partner">';
-        foreach (getPlayerPartner($cur) as $p) {
-            echo '<option value="' . htmlspecialchars($p, ENT_QUOTES) . '">'
-                . htmlspecialchars($p, ENT_QUOTES)
-                . '</option>';
-        }
-        echo '</select>'
-            . '</fieldset>'
-            . '</div>';
-
-    }
 
         //Aliado
         echo '<div id="allySelect" style="display:none;margin-top:0.5em;">'
@@ -802,7 +814,79 @@ switch ($step) {
         echo '<button type="button" onclick="history.back()">Voltar</button>';
         echo '</form>';
 
+        
 
+        // Form de Magias
+
+        $has_magic_school = false;
+        foreach (['magia_branca', 'magia_negra', 'magia_elemental', 'magia_de_sangue'] as $school) {
+            if (in_array($school, listPlayerTraits($cur))) {
+                $has_magic_school = true;
+                break;
+            }
+        }
+        if ($has_magic_school && empty($notes['furia'])) {
+            echo '<h2>Magias</h2>';
+
+            echo '<form method="post" action="battle.php?step=act" id="sustainedForm">';
+            echo '<input type="hidden" name="action" value="update_sustained_spells">';
+            echo '<input type="hidden" name="player" value="' . htmlspecialchars($cur, ENT_QUOTES) . '">';
+            echo '<textarea name="sustained_spells" rows="3" cols="60" placeholder="Anote magias sustentadas aqui...">'.htmlspecialchars($b['notes'][$cur]['sustained_spells'] ?? '', ENT_QUOTES).'</textarea><br>';
+            echo '<button type="submit">Salvar Anotações de Magia</button>';
+            echo '</form>';
+
+            $player_magics = getPlayerMagics($cur);
+            if (!empty($player_magics)) {
+                echo '<form method="post" action="battle.php?step=act" id="magicForm">';
+                echo '<input type="hidden" name="action" value="cast_magic">';
+                echo '<input type="hidden" name="player" value="' . htmlspecialchars($cur, ENT_QUOTES) . '">';
+
+                // Select de Magias
+                echo '<select id="magicSelect" name="magic" style="margin-top: 10px;">';
+                echo '<option value="">-- Selecione uma Magia --</option>';
+                foreach ($player_magics as $magic) {
+                    $slug = htmlspecialchars($magic['efeito_slug'], ENT_QUOTES);
+                    $nome = htmlspecialchars($magic['nome'], ENT_QUOTES);
+                    
+                    $magic_nome = (string)($magic['nome'] ?? '');
+                    $magic_escola = (string)($magic['escola'] ?? '');
+                    $magic_custo_desc = (string)($magic['custo_descricao'] ?? '');
+                    $magic_duracao = (string)($magic['duracao'] ?? '');
+                    $magic_alcance = (string)($magic['alcance'] ?? '');
+                    $magic_descricao = str_replace(["\r", "\n"], ' ', (string)($magic['descricao'] ?? ''));
+
+                    // Adicionando todos os dados da magia como data-attributes
+                    echo "<option value=\"{$slug}\" " .
+                         "data-nome=\"" . htmlspecialchars($magic['nome'], ENT_QUOTES) . "\" " .
+                         "data-escola=\"" . htmlspecialchars($magic['escola'], ENT_QUOTES) . "\" " .
+                         "data-custo-descricao=\"" . htmlspecialchars($magic['custo_descricao'], ENT_QUOTES) . "\" " .
+                         "data-duracao=\"" . htmlspecialchars($magic['duracao'], ENT_QUOTES) . "\" " .
+                         "data-alcance=\"" . htmlspecialchars($magic['alcance'], ENT_QUOTES) . "\" " .
+                         "data-descricao=\"" . htmlspecialchars(str_replace(["\r", "\n"], ' ', $magic['descricao']), ENT_QUOTES) . "\">" .
+                         $nome . "</option>";
+                }
+                echo '</select><br>';
+                
+                echo '<div id="magicInfo" style="display:none; width: 440px; min-height: 120px; border: 1px solid #ccc; padding: 10px; margin-top: 10px;"></div>';
+
+                echo '<div id="magicInputsContainer" style="display:none;"><fieldset><legend>Opções da Magia</legend>';
+                
+                echo '</fieldset></div>';
+
+                echo '<button type="submit">Lançar Magia</button>';
+                echo '</form>';
+            } else {
+                echo '<p>Este personagem não conhece nenhuma magia.</p>';
+            }
+        }
+
+
+        //Arena
+        echo '<h2>Arena</h2>';
+        echo '<form method="post" action="?step=update_arena">';
+        $arena_text = htmlspecialchars($_SESSION['battle']['arena'] ?? '', ENT_QUOTES);
+        echo '<textarea name="arena" rows="8" cols="60">' . $arena_text . '</textarea><br>';
+        echo '<button type="submit">Salvar Arena</button></form>';
 
 
 
@@ -854,7 +938,7 @@ switch ($step) {
                 . '</textarea><br>';
 
             echo 'Posição:<br>'
-                . '<textarea name="partial_stats[' . $pl . '][posicao]" rows="2" cols="30">'
+                . '<textarea name="partial_stats[' . $pl . '][posicao]" rows="2" cols="60">'
                 . htmlspecialchars($note['posicao'], ENT_QUOTES)
                 . '</textarea><br>';
 
@@ -865,6 +949,9 @@ switch ($step) {
         echo '</form>';
 
 
+        $isInculto_php = in_array('inculto', listPlayerTraits($cur), true);
+        $isInculto_js = $isInculto_php ? 'true' : 'false';
+        
         echo <<<JS
 <script>
 document.addEventListener('DOMContentLoaded', () => {
@@ -901,15 +988,21 @@ document.addEventListener('DOMContentLoaded', () => {
   const selAlvoTi   = document.querySelector('select[name="targetTiroMulti"]');
   const selAlvoAg   = document.querySelector('select[name="targetAgarrao"]');
 
-  const esqSi    = document.getElementById('opt-esquiva-simples');
-  const esqMu    = document.getElementById('opt-esquiva-multi');
-  const esqTi    = document.getElementById('opt-esquiva-tiro');
+  const esqSi       = document.getElementById('opt-esquiva-simples');
+  const esqMu       = document.getElementById('opt-esquiva-multi');
+  const esqTi       = document.getElementById('opt-esquiva-tiro');
   
   const deflexSim   = document.getElementById('opt-deflexao-simples');
   const deflexMulti = document.getElementById('opt-deflexao-multi');
   const deflexTiro  = document.getElementById('opt-deflexao-tiro');
 
   const selStatDebi = document.getElementById('stat_debili');
+
+  const magicSelect = document.getElementById('magicSelect');
+  const magicInfo   = document.getElementById('magicInfo');
+  const magicInputsContainer = document.getElementById('magicInputsContainer');
+  const isInculto   = {$isInculto_js};
+
 
   //Funções Auxiliares
 
@@ -936,6 +1029,30 @@ document.addEventListener('DOMContentLoaded', () => {
       if (reactSelId === 'def')    onDef();
       if (reactSelId === 'defM')   onDefM();
       if (reactSelId === 'defTiro') onAct();
+    }
+  }
+
+  function onMagicSelect() {
+    if (!magicSelect) return;
+
+    magicInfo.style.display = 'none';
+    magicInputsContainer.style.display = 'none';
+
+    const selectedOption = magicSelect.options[magicSelect.selectedIndex];
+    if (!selectedOption || !selectedOption.value) {
+      return;
+    }
+    
+    const data = selectedOption.dataset;
+    if (!isInculto) {
+      magicInfo.style.display = 'block';
+      magicInfo.innerHTML =
+        '<strong>Nome:</strong> ' + data.nome + '<br>' +
+        '<strong>Escola:</strong> ' + data.escola + '<br>' +
+        '<strong>Custo:</strong> ' + data.custoDescricao + '<br>' +
+        '<strong>Duração:</strong> ' + data.duracao + '<br>' +
+        '<strong>Alcance:</strong> ' + data.alcance + '<br>' +
+        '<strong>Descrição:</strong> ' + data.descricao;
     }
   }
 
@@ -1088,6 +1205,8 @@ document.addEventListener('DOMContentLoaded', () => {
   if (atkTypeMulti) atkTypeMulti.addEventListener('change', manageDeflexaoMulti);
   if (selAlvoMu)  selAlvoMu.addEventListener('change', manageDeflexaoMulti);
   if (selAlvoTi)  selAlvoTi.addEventListener('change', manageDeflexaoTiro);
+
+  if (magicSelect) { magicSelect.addEventListener('change', onMagicSelect); onMagicSelect(); }
 
   //Inicialização
   atualizaReacao(selAlvoSi, esqSi);
@@ -1503,6 +1622,37 @@ JS;
                     exit;
 
 
+                case 'cast_magic':
+                    $magic_slug = $_POST['magic'] ?? '';
+                    $target = $_POST['magic_target'] ?? $pl; // Alvo padrão é o próprio conjurador
+                    $pm_cost = (int)($_POST['magic_pm_cost'] ?? 1);
+                    
+                    if (empty($magic_slug)) {
+                        $out = 'Nenhuma magia foi selecionada.';
+                        break;
+                    }
+
+                    // Switch interno para lidar com cada magia
+                    switch ($magic_slug) {
+                        case 'bola-de-fogo': // Exemplo
+                            $out = "<strong>{$pl}</strong> lançou Bola de Fogo em <strong>{$target}</strong> gastando {$pm_cost} PMs!";
+                            unset($b['playingAlly']);
+                            $b['init_index']++; // Essa magia passa o turno, a de baixo não.
+                            break;
+
+                        case 'cura-magica': // Exemplo
+                            $out = "<strong>{$pl}</strong> curou <strong>{$target}</strong> gastando {$pm_cost} PMs!";
+                            break;
+                            
+                        default:
+                            $out = "A magia '{$magic_slug}' foi selecionada, mas sua lógica ainda não foi implementada.";
+                            unset($b['playingAlly']);
+                            $b['init_index']++;
+                            break;
+                    }
+                    break;
+
+                    
                 default:
                     $out = 'Ação inválida ou não reconhecida.';
                     break;
@@ -1639,3 +1789,5 @@ JS;
         header('Location: battle.php');
         exit;
 }
+
+?>
