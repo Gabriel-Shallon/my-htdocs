@@ -136,6 +136,17 @@ switch ($step) {
         header('Location: battle.php?step=turn');
         exit;
 
+    // 2.3) Atualizar magias sustentadas
+    case 'update_sustained_spells':
+        if ($_SERVER['REQUEST_METHOD'] === 'POST'){
+            $pl = $_GET['player'] ?? '';
+            if ($pl && in_array($pl, $b['players'], true)){
+                $_SESSION['battle']['notes'][$pl]['sustained_spells'] = trim($_POST['sustained_spells'] ?? '');
+            }
+        }
+        header('Location: battle.php?step=turn');
+        exit;
+
 
 
         // 3) initiative atual
@@ -511,6 +522,12 @@ switch ($step) {
         echo 'Equipado:<br><textarea name="equipped" rows="2" cols="60">' . htmlspecialchars($stats['equipado'] ?? '', ENT_QUOTES) . '</textarea><br>';
         echo '<button>Salvar Stats</button></form>';
 
+
+
+
+
+
+
         // Form de ações
         echo '<h2>Ações</h2>';
 
@@ -816,8 +833,11 @@ switch ($step) {
 
         
 
-        // Form de Magias
 
+
+
+
+        // Form de Magias
         $has_magic_school = false;
         foreach (['magia_branca', 'magia_negra', 'magia_elemental', 'magia_de_sangue'] as $school) {
             if (in_array($school, listPlayerTraits($cur))) {
@@ -828,12 +848,11 @@ switch ($step) {
         if ($has_magic_school && empty($notes['furia'])) {
             echo '<h2>Magias</h2>';
 
-            echo '<form method="post" action="battle.php?step=act" id="sustainedForm">';
-            echo '<input type="hidden" name="action" value="update_sustained_spells">';
-            echo '<input type="hidden" name="player" value="' . htmlspecialchars($cur, ENT_QUOTES) . '">';
-            echo '<textarea name="sustained_spells" rows="3" cols="60" placeholder="Anote magias sustentadas aqui...">'.htmlspecialchars($b['notes'][$cur]['sustained_spells'] ?? '', ENT_QUOTES).'</textarea><br>';
-            echo '<button type="submit">Salvar Anotações de Magia</button>';
-            echo '</form>';
+            $susteinedSpellsText = htmlspecialchars($_SESSION['battle']['notes'][$cur]['sustained_spells'] ?? '', ENT_QUOTES);
+            echo '<form method="post" action="?step=update_sustained_spells&player=' . urlencode($cur) . '">'
+            .'<textarea name="sustained_spells" rows="3" cols="60" placeholder="Anote magias sustentadas aqui...">'.$susteinedSpellsText.'</textarea><br>'
+            .'<button type="submit">Salvar Anotações de Magia</button>'
+            .'</form>';
 
             $player_magics = getPlayerMagics($cur);
             if (!empty($player_magics)) {
@@ -870,7 +889,11 @@ switch ($step) {
                 echo '<div id="magicInfo" style="display:none; width: 440px; min-height: 120px; border: 1px solid #ccc; padding: 10px; margin-top: 10px;"></div>';
 
                 echo '<div id="magicInputsContainer" style="display:none;"><fieldset><legend>Opções da Magia</legend>';
-                
+                    
+
+
+
+
                 echo '</fieldset></div>';
 
                 echo '<button type="submit">Lançar Magia</button>';
@@ -884,8 +907,8 @@ switch ($step) {
         //Arena
         echo '<h2>Arena</h2>';
         echo '<form method="post" action="?step=update_arena">';
-        $arena_text = htmlspecialchars($_SESSION['battle']['arena'] ?? '', ENT_QUOTES);
-        echo '<textarea name="arena" rows="8" cols="60">' . $arena_text . '</textarea><br>';
+        $arenaText = htmlspecialchars($_SESSION['battle']['arena'] ?? '', ENT_QUOTES);
+        echo '<textarea name="arena" rows="8" cols="60">' . $arenaText . '</textarea><br>';
         echo '<button type="submit">Salvar Arena</button></form>';
 
 
