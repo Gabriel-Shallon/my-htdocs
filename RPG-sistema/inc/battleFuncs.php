@@ -287,8 +287,8 @@ include_once 'traitFuncs.php';
         }
     }
 
-    function applyDamage(string $pl, string $tgt, int $dano, string $tipo, string &$out){
-        if (!empty($_SESSION['battle']['notes'][$tgt]['incorp_active']) && in_array($tipo, ['F','PdF'], true) && empty($_SESSION['battle']['notes'][$pl]['incorp_active'])) {
+    function applyDamage(string $pl, string $tgt, int $dano, string $tipoAtk, string &$out){
+        if (!empty($_SESSION['battle']['notes'][$tgt]['incorp_active']) && in_array($tipoAtk, ['F','PdF'], true) && empty($_SESSION['battle']['notes'][$pl]['incorp_active'])) {
             $dano = 0;
             $out .= " (inútil: alvo incorpóreo)";
         } else {

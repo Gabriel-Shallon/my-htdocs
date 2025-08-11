@@ -288,7 +288,11 @@
 
     
     function resistenciaMagia ($player){
-        //atualizar quando houver magias
+        if (in_array('resistencia_a_magia', listPlayerTraits($player), true)){
+            return 2; // bonus
+        } else {
+            return 0; // bonus
+        }
     }
 
     function PMextra(string $player){

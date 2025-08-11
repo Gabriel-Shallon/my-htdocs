@@ -1,7 +1,7 @@
 <?php
 
-include_once 'generalFuncs.php';
-include_once 'battleFuncs.php';
+include_once 'inc/generalFuncs.php';
+include_once 'inc/battleFuncs.php';
 
 function getMagic($magic) {
     $conn = conecta();
@@ -147,6 +147,83 @@ function removeMagic($magic) {
     $conn->commit();
     return $stmtMagic->rowCount() > 0;
 }
+
+
+
+
+// EXECUÇÃO DE MAGIAS //
+
+
+
+function ataqueMagico($b, $mago, $alvosInfo, $PMs, $atkType){
+    $out = '';
+    $costPerTgt = round($PMs/count($alvosInfo));
+    if (spendPM($mago,$PMs)){
+        foreach ($alvosInfo as $tgt) {
+            $tgtName = $tgt['name'];
+            $rollFAAndPMs = $tgt['rollFA']+$costPerTgt;
+            $dano = defaultReactionTreatment($b, $tgtName, $mago, $tgt['reaction'], $rollFAAndPMs, ($tgt['rollFD']+resistenciaMagia($tgtName)), $atkType, 'Magia');
+            $out .= applyDamage($mago, $tgtName, $dano, 'Magico', $out);
+            $out .= "<strong>{$mago}</strong> usou Ataque Mágico ({$atkType}) em <strong>{$tgtName}</strong>. PMs = {$PMs}; Dano = {$dano}<br>";
+        }
+        return $out;
+    } else {
+        return "<strong>{$mago}</strong> não tem PMs o suficiente par lançar esse ataque mágico.";
+    }
+}
+
+
+function lancaInfalivelDeTalude($b, $mago, $alvosInfo, $PMs){
+    $out = '';
+    if (spendPM($mago,$PMs)){
+        foreach ($alvosInfo as $tgt) {
+            $tgtName = $tgt['name'];
+            $FA = $tgt['qtdAtk'] * 2;
+            $dano = $FA - (FDindefeso($tgtName, 'Magia')+resistenciaMagia($tgtName));
+            $out .= applyDamage($mago, $tgtName, $dano, 'Magico', $out);
+            $out .= "<strong>{$mago}</strong> usou A Lança Infalível de Talude em <strong>{$tgtName}</strong>. PMs = {$PMs}; Dano = {$dano}<br>";
+        }
+        return $out;
+    } else {
+        return "<strong>{$mago}</strong> não tem PMs o suficiente par lançar essa quantidade de Lanças Infalíveis de Talude.";
+    }
+}
+
+function brilhoExplosivo($b, $mago, $alvo, $dadosFA, $dadoFD){
+    $out = '';
+    if (spendPM($mago,25)){
+        $dano = $dadosFA - ($dadoFD+getPlayerStat($alvo, 'H')+resistenciaMagia($alvo));
+        $out .= applyDamage($mago, $alvo, $dano, 'Magico', $out);
+        $out .= "<strong>{$mago}</strong> usou Brilho Explosivo em <strong>{$alvo}</strong>. PMs = 25; Dano = {$dano}<br>";
+        return $out;
+    } else {
+        return "<strong>{$mago}</strong> não tem PMs o suficiente par lançar essa quantidade de Lanças Infalíveis de Talude.";
+    }
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 ?>

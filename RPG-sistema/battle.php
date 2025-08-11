@@ -148,6 +148,18 @@ switch ($step) {
         exit;
 
 
+    // 2.4) Gerar inputs de magias    
+    case 'get_magic_inputs':
+        $magic_slug = $_GET['magic'] ?? '';
+        $cur = $b['order'][$b['init_index'] % count($b['order'])];
+        if (empty($magic_slug) || empty($cur)) {
+            exit;
+        }
+        include_once 'inc/magicInputs.php';
+        renderMagicInputs($magic_slug, $cur, $b);
+        exit;
+
+
 
         // 3) initiative atual
     case 'turn':
@@ -839,7 +851,7 @@ switch ($step) {
 
         // Form de Magias
         $has_magic_school = false;
-        foreach (['magia_branca', 'magia_negra', 'magia_elemental', 'magia_de_sangue'] as $school) {
+        foreach (['magia_branca', 'magia_negra', 'magia_elemental', 'magia_de_sangue', 'arcano'] as $school) {
             if (in_array($school, listPlayerTraits($cur))) {
                 $has_magic_school = true;
                 break;
@@ -885,17 +897,9 @@ switch ($step) {
                          $nome . "</option>";
                 }
                 echo '</select><br>';
-                
                 echo '<div id="magicInfo" style="display:none; width: 440px; min-height: 120px; border: 1px solid #ccc; padding: 10px; margin-top: 10px;"></div>';
-
                 echo '<div id="magicInputsContainer" style="display:none;"><fieldset><legend>Opções da Magia</legend>';
-                    
-
-
-
-
                 echo '</fieldset></div>';
-
                 echo '<button type="submit">Lançar Magia</button>';
                 echo '</form>';
             } else {
@@ -1055,10 +1059,11 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   }
 
-  function onMagicSelect() {
+  async function onMagicSelect() {
     if (!magicSelect) return;
 
     magicInfo.style.display = 'none';
+    magicInputsContainer.innerHTML = '';
     magicInputsContainer.style.display = 'none';
 
     const selectedOption = magicSelect.options[magicSelect.selectedIndex];
@@ -1076,6 +1081,31 @@ document.addEventListener('DOMContentLoaded', () => {
         '<strong>Duração:</strong> ' + data.duracao + '<br>' +
         '<strong>Alcance:</strong> ' + data.alcance + '<br>' +
         '<strong>Descrição:</strong> ' + data.descricao;
+    }
+
+    const magicSlug = selectedOption.value;
+    magicInputsContainer.style.display = 'block';
+    magicInputsContainer.innerHTML = '<fieldset><legend>Opções da Magia</legend>Carregando opções...</fieldset>';
+    
+    try {
+        const response = await fetch('battle.php?step=get_magic_inputs&magic='+magicSlug);
+        if (!response.ok) {
+            throw new Error('Erro ao buscar opções da magia.');
+        }
+        const htmlInputs = await response.text();
+        if (htmlInputs.trim() !== ''){
+            magicInputsContainer.innerHTML = '<fieldset><legend>Opções da Magia</legend>'+htmlInputs+'</fieldset>';
+            magicInputsContainer.querySelectorAll('script').forEach(script => {
+                const newScript = document.createElement('script');
+                newScript.textContent = script.textContent;
+                script.parentNode.replaceChild(newScript, script);
+            });
+        } else {
+             magicInputsContainer.style.display = 'none';
+        }
+    } catch (error) {
+        console.error("Falha na requisição da magia:", error);
+        magicInputsContainer.innerHTML = '<fieldset><legend>Erro</legend>Não foi possível carregar as opções da magia.</fieldset>';
     }
   }
 
@@ -1645,6 +1675,14 @@ JS;
                     exit;
 
 
+
+
+
+
+
+
+
+                // Processamento de dados de magias
                 case 'cast_magic':
                     $magic_slug = $_POST['magic'] ?? '';
                     $target = $_POST['magic_target'] ?? $pl; // Alvo padrão é o próprio conjurador
@@ -1657,14 +1695,56 @@ JS;
 
                     // Switch interno para lidar com cada magia
                     switch ($magic_slug) {
-                        case 'bola-de-fogo': // Exemplo
+                        case 'bola_de_fogo':
+                            // Esta magia precisa de 'magic_target' e 'magic_pm_cost'
                             $out = "<strong>{$pl}</strong> lançou Bola de Fogo em <strong>{$target}</strong> gastando {$pm_cost} PMs!";
+                            // ... aqui viria a lógica de dano, gasto de PM, etc.
                             unset($b['playingAlly']);
-                            $b['init_index']++; // Essa magia passa o turno, a de baixo não.
+                            $b['init_index']++;
+                            break;
+                        
+                        case 'cura_magica':
+                            // Precisa de 'magic_target' e 'magic_heal_type'
+                            $heal_type = $_POST['magic_heal_type'] ?? 'heal_pv';
+                            $cost = ($heal_type === 'heal_pv') ? 2 : 4;
+                            $out = "<strong>{$pl}</strong> usou Cura Mágica em <strong>{$target}</strong> (custo: {$cost} PMs).";
+                            // ... lógica de cura ...
+                            // Magias de cura geralmente não passam o turno, então não incrementamos init_index.
+                            break;
+                            
+                        case 'ataque_magico':
+                            $pmCost = $_POST['magic_pm_cost'] ?? 1;
+                            $atkType = $_POST['magic_attack_type'] ?? 'F';
+                            $tgtsInfo = $_POST['magic_targets'] ?? ['']; //alvos [name] + reação [reaction] + dado de defesa [rollFD] + dado de ataque [rollFA]
+
+                            $out = ataqueMagico($b, $pl, $tgtsInfo, $pmCost, $atkType);
+                        
+                            unset($b['playingAlly']);
+                            $b['init_index']++;
                             break;
 
-                        case 'cura-magica': // Exemplo
-                            $out = "<strong>{$pl}</strong> curou <strong>{$target}</strong> gastando {$pm_cost} PMs!";
+                        case 'lanca_infalivel_de_talude':
+                            $pmCost = $_POST['magic_pm_cost'] ?? 1;
+                            $tgtsInfo = $_POST['magic_targets'] ?? ['']; //alvos [name] + lancas atacando ele [qtdAtk]
+
+                            $out = lancaInfalivelDeTalude($b, $pl, $tgtsInfo, $pmCost);
+                        
+                            unset($b['playingAlly']);
+                            $b['init_index']++;
+                            break;
+
+                        case 'brilho_explosivo':
+                            $tgt = $_POST['target'] ?? [''];
+                            $dadoFD = $_POST['dadoFD'] ?? [''];
+                            $somaDosDadosFA = 0;
+                            for ($i = 1; $i < 11; $i++){
+                                $somaDosDadosFA += $_POST['dado'.$i] ?? [0];
+                            }
+
+                            $out = brilhoExplosivo($b, $pl, $tgt, $somaDosDadosFA, $dadoFD);
+                        
+                            unset($b['playingAlly']);
+                            $b['init_index']++;
                             break;
                             
                         default:
