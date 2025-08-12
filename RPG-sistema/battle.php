@@ -681,7 +681,7 @@ switch ($step) {
                     echo '<option value="ataque_debilitante">Ataque Debilitante</option>';
                 }
             }
-            echo '</select><br>';
+            echo '</select>';
 
 
             $validTargets = [];
@@ -726,9 +726,9 @@ switch ($step) {
                     . '</select><br>'
                     . '<label>'
                     . 'Roll FD/Esq.: <input id="dadoFD" type="number" name="dadoFD" required>'
-                    . '</label><br>'
+                    . '</label>'
                 //Ataque debilitante
-                    . '<div id="stat_debili">'
+                    . '<br><div id="stat_debili">'
                     . '<label>Stat a ser debilitado: '
                     . '<select name="stat"> ' 
                     . '<option value="F">F</option> <option value="H">H</option> <option value="R">R</option> <option value="A">A</option> <option value="PdF">PdF</option>'
@@ -754,7 +754,7 @@ switch ($step) {
                             . '<option id="opt-esquiva-multi" value="defender_esquiva">Esquivar</option>'
                             . '<option value="indefeso">Indefeso</option>'
                             . '<option id="opt-deflexao-multi" value="defender_esquiva_deflexao">Deflexão (2 PM)</option>'
-                            . '</select><br>'
+                            . '</select>'
                             . '<div id="dCont"></div>';
                     } else {
                         echo 'Este personagem não tem H o suficiente para usar ataque múltiplo.';
@@ -782,7 +782,7 @@ switch ($step) {
                     . '<div id="dContTiro"></div>'
                     . '<label>Roll FD/Esq.: '
                     . '<input id="dadoFDTiro" type="number" name="dadoFDTiro" required>'
-                    . '</label><br>'
+                    . '</label>'
                     . '</fieldset></div>';
             }
 
@@ -796,7 +796,7 @@ switch ($step) {
                         . htmlspecialchars($tgt)
                         . '</option>';
                 }
-                echo '</select><br>'
+                echo '</select>'
                     . 'Roll Teste de Força: <input id="rollAgarrao" type="number" name="rollAgarrao" required><br>'
                     . '</fieldset></div>';
             }
@@ -839,7 +839,7 @@ switch ($step) {
 
 
 
-        echo '<button type="submit">Executar</button> ';
+        echo '<br><button type="submit">Executar</button> ';
         echo '<button type="button" onclick="history.back()">Voltar</button>';
         echo '</form>';
 
@@ -850,63 +850,64 @@ switch ($step) {
 
 
         // Form de Magias
-        $has_magic_school = false;
-        foreach (['magia_branca', 'magia_negra', 'magia_elemental', 'magia_de_sangue', 'arcano'] as $school) {
-            if (in_array($school, listPlayerTraits($cur))) {
-                $has_magic_school = true;
-                break;
-            }
-        }
-        if ($has_magic_school && empty($notes['furia'])) {
-            echo '<h2>Magias</h2>';
-
-            $susteinedSpellsText = htmlspecialchars($_SESSION['battle']['notes'][$cur]['sustained_spells'] ?? '', ENT_QUOTES);
-            echo '<form method="post" action="?step=update_sustained_spells&player=' . urlencode($cur) . '">'
-            .'<textarea name="sustained_spells" rows="3" cols="60" placeholder="Anote magias sustentadas aqui...">'.$susteinedSpellsText.'</textarea><br>'
-            .'<button type="submit">Salvar Anotações de Magia</button>'
-            .'</form>';
-
-            $player_magics = getPlayerMagics($cur);
-            if (!empty($player_magics)) {
-                echo '<form method="post" action="battle.php?step=act" id="magicForm">';
-                echo '<input type="hidden" name="action" value="cast_magic">';
-                echo '<input type="hidden" name="player" value="' . htmlspecialchars($cur, ENT_QUOTES) . '">';
-
-                // Select de Magias
-                echo '<select id="magicSelect" name="magic" style="margin-top: 10px;">';
-                echo '<option value="">-- Selecione uma Magia --</option>';
-                foreach ($player_magics as $magic) {
-                    $slug = htmlspecialchars($magic['efeito_slug'], ENT_QUOTES);
-                    $nome = htmlspecialchars($magic['nome'], ENT_QUOTES);
-                    
-                    $magic_nome = (string)($magic['nome'] ?? '');
-                    $magic_escola = (string)($magic['escola'] ?? '');
-                    $magic_custo_desc = (string)($magic['custo_descricao'] ?? '');
-                    $magic_duracao = (string)($magic['duracao'] ?? '');
-                    $magic_alcance = (string)($magic['alcance'] ?? '');
-                    $magic_descricao = str_replace(["\r", "\n"], ' ', (string)($magic['descricao'] ?? ''));
-
-                    // Adicionando todos os dados da magia como data-attributes
-                    echo "<option value=\"{$slug}\" " .
-                         "data-nome=\"" . htmlspecialchars($magic['nome'], ENT_QUOTES) . "\" " .
-                         "data-escola=\"" . htmlspecialchars($magic['escola'], ENT_QUOTES) . "\" " .
-                         "data-custo-descricao=\"" . htmlspecialchars($magic['custo_descricao'], ENT_QUOTES) . "\" " .
-                         "data-duracao=\"" . htmlspecialchars($magic['duracao'], ENT_QUOTES) . "\" " .
-                         "data-alcance=\"" . htmlspecialchars($magic['alcance'], ENT_QUOTES) . "\" " .
-                         "data-descricao=\"" . htmlspecialchars(str_replace(["\r", "\n"], ' ', $magic['descricao']), ENT_QUOTES) . "\">" .
-                         $nome . "</option>";
+        if(!$isDefeated){
+            $has_magic_school = false;
+            foreach (['magia_branca', 'magia_negra', 'magia_elemental', 'magia_de_sangue', 'arcano'] as $school) {
+                if (in_array($school, listPlayerTraits($cur))) {
+                    $has_magic_school = true;
+                    break;
                 }
-                echo '</select><br>';
-                echo '<div id="magicInfo" style="display:none; width: 440px; min-height: 120px; border: 1px solid #ccc; padding: 10px; margin-top: 10px;"></div>';
-                echo '<div id="magicInputsContainer" style="display:none;"><fieldset><legend>Opções da Magia</legend>';
-                echo '</fieldset></div>';
-                echo '<button type="submit">Lançar Magia</button>';
-                echo '</form>';
-            } else {
-                echo '<p>Este personagem não conhece nenhuma magia.</p>';
+            }
+            if ($has_magic_school && empty($notes['furia'])) {
+                echo '<h2>Magias</h2>';
+
+                $susteinedSpellsText = htmlspecialchars($_SESSION['battle']['notes'][$cur]['sustained_spells'] ?? '', ENT_QUOTES);
+                echo '<form method="post" action="?step=update_sustained_spells&player=' . urlencode($cur) . '">'
+                .'<textarea name="sustained_spells" rows="3" cols="60" placeholder="Anote magias sustentadas aqui...">'.$susteinedSpellsText.'</textarea><br>'
+                .'<button type="submit">Salvar Anotações de Magia</button>'
+                .'</form>';
+
+                $player_magics = getPlayerMagics($cur);
+                if (!empty($player_magics)) {
+                    echo '<form method="post" action="battle.php?step=act" id="magicForm">';
+                    echo '<input type="hidden" name="action" value="cast_magic">';
+                    echo '<input type="hidden" name="player" value="' . htmlspecialchars($cur, ENT_QUOTES) . '">';
+
+                    // Select de Magias
+                    echo '<select id="magicSelect" name="magic" style="margin-top: 10px;">';
+                    echo '<option value="">-- Selecione uma Magia --</option>';
+                    foreach ($player_magics as $magic) {
+                        $slug = htmlspecialchars($magic['efeito_slug'], ENT_QUOTES);
+                        $nome = htmlspecialchars($magic['nome'], ENT_QUOTES);
+
+                        $magic_nome = (string)($magic['nome'] ?? '');
+                        $magic_escola = (string)($magic['escola'] ?? '');
+                        $magic_custo_desc = (string)($magic['custo_descricao'] ?? '');
+                        $magic_duracao = (string)($magic['duracao'] ?? '');
+                        $magic_alcance = (string)($magic['alcance'] ?? '');
+                        $magic_descricao = str_replace(["\r", "\n"], ' ', (string)($magic['descricao'] ?? ''));
+
+                        // Adicionando todos os dados da magia como data-attributes
+                        echo "<option value=\"{$slug}\" " .
+                             "data-nome=\"" . htmlspecialchars($magic['nome'], ENT_QUOTES) . "\" " .
+                             "data-escola=\"" . htmlspecialchars($magic['escola'], ENT_QUOTES) . "\" " .
+                             "data-custo-descricao=\"" . htmlspecialchars($magic['custo_descricao'], ENT_QUOTES) . "\" " .
+                             "data-duracao=\"" . htmlspecialchars($magic['duracao'], ENT_QUOTES) . "\" " .
+                             "data-alcance=\"" . htmlspecialchars($magic['alcance'], ENT_QUOTES) . "\" " .
+                             "data-descricao=\"" . htmlspecialchars(str_replace(["\r", "\n"], ' ', $magic['descricao']), ENT_QUOTES) . "\">" .
+                             $nome . "</option>";
+                    }
+                    echo '</select><br>';
+                    echo '<div id="magicInfo" style="display:none; width: 440px; min-height: 120px; border: 1px solid #ccc; padding: 10px; margin-top: 10px;"></div>';
+                    echo '<div id="magicInputsContainer" style="display:none;"><fieldset><legend>Opções da Magia</legend>';
+                    echo '</fieldset></div>';
+                    echo '<button type="submit">Lançar Magia</button>';
+                    echo '</form>';
+                } else {
+                    echo '<p>Este personagem não conhece nenhuma magia.</p>';
+                }
             }
         }
-
 
         //Arena
         echo '<h2>Arena</h2>';
@@ -1025,9 +1026,9 @@ document.addEventListener('DOMContentLoaded', () => {
 
   const selStatDebi = document.getElementById('stat_debili');
 
-  const magicSelect = document.getElementById('magicSelect');
-  const magicInfo   = document.getElementById('magicInfo');
-  const magicInputsContainer = document.getElementById('magicInputsContainer');
+  const magicSelect = document.getElementById('magicSelect') ?? '';
+  const magicInfo   = document.getElementById('magicInfo') ?? '';
+  const magicInputsContainer = document.getElementById('magicInputsContainer') ?? '';
   const isInculto   = {$isInculto_js};
 
 
@@ -1364,7 +1365,7 @@ JS;
                     if (empty($b['notes'][$pl]['concentrado'])) {
                         $b['notes'][$pl]['concentrado'] = 1;
                     }
-                    $out = "<strong>{$pl}</strong> iniciou/concentra (rodada atual: +{$b['notes'][$pl]['concentrado']})";
+                    $out = "<strong>{$pl}</strong> começou a se concentrar (rodada atual: +{$b['notes'][$pl]['concentrado']})";
                     unset($b['playingAlly']);
                     $b['init_index']++;
                     break;
@@ -1747,6 +1748,16 @@ JS;
                             $b['init_index']++;
                             break;
                             
+                        case 'morte_estelar':
+                            $tgt = $_POST['target'] ?? [''];
+
+                            $out = morteEstelar( $pl, $tgt);
+                        
+                            unset($b['playingAlly']);
+                            $b['init_index']++;
+                            break;
+
+
                         default:
                             $out = "A magia '{$magic_slug}' foi selecionada, mas sua lógica ainda não foi implementada.";
                             unset($b['playingAlly']);

@@ -26,6 +26,10 @@ function renderMagicInputs($slug, $caster, &$battle) {
             inputBrilhoExplosivo($caster, $battle);
             break;
 
+        case 'morte_estelar':
+            inputMorteEstelar($caster, $battle);
+            break;
+
 
         default:
             echo 'Essa magia ainda não foi implementada';
@@ -192,6 +196,51 @@ function inputBrilhoExplosivo($caster, &$b){
         echo '<label>'.$i.'° dado: <input type="number" name="dado'.$i.'" required></label><br>';
     }
     echo '<label>Dado de defesa: <input type="number" name="dadoFD" required></label>';
+}
+
+
+
+
+
+function inputMorteEstelar($caster, &$b){
+    $validTargets = getValidTargets($caster, $b);
+    echo '<label>Selecionar Alvo: <select id="morte_estelar_select" name="target" required>';
+    echo '<option value="" selected>Prossiga com Cuidado</option>';
+    foreach ($validTargets as $target) {
+        echo '<option value="'.htmlspecialchars($target, ENT_QUOTES, 'UTF-8').'">'.htmlspecialchars($target, ENT_QUOTES, 'UTF-8').'</option>';
+    }
+    echo '</select></label><br>';
+    echo '<div id="morte_estelar_confirm_container" style="margin-top:8px; display:none;"></div>';
+    ?>
+    <script>
+    (function() {
+        const select = document.getElementById('morte_estelar_select');
+        const container = document.getElementById('morte_estelar_confirm_container');
+        const magicForm = document.getElementById('magicForm');
+        select.addEventListener('change', function() {
+            const alvo = select.value;
+            if (!alvo) {
+                container.style.display = 'none';
+                container.innerHTML = '';
+                return;
+            }
+            container.style.display = 'block';
+            container.innerHTML = `
+                <div style="margin-bottom:8px;color:darkred;font-weight:600;">
+                    Confirmar: -5 PMs permanentemente & Aniquilação de <strong>${alvo}</strong>
+                </div>
+                <button type="submit" form="magicForm" style="margin-right:8px;">Confirmar</button>
+                <button type="button" id="morte_estelar_cancel">Cancelar</button>
+            `;
+            document.getElementById('morte_estelar_cancel').addEventListener('click', function() {
+                select.value = '';
+                container.style.display = 'none';
+                container.innerHTML = '';
+            });
+        });
+    })();
+    </script>
+    <?php
 }
 
 

@@ -201,7 +201,27 @@ function brilhoExplosivo($b, $mago, $alvo, $dadosFA, $dadoFD){
     }
 }
 
-
+function morteEstelar($mago, $alvo){
+    $out = '';
+    if (spendPM($mago,5)){
+        $FA = '992625164071551871061817274843250294784';
+        $FD = (string)(FDindefeso($alvo, 'Magia')+resistenciaMagia($alvo));
+        $dano = bcsub($FA, $FD, 0);
+        $PV = (string)getPlayerStat($alvo, 'PV');
+        $resultado = bcsub($PV, $dano, 0);
+        if (bccomp($resultado, '0', 0) <= 0){
+            setPlayerStat($mago, 'PM_max', getPlayerStat($mago, 'PM_max')-5);
+            setPlayerStat($alvo, 'PV', 0);
+            return "<strong>{$mago}</strong> aniquilou <strong>{$alvo}</strong> com <strong>".$dano."</strong> de dano!";
+        } else {
+            setPlayerStat($mago, 'PM_max', getPlayerStat($mago, 'PM_max')-5);
+            setPlayerStat($alvo, 'PV', (int)$resultado);
+            return "<strong>{$alvo}</strong> sobreviveu a <strong>".$dano."</strong> de dano da Morte Estelar de <strong>{$mago}</strong>, com <strong>{$resultado}</strong> de PVs. WOW!!!";
+        }
+    } else {
+        return "<strong>{$mago}</strong> não tem PMs o suficiente par lançar Morte Estelar.";
+    }
+}
 
 
 
