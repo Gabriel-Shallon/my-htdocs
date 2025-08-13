@@ -768,26 +768,32 @@ switch ($step) {
 
             //Tiro múltiplo
             if ($hasTargets) {
-                echo '<div id="atkTiroMulti" style="display:none"><fieldset><legend>Tiro Múltiplo</legend>'
-                    . 'Tipo de Dano: <select name="dmgType">'; 
-                selectDmgType($cur); 
-                echo '</select><br>'
-                    . 'Quantidade (1-' . $stats['H'] . '): <input id="quantTiro" type="number" name="quantTiro" '
-                    . 'min="1" max="' . $stats['H'] . '" value="1"><br>'
-                    . 'Alvo: <select name="targetTiroMulti">';
-                selectTarget($cur, $validTargets);
-                echo '</select><br>'
-                    . 'Reação: <select id="defTiro" name="defesaTiroMulti">'
-                    . '<option value="defender">Defender</option>'
-                    . '<option id="opt-esquiva-tiro" value="defender_esquiva">Esquivar</option>'
-                    . '<option value="indefeso">Indefeso</option>'
-                    . '<option id="opt-deflexao-tiro" value="defender_esquiva_deflexao">Deflexão (2 PM)</option>'
-                    . '</select><br>'
-                    . '<div id="dContTiro"></div>'
-                    . '<label>Roll FD/Esq.: '
-                    . '<input id="dadoFDTiro" type="number" name="dadoFDTiro" required>'
-                    . '</label>'
-                    . '</fieldset></div>';
+                if (!$stats['H'] == 0){
+                    echo '<div id="atkTiroMulti" style="display:none"><fieldset><legend>Tiro Múltiplo</legend>'
+                        . 'Tipo de Dano: <select name="dmgType">'; 
+                    selectDmgType($cur); 
+                    echo '</select><br>'
+                        . 'Quantidade (1-' . $stats['H'] . '): <input id="quantTiro" type="number" name="quantTiro" '
+                        . 'min="1" max="' . $stats['H'] . '" value="1"><br>'
+                        . 'Alvo: <select name="targetTiroMulti">';
+                    selectTarget($cur, $validTargets);
+                    echo '</select><br>'
+                        . 'Reação: <select id="defTiro" name="defesaTiroMulti">'
+                        . '<option value="defender">Defender</option>'
+                        . '<option id="opt-esquiva-tiro" value="defender_esquiva">Esquivar</option>'
+                        . '<option value="indefeso">Indefeso</option>'
+                        . '<option id="opt-deflexao-tiro" value="defender_esquiva_deflexao">Deflexão (2 PM)</option>'
+                        . '</select><br>'
+                        . '<div id="dContTiro"></div>'
+                        . '<label>Roll FD/Esq.: '
+                        . '<input id="dadoFDTiro" type="number" name="dadoFDTiro" required>'
+                        . '</label>'
+                        . '</fieldset></div>';
+                } else {
+                    echo '<div id="atkTiroMulti" style="display:none">';
+                    echo 'Você não tem Habilidade o suficiente para usar essa vantagem.';
+                    echo '</div>';
+                }
             }
 
 
@@ -912,7 +918,7 @@ switch ($step) {
                     }
                     echo '</select><br>';
                     echo '<div id="magicInfo" style="display:none; width: 440px; min-height: 120px; border: 1px solid #ccc; padding: 10px; margin-top: 10px;"></div>';
-                    echo '<div id="magicInputsContainer" style="display:none;"><fieldset><legend>Opções da Magia</legend>';
+                    echo '<div id="magicInputsContainer" style="display:none; width: 465px;"><fieldset><legend>Opções da Magia</legend>';
                     echo '</fieldset></div>';
                     echo '<button type="submit">Lançar Magia</button>';
                     echo '</form>';
@@ -1710,9 +1716,12 @@ JS;
                     // Switch interno para lidar com cada magia
                     switch ($magic_slug) {
                         case 'bola_de_fogo':
-                            // Esta magia precisa de 'magic_target' e 'magic_pm_cost'
-                            $out = "<strong>{$pl}</strong> lançou Bola de Fogo em <strong>{$target}</strong> gastando {$pm_cost} PMs!";
-                            // ... aqui viria a lógica de dano, gasto de PM, etc.
+                            $tgts = $_POST['magic_targets'] ?? ['']; // Info do alvo: name + dFD
+                            $PMs = $_POST['magic_pm_cost'] ?? [''];
+                            $dadoFA = $_POST['dadoFA'] ?? [''];
+
+                            $out = bolaDeFogo($pl, $tgts, $PMs, $dadoFA);
+                        
                             unset($b['playingAlly']);
                             $b['init_index']++;
                             break;
@@ -1777,6 +1786,27 @@ JS;
                             $dFD = $_POST['dadoFD'] ?? [''];
 
                             $out = enxameDeTrovoes( $b, $pl, $tgt, $dFA1, $dFA2, $dFD);
+                        
+                            unset($b['playingAlly']);
+                            $b['init_index']++;
+                            break;
+
+                        case 'nulificacao_total_de_talude':
+                            $tgt = $_POST['target'] ?? [''];
+                            $RTest = $_POST['RTest'] ?? [''];
+
+                            $out = nulificacaoTotalDeTalude($pl, $tgt, $RTest);
+                        
+                            unset($b['playingAlly']);
+                            $b['init_index']++;
+                            break;
+
+                        case 'bola_de_fogo_instavel':
+                            $tgts = $_POST['magic_targets'] ?? ['']; // Info do alvo: name + dFD
+                            $PMs = $_POST['magic_pm_cost'] ?? [''];
+                            $dadosFA = $_POST['dados'] ?? [''];
+
+                            $out = bolaDeFogoInstavel($pl, $tgts, $PMs, $dadosFA);
                         
                             unset($b['playingAlly']);
                             $b['init_index']++;

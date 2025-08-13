@@ -39,8 +39,15 @@ include_once 'traitFuncs.php';
     }
 
 
-
-
+    function statTest($player, $stat, $diff, $dado){
+        $meta = getPlayerStat($player, $stat) - $diff;
+        if ($dado > $meta || $dado == 6){
+            return false;
+        }
+        if ($dado <= $meta){
+            return true;
+        }
+    }
 
     
     function FA (string $atacante, string $atkType, int $dado, $H){

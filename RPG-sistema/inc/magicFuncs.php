@@ -215,7 +215,7 @@ function brilhoExplosivo($mago, $alvo, $dadosFA, $dadoFD){
         $out .= "<strong>{$mago}</strong> usou ".getMagicSpecialName($mago, 'brilho_explosivo')." (Brilho Explosivo) em <strong>{$alvo}</strong>. PMs = 25; Dano = {$dano}<br>";
         return $out;
     } else {
-        return "<strong>{$mago}</strong> não tem PMs o suficiente par lançar essa quantidade de Lanças Infalíveis de Talude.";
+        return "<strong>{$mago}</strong> não tem PMs o suficiente para lançar Brilho Explisivo.";
     }
 }
 
@@ -237,7 +237,7 @@ function morteEstelar($mago, $alvo){
             return "<strong>{$alvo}</strong> sobreviveu a <strong>".$dano."</strong> de dano da ".getMagicSpecialName($mago, 'brilho_explosivo')." (Morte Estelar) de <strong>{$mago}</strong>, com <strong>{$resultado}</strong> de PVs. WOW!!!";
         }
     } else {
-        return "<strong>{$mago}</strong> não tem PMs o suficiente par lançar Morte Estelar.";
+        return "<strong>{$mago}</strong> não tem PMs o suficiente para lançar Morte Estelar.";
     }
 }
 
@@ -251,18 +251,119 @@ function enxameDeTrovoes($b, $mago, $alvo, $dadoFA1, $dadoFA2, $dadoFD){
             $dano = max(($dadoFA1+$dadoFA2+getPlayerStat($mago, 'H')) - ($dadoFD+getPlayerStat($alvo, 'H')+resistenciaMagia($alvo)), 0);
         }
         $out .= applyDamage($mago, $alvo, $dano, 'Magico', $out);
-        $out .= "<strong>{$mago}</strong> usou ".getMagicSpecialName($mago, 'enxame_de_trovoes')." (Enxame de Trovoes) em <strong>{$alvo}</strong>. PMs = 4; Dano = {$dano}<br>";
+        $out .= "<strong>{$mago}</strong> usou ".getMagicSpecialName($mago, 'enxame_de_trovoes')." (Enxame de Trovoes) em <strong>{$alvo}</strong>. -4 PMs; Dano = {$dano}<br>";
         return $out;
     } else {
-        return "<strong>{$mago}</strong> não tem PMs o suficiente par lançar essa quantidade de Lanças Infalíveis de Talude.";
+        return "<strong>{$mago}</strong> não tem PMs o suficiente para lançar Enxame de Trovões.";
     }
 }
 
 
 
 
+function nulificacaoTotalDeTalude($mago, $alvo, $RTest){
+    $out = '';
+    if (spendPM($mago,50)){
+        if (statTest($alvo, 'R', getPlayerStat($mago, 'H')-resistenciaMagia($alvo), $RTest)){
+            return "<strong>{$mago}</strong> usou ".getMagicSpecialName($mago, 'nulificacao_total_de_talude')." (A Nulificação Total de Talude) para apagar <strong>{$alvo}</strong> da existência, mas não teve Habilidade o suficiente para afetar-lo!!! -50 PMs.<br>";
+        }
+        $pdo = conecta();
+        $tabelasFilhas = [
+            'player_advantages',
+            'player_disadvantages',
+            'player_damage_types',
+            'player_vulnerabilities',
+            'player_invulnerabilities',
+            'player_extra_armor',
+            'player_magias'
+        ];
+        $pdo->beginTransaction();
+        $sqlAllies = "DELETE FROM RPG.allies WHERE dono = :nome OR aliado = :nome";
+        $stmtAllies = $pdo->prepare($sqlAllies);
+        $stmtAllies->execute([':nome' => $alvo]);
+        foreach ($tabelasFilhas as $tabela) {
+            $sql = "DELETE FROM RPG.{$tabela} WHERE player_name = :nome";
+            $stmt = $pdo->prepare($sql);
+            $stmt->execute([':nome' => $alvo]);
+        }
+        if (statTest($alvo, 'R', 4-resistenciaMagia($alvo), $RTest)){
+            $pdo->commit();
+            return  "<strong>{$mago}</strong> usou ".getMagicSpecialName($mago, 'nulificacao_total_de_talude')." (A Nulificação Total de Talude) para apagar <strong>{$alvo}</strong> da existência. <strong>{$alvo}</strong> ressistiu, mas perdeu seus poderes... -50 PMs.<br>";
+        }
+        $constraintOff = "SET foreign_key_checks = 0";
+        $sqlPlayer = "DELETE FROM RPG.player WHERE nome = :nome";
+        $constraintOn = "SET foreign_key_checks = 1";
+        $stmtConstraintOff = $pdo->prepare($constraintOff);
+        $stmtPlayer = $pdo->prepare($sqlPlayer);
+        $stmtConstraintOn = $pdo->prepare($constraintOn);
+        $stmtConstraintOff->execute();
+        $stmtPlayer->execute([':nome' => $alvo]);
+        $stmtConstraintOn->execute();
+        $pdo->commit();
+        $key = array_search($alvo, $_SESSION['battle']['order']);
+        if ($key !== false) {
+            unset($_SESSION['battle']['order'][$key]);
+            $_SESSION['battle']['order'] = array_values($_SESSION['battle']['order']);
+        }
+        $key_players = array_search($alvo, $_SESSION['battle']['players']);
+        if ($key_players !== false) {
+            unset($_SESSION['battle']['players'][$key_players]);
+            $_SESSION['battle']['players'] = array_values($_SESSION['battle']['players']);
+        }
+        if (isset($_SESSION['battle']['notes'][$alvo])) {
+            unset($_SESSION['battle']['notes'][$alvo]);
+        }
+        if (isset($_SESSION['battle']['orig'][$alvo])) unset($_SESSION['battle']['orig'][$alvo]);
+        if (isset($_SESSION['battle']['agarrao'][$alvo])) unset($_SESSION['battle']['agarrao'][$alvo]);
+
+        $out .= "<strong>{$mago}</strong> usou ".getMagicSpecialName($mago, 'nulificacao_total_de_talude')." (A Nulificação Total de Talude) e apagou <strong>{$alvo}</strong> da existência. -50 PMs.<br>";
+        return $out;
+    } else {
+        return "<strong>{$mago}</strong> não tem PMs o suficiente para Nulificar alguém!";
+    }
+}
 
 
+function bolaDeFogoInstavel($mago, $tgts, $PMs, $dadosFA){
+    $out = '';
+    if (spendPM($mago,$PMs)){
+        $FA = getPlayerStat($mago, 'H');
+        foreach ($dadosFA as $dFA){
+            $FA += $dFA;
+        }
+        foreach ($tgts as $tgt){
+            $tgtName = $tgt['name'];
+            $FD = FD($tgtName, $tgt['dFD'], 'Magia') + resistenciaMagia($tgtName); 
+            $dano = max($FA - $FD, 0);
+            applyDamage($mago, $tgtName, $dano, 'Magico', $out);
+            $out .= "<strong>{$mago}</strong> usou ".getMagicSpecialName($mago, 'bola_de_fogo_instavel')." (Bola de Fogo Instável) em <strong>{$tgtName}</strong>. Dano = {$dano}<br>";   
+        }
+        $out .= "PMs = -{$PMs}";
+        return $out;
+    } else {
+        return "<strong>{$mago}</strong> não tem PMs o suficiente para lançar essa Bola de Fogo Instável!";
+    }
+}
+
+
+
+function bolaDeFogo($mago, $tgts, $PMs, $dadoFA){
+    $out = '';
+    if (spendPM($mago,$PMs)){
+        $FA = getPlayerStat($mago, 'H') + $PMs + $dadoFA;
+        foreach ($tgts as $tgt){
+            $tgtName = $tgt['name'];
+            $FD = FD($tgtName, $tgt['dFD'], 'Magia') + resistenciaMagia($tgtName); 
+            $dano = max($FA - $FD, 0);
+            applyDamage($mago, $tgtName, $dano, 'Magico', $out);
+            $out .= "<strong>{$mago}</strong> usou ".getMagicSpecialName($mago, 'bola_de_fogo')." (Bola de Fogo) em <strong>{$tgtName}</strong>. Dano = {$dano}<br>";   
+        }
+        $out .= "PMs = -{$PMs}";
+        return $out;
+    } else {
+        return "<strong>{$mago}</strong> não tem PMs o suficiente para lançar essa Bola de Fogo Instável!";
+    }
+}
 
 
 

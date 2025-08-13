@@ -34,6 +34,14 @@ function renderMagicInputs($slug, $caster, &$battle) {
             inputEnxameDeTrovoes($caster, $battle);
             break;
 
+        case 'nulificacao_total_de_talude':
+            inputNulificacaoTotalDeTalude($caster, $battle);
+            break;
+           
+        case 'bola_de_fogo_instavel':
+            inputBolaDeFogoInstavel($caster, $battle);
+            break;            
+
         default:
             echo 'Essa magia ainda não foi implementada';
             break;
@@ -41,15 +49,49 @@ function renderMagicInputs($slug, $caster, &$battle) {
 }
 
 function inputBolaDeFogo($caster, &$b) {
-    $validTargets = getValidTargets($caster, $b, 'enemies'); // Função auxiliar para pegar alvos
+    $validTargets = getValidTargets($caster, $b, 'enemies');
+    echo 'Custo em PMs (1-10): <input type="number" id="magic_pm_cost_instavel" name="magic_pm_cost" value="2" min="2" max="10" step="1" required><br>';
+    echo 'Quantidade de inimigos na área: <input type="number" id="magic_num_targets_instavel" name="magic_num_targets" value="1" min="1" required><br>';
+    echo 'Dado de ataque: <input type="number" name="dadoFA" value="1" min="6" required><br>';
 
-    echo 'Alvo: <select name="magic_target">';
-    foreach ($validTargets as $tgt) {
-        echo '<option value="' . htmlspecialchars($tgt) . '">' . htmlspecialchars($tgt) . '</option>';
-    }
-    echo '</select><br>';
-
-    echo 'Custo em PMs (1-10): <input type="number" name="magic_pm_cost" value="1" min="1" max="10" required><br>';
+    echo '<hr><h4>Dados de Ataque</h4><div id="magic_dice_container"></div><hr>';
+    echo '<h4>Alvos na Área</h4><div id="magic_targets_container"></div>';
+    ?>
+    <script>
+    (function() {
+        const pmCostInput = document.getElementById('magic_pm_cost_instavel');
+        const numTargetsInput = document.getElementById('magic_num_targets_instavel');
+        const targetsContainer = document.getElementById('magic_targets_container');
+        const validTargets = <?php echo json_encode($validTargets); ?>;
+        function generateTargetInputs() {
+            targetsContainer.innerHTML = '';
+            const numTargets = parseInt(numTargetsInput.value, 10);
+            for (let i = 0; i < numTargets; i++) {
+                const fieldset = document.createElement('fieldset');
+                fieldset.style.marginTop = '10px';
+                const legend = document.createElement('legend');
+                legend.textContent = `Alvo ${i + 1}`;
+                fieldset.appendChild(legend);
+                let targetSelectHTML = `<label>Selecionar Alvo: <select name="magic_targets[${i}][name]" required>`;
+                validTargets.forEach(target => {
+                    targetSelectHTML += `<option value="${target}">${target}</option>`;
+                });
+                targetSelectHTML += '</select></label>';
+                targetFDHTML = `<br><label>Dado de defesa: <input type="number" name="magic_targets[${i}][dFD]" required></label>`;
+                fieldset.innerHTML += targetSelectHTML + targetFDHTML;
+                targetsContainer.appendChild(fieldset);
+            }
+        }
+        function updateAllInputs() {
+            generateDiceInputs();
+            generateTargetInputs();
+        }
+        pmCostInput.addEventListener('input', updateAllInputs);
+        numTargetsInput.addEventListener('input', updateAllInputs);
+        updateAllInputs();
+    })();
+    </script>
+    <?php
 }
 
 
@@ -228,7 +270,7 @@ function inputMorteEstelar($caster, &$b){
             container.style.display = 'block';
             container.innerHTML = `
                 <div style="margin-bottom:8px;color:darkred;font-weight:600;">
-                    Confirmar: -5 PMs permanentemente & Aniquilação de <strong>${alvo}</strong>
+                    Confirmar: -5 PMs permanentemente & Aniquilação de <strong>${alvo}</strong>?
                 </div>
                 <button type="submit" form="magicForm" style="margin-right:8px;">Confirmar</button>
                 <button type="button" id="morte_estelar_cancel">Cancelar</button>
@@ -258,6 +300,109 @@ function inputEnxameDeTrovoes($caster, &$b){
     echo '<br><label>2° dado de ataque: <input type="number" name="dadoFA2" required></label>';
     echo '<br><label>Dado de defesa: <input type="number" name="dadoFD" required></label>';
 }
+
+
+
+function inputNulificacaoTotalDeTalude($caster, &$b){
+    $validTargets = getValidTargets($caster, $b);
+    echo '<label>Selecionar Alvo: <select id="nulificacao_select" name="target" required>';
+    echo '<option value="" selected>Prossiga com Cuidado</option>';
+    foreach ($validTargets as $target) {
+        echo '<option value="'.htmlspecialchars($target, ENT_QUOTES, 'UTF-8').'">'.htmlspecialchars($target, ENT_QUOTES, 'UTF-8').'</option>';
+    }
+    echo '</select></label><br>';
+    echo '<div id="nulificacao_confirm_container" style="margin-top:8px; display:none;"></div>';
+    ?>
+    <script>
+    (function() {
+        const select = document.getElementById('nulificacao_select');
+        const container = document.getElementById('nulificacao_confirm_container');
+        const magicForm = document.getElementById('magicForm');
+        select.addEventListener('change', function() {
+            const alvo = select.value;
+            if (!alvo) {
+                container.style.display = 'none';
+                container.innerHTML = '';
+                return;
+            }
+            container.style.display = 'block';
+            container.innerHTML = `
+                <div style="margin-bottom:8px;color:darkred;font-weight:600;">
+                    Confirmar: -50 PMs para apagar <strong>${alvo}</strong> da existência?
+                </div>
+                <label>Teste de resistência: <input type="number" name="RTest" required></label><br>
+                <button type="submit" form="magicForm" style="margin-right:8px;">Confirmar</button>
+                <button type="button" id="nulificacao_cancel">Cancelar</button>
+            `;
+            document.getElementById('nulificacao_cancel').addEventListener('click', function() {
+                select.value = '';
+                container.style.display = 'none';
+                container.innerHTML = '';
+            });
+        });
+    })();
+    </script>
+    <?php
+}
+
+
+
+
+function inputBolaDeFogoInstavel($caster, &$b) {
+    $validTargets = getValidTargets($caster, $b, 'enemies');
+    echo 'Custo em PMs (2-10): <input type="number" id="magic_pm_cost_instavel" name="magic_pm_cost" value="2" min="2" max="10" step="1" required><br>';
+    echo 'Quantidade de inimigos na área: <input type="number" id="magic_num_targets_instavel" name="magic_num_targets" value="1" min="1" required><br>'; 
+    
+    echo '<hr><h4>Dados de Ataque</h4><div id="magic_dice_container"></div><hr>';
+    echo '<h4>Alvos na Área</h4><div id="magic_targets_container"></div>';
+    ?>
+    <script>
+    (function() {
+        const pmCostInput = document.getElementById('magic_pm_cost_instavel');
+        const numTargetsInput = document.getElementById('magic_num_targets_instavel');
+        const diceContainer = document.getElementById('magic_dice_container');
+        const targetsContainer = document.getElementById('magic_targets_container');
+        const validTargets = <?php echo json_encode($validTargets); ?>;
+        function generateDiceInputs() {
+            diceContainer.innerHTML = ''; // Limpa os inputs antigos
+            const currentPmCost = parseInt(pmCostInput.value, 10);
+            const numDice = 1 + Math.floor(currentPmCost / 2);
+            for (let i = 0; i < numDice; i++) {
+                let dInputHTML = `<label>Rolagem do Dado ${i + 1}: <input type="number" name="dados[${i}]" required></label><br>`;
+                diceContainer.innerHTML += dInputHTML;
+            }
+        }
+        function generateTargetInputs() {
+            targetsContainer.innerHTML = '';
+            const numTargets = parseInt(numTargetsInput.value, 10);
+            for (let i = 0; i < numTargets; i++) {
+                const fieldset = document.createElement('fieldset');
+                fieldset.style.marginTop = '10px';
+                const legend = document.createElement('legend');
+                legend.textContent = `Alvo ${i + 1}`;
+                fieldset.appendChild(legend);
+                let targetSelectHTML = `<label>Selecionar Alvo: <select name="magic_targets[${i}][name]" required>`;
+                validTargets.forEach(target => {
+                    targetSelectHTML += `<option value="${target}">${target}</option>`;
+                });
+                targetSelectHTML += '</select></label>';
+                targetFDHTML = `<br><label>Dado de defesa: <input type="number" name="magic_targets[${i}][dFD]" required></label>`;
+                fieldset.innerHTML += targetSelectHTML + targetFDHTML;
+                targetsContainer.appendChild(fieldset);
+            }
+        }
+        function updateAllInputs() {
+            generateDiceInputs();
+            generateTargetInputs();
+        }
+        pmCostInput.addEventListener('input', updateAllInputs);
+        numTargetsInput.addEventListener('input', updateAllInputs);
+        updateAllInputs();
+    })();
+    </script>
+    <?php
+}
+
 
 
 
