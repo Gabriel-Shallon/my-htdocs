@@ -22,25 +22,43 @@ function getMagicStat($magic, $stat) {
 
 
 function getPlayerMagics($player) {
-        $conn = conecta();
-        $sql = "SELECT m.* 
-                FROM RPG.magias AS m
-                JOIN RPG.player_magias AS pm ON m.id = pm.magia_id
-                WHERE pm.player_name = :player";
-        $stmt = $conn->prepare($sql);
-        $stmt->bindParam(':player', $player, PDO::PARAM_STR);
-        $stmt->execute();
-        return $stmt->fetchAll(PDO::FETCH_ASSOC);
+    $conn = conecta();
+    $sql = "SELECT m.* 
+            FROM RPG.magias AS m
+            JOIN RPG.player_magias AS pm ON m.id = pm.magia_id
+            WHERE pm.player_name = :player";
+    $stmt = $conn->prepare($sql);
+    $stmt->bindParam(':player', $player, PDO::PARAM_STR);
+    $stmt->execute();
+    return $stmt->fetchAll(PDO::FETCH_ASSOC);
 }
 
 
 function getMagicSchool($school) {
-        $conn = conecta();
-        $sql = "SELECT * FROM RPG.magias WHERE escola = :school ORDER BY nome ASC";
-        $stmt = $conn->prepare($sql);
-        $stmt->bindParam(':school', $school, PDO::PARAM_STR);
-        $stmt->execute();
-        return $stmt->fetchAll(PDO::FETCH_ASSOC);
+    $conn = conecta();
+    $sql = "SELECT * FROM RPG.magias WHERE escola = :school ORDER BY nome ASC";
+    $stmt = $conn->prepare($sql);
+    $stmt->bindParam(':school', $school, PDO::PARAM_STR);
+    $stmt->execute();
+    return $stmt->fetchAll(PDO::FETCH_ASSOC);
+}
+
+
+function getMagicSpecialName($mago, $magica){
+    $conn = conecta();
+    $sql = "SELECT pm.nome_personagem 
+            FROM RPG.player_magias AS pm
+            JOIN RPG.magias AS m ON pm.magia_id = m.id
+            WHERE pm.player_name = :mago AND m.efeito_slug = :magica";
+    $stmt = $conn->prepare($sql);
+    $stmt->bindParam(':mago', $mago, PDO::PARAM_STR);
+    $stmt->bindParam(':magica', $magica, PDO::PARAM_STR);
+    $stmt->execute();
+    $result = $stmt->fetch(PDO::FETCH_ASSOC);
+    if ($result && !empty($result['nome_personagem'])) {
+        return $result['nome_personagem'];
+    }
+    return null;
 }
 
 
@@ -162,7 +180,7 @@ function ataqueMagico($b, $mago, $alvosInfo, $PMs, $atkType){
         foreach ($alvosInfo as $tgt) {
             $tgtName = $tgt['name'];
             $rollFAAndPMs = $tgt['rollFA']+$costPerTgt;
-            $dano = defaultReactionTreatment($b, $tgtName, $mago, $tgt['reaction'], $rollFAAndPMs, ($tgt['rollFD']+resistenciaMagia($tgtName)), $atkType, 'Magia');
+            $dano = max(defaultReactionTreatment($b, $tgtName, $mago, $tgt['reaction'], $rollFAAndPMs, ($tgt['rollFD']+resistenciaMagia($tgtName)), $atkType, 'Magia'), 0);
             $out .= applyDamage($mago, $tgtName, $dano, 'Magico', $out);
             $out .= "<strong>{$mago}</strong> usou Ataque Mágico ({$atkType}) em <strong>{$tgtName}</strong>. PMs = {$PMs}; Dano = {$dano}<br>";
         }
@@ -173,15 +191,15 @@ function ataqueMagico($b, $mago, $alvosInfo, $PMs, $atkType){
 }
 
 
-function lancaInfalivelDeTalude($b, $mago, $alvosInfo, $PMs){
+function lancaInfalivelDeTalude($mago, $alvosInfo, $PMs){
     $out = '';
     if (spendPM($mago,$PMs)){
         foreach ($alvosInfo as $tgt) {
             $tgtName = $tgt['name'];
             $FA = $tgt['qtdAtk'] * 2;
-            $dano = $FA - (FDindefeso($tgtName, 'Magia')+resistenciaMagia($tgtName));
+            $dano = max($FA - (FDindefeso($tgtName, 'Magia')+resistenciaMagia($tgtName)), 0);
             $out .= applyDamage($mago, $tgtName, $dano, 'Magico', $out);
-            $out .= "<strong>{$mago}</strong> usou A Lança Infalível de Talude em <strong>{$tgtName}</strong>. PMs = {$PMs}; Dano = {$dano}<br>";
+            $out .= "<strong>{$mago}</strong> usou ".getMagicSpecialName($mago, 'lanca_infalivel_de_talude')." (A Lança Infalível de Talude) em <strong>{$tgtName}</strong>. PMs = {$PMs}; Dano = {$dano}<br>";
         }
         return $out;
     } else {
@@ -189,12 +207,12 @@ function lancaInfalivelDeTalude($b, $mago, $alvosInfo, $PMs){
     }
 }
 
-function brilhoExplosivo($b, $mago, $alvo, $dadosFA, $dadoFD){
+function brilhoExplosivo($mago, $alvo, $dadosFA, $dadoFD){
     $out = '';
     if (spendPM($mago,25)){
-        $dano = $dadosFA - ($dadoFD+getPlayerStat($alvo, 'H')+resistenciaMagia($alvo));
+        $dano = max($dadosFA - ($dadoFD+getPlayerStat($alvo, 'H')+resistenciaMagia($alvo)), 0);
         $out .= applyDamage($mago, $alvo, $dano, 'Magico', $out);
-        $out .= "<strong>{$mago}</strong> usou Brilho Explosivo em <strong>{$alvo}</strong>. PMs = 25; Dano = {$dano}<br>";
+        $out .= "<strong>{$mago}</strong> usou ".getMagicSpecialName($mago, 'brilho_explosivo')." (Brilho Explosivo) em <strong>{$alvo}</strong>. PMs = 25; Dano = {$dano}<br>";
         return $out;
     } else {
         return "<strong>{$mago}</strong> não tem PMs o suficiente par lançar essa quantidade de Lanças Infalíveis de Talude.";
@@ -216,7 +234,7 @@ function morteEstelar($mago, $alvo){
         } else {
             setPlayerStat($mago, 'PM_max', getPlayerStat($mago, 'PM_max')-5);
             setPlayerStat($alvo, 'PV', (int)$resultado);
-            return "<strong>{$alvo}</strong> sobreviveu a <strong>".$dano."</strong> de dano da Morte Estelar de <strong>{$mago}</strong>, com <strong>{$resultado}</strong> de PVs. WOW!!!";
+            return "<strong>{$alvo}</strong> sobreviveu a <strong>".$dano."</strong> de dano da ".getMagicSpecialName($mago, 'brilho_explosivo')." (Morte Estelar) de <strong>{$mago}</strong>, com <strong>{$resultado}</strong> de PVs. WOW!!!";
         }
     } else {
         return "<strong>{$mago}</strong> não tem PMs o suficiente par lançar Morte Estelar.";
@@ -224,6 +242,21 @@ function morteEstelar($mago, $alvo){
 }
 
 
+function enxameDeTrovoes($b, $mago, $alvo, $dadoFA1, $dadoFA2, $dadoFD){
+    $out = '';
+    if (spendPM($mago,4)){
+        if (in_array('Magia',listPlayerExtraArmor($alvo))){
+            $dano = defaultReactionTreatment($b, $alvo, $mago, 'defender', ($dadoFA1+$dadoFA2), ($dadoFD+resistenciaMagia($alvo)-getPlayerStat($alvo, 'A')), 'PdF', 'Magia');
+        } else {
+            $dano = max(($dadoFA1+$dadoFA2+getPlayerStat($mago, 'H')) - ($dadoFD+getPlayerStat($alvo, 'H')+resistenciaMagia($alvo)), 0);
+        }
+        $out .= applyDamage($mago, $alvo, $dano, 'Magico', $out);
+        $out .= "<strong>{$mago}</strong> usou ".getMagicSpecialName($mago, 'enxame_de_trovoes')." (Enxame de Trovoes) em <strong>{$alvo}</strong>. PMs = 4; Dano = {$dano}<br>";
+        return $out;
+    } else {
+        return "<strong>{$mago}</strong> não tem PMs o suficiente par lançar essa quantidade de Lanças Infalíveis de Talude.";
+    }
+}
 
 
 

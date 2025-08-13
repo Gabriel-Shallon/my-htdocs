@@ -30,6 +30,9 @@ function renderMagicInputs($slug, $caster, &$battle) {
             inputMorteEstelar($caster, $battle);
             break;
 
+        case 'enxame_de_trovoes':
+            inputEnxameDeTrovoes($caster, $battle);
+            break;
 
         default:
             echo 'Essa magia ainda não foi implementada';
@@ -161,7 +164,7 @@ function inputLancaInfalivel($caster, &$b) {
                 validTargets.forEach(target => {
                     targetSelectHTML += `<option value="${target}">${target}</option>`;
                 })
-                const qtdAtkHTML = `<label>Quantidade de Lanças atacando esse: <input type="number" name="magic_targets[${i}][qtdAtk]" min="1" max="${pmCostInput.value}"required></label><br>`;;
+                const qtdAtkHTML = `<label>Quantidade de Lanças atacando esse alvo: <input type="number" name="magic_targets[${i}][qtdAtk]" min="1" max="${pmCostInput.value}"required></label><br>`;;
                 targetSelectHTML += '</select></label><br>';
                 fieldset.innerHTML += targetSelectHTML + qtdAtkHTML;
                 targetsContainer.appendChild(fieldset);
@@ -197,8 +200,6 @@ function inputBrilhoExplosivo($caster, &$b){
     }
     echo '<label>Dado de defesa: <input type="number" name="dadoFD" required></label>';
 }
-
-
 
 
 
@@ -246,7 +247,17 @@ function inputMorteEstelar($caster, &$b){
 
 
 
-
+function inputEnxameDeTrovoes($caster, &$b){
+    $validTargets = getValidTargets($caster, $b);
+    echo '<label>Selecionar Alvo: <select name="target" required>';
+    foreach ($validTargets as $target){
+        echo '<option value="'.$target.'">'.$target.'</option>';
+    }
+    echo '</select></label><br>';
+    echo '<br><label>1° dado de ataque: <input type="number" name="dadoFA1" required></label>';
+    echo '<br><label>2° dado de ataque: <input type="number" name="dadoFA2" required></label>';
+    echo '<br><label>Dado de defesa: <input type="number" name="dadoFD" required></label>';
+}
 
 
 

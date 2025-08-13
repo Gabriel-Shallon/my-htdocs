@@ -57,7 +57,8 @@ switch ($step) {
             $safe = htmlspecialchars($n, ENT_QUOTES);
             echo '<label><input type="checkbox" name="players[]" value="' . $n . '"> ' . $n . '</label><br>';
         }
-        echo '<button type="submit">Confirmar</button></form>';
+
+        echo '<br><button type="submit">Confirmar</button></form>';
         break;
 
 
@@ -66,6 +67,7 @@ switch ($step) {
         $rolls = $_POST['rolls'] ?? [];
         
         if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+            $_SESSION['battle']['arena'] = trim($_POST['arena'] ?? '');
             foreach ($b['players'] as $i => $pl) { 
                 syncEquipBuffs($pl);  
                 if (!isset($b['orig'][$pl])) {
@@ -106,10 +108,12 @@ switch ($step) {
             if (in_array('assombrado', listPlayerTraits($nome), true)) {
                 echo '<label>' . htmlspecialchars($nome, ENT_QUOTES) . ' Assombrado (1–6), dado:
                     <input type="number" name="roll_assombrado[' . $i . ']" min="1" max="6" required>
-                  </label><br>';
+                  </label>';
             }
         }
-        echo '<button type="submit">Ok</button>
+        echo '<h2>Arena</h2>';
+        echo '<textarea name="arena" rows="8" cols="60"></textarea><br>';
+        echo '<br><button type="submit">Ok</button>
           </form>';
         break;
 
@@ -879,6 +883,15 @@ switch ($step) {
                     foreach ($player_magics as $magic) {
                         $slug = htmlspecialchars($magic['efeito_slug'], ENT_QUOTES);
                         $nome = htmlspecialchars($magic['nome'], ENT_QUOTES);
+                        $specialNome = getMagicSpecialName($cur, $slug);
+
+                        $displayText = '';
+                        if ($specialNome) {
+                            $safeSpecialNome = htmlspecialchars($specialNome, ENT_QUOTES);
+                            $displayText = $safeSpecialNome . ' (' . $nome . ')';
+                        } else {
+                            $displayText = $nome;
+                        }
 
                         $magic_nome = (string)($magic['nome'] ?? '');
                         $magic_escola = (string)($magic['escola'] ?? '');
@@ -894,8 +907,8 @@ switch ($step) {
                              "data-custo-descricao=\"" . htmlspecialchars($magic['custo_descricao'], ENT_QUOTES) . "\" " .
                              "data-duracao=\"" . htmlspecialchars($magic['duracao'], ENT_QUOTES) . "\" " .
                              "data-alcance=\"" . htmlspecialchars($magic['alcance'], ENT_QUOTES) . "\" " .
-                             "data-descricao=\"" . htmlspecialchars(str_replace(["\r", "\n"], ' ', $magic['descricao']), ENT_QUOTES) . "\">" .
-                             $nome . "</option>";
+                             "data-descricao=\"" . htmlspecialchars(str_replace(["\r", "\n"], ' ', $magic['descricao']), ENT_QUOTES) . "\">
+                             " . $displayText . "</option>";
                     }
                     echo '</select><br>';
                     echo '<div id="magicInfo" style="display:none; width: 440px; min-height: 120px; border: 1px solid #ccc; padding: 10px; margin-top: 10px;"></div>';
@@ -1026,9 +1039,9 @@ document.addEventListener('DOMContentLoaded', () => {
 
   const selStatDebi = document.getElementById('stat_debili');
 
-  const magicSelect = document.getElementById('magicSelect') ?? '';
-  const magicInfo   = document.getElementById('magicInfo') ?? '';
-  const magicInputsContainer = document.getElementById('magicInputsContainer') ?? '';
+  const magicSelect = document.getElementById('magicSelect');
+  const magicInfo   = document.getElementById('magicInfo');
+  const magicInputsContainer = document.getElementById('magicInputsContainer');
   const isInculto   = {$isInculto_js};
 
 
@@ -1256,7 +1269,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
   if (atkTypeSimp) atkTypeSimp.addEventListener('change', manageDeflexaoSimple);
   if (selAlvoSi)  selAlvoSi.addEventListener('change', manageDeflexaoSimple);
-  if (atkTypeMulti) atkTypeMulti.addEventListener('change', manageDeflexaoMulti);
+  if (atkTypeMult) atkTypeMulti.addEventListener('change', manageDeflexaoMulti);
   if (selAlvoMu)  selAlvoMu.addEventListener('change', manageDeflexaoMulti);
   if (selAlvoTi)  selAlvoTi.addEventListener('change', manageDeflexaoTiro);
 
@@ -1728,7 +1741,7 @@ JS;
                             $pmCost = $_POST['magic_pm_cost'] ?? 1;
                             $tgtsInfo = $_POST['magic_targets'] ?? ['']; //alvos [name] + lancas atacando ele [qtdAtk]
 
-                            $out = lancaInfalivelDeTalude($b, $pl, $tgtsInfo, $pmCost);
+                            $out = lancaInfalivelDeTalude($pl, $tgtsInfo, $pmCost);
                         
                             unset($b['playingAlly']);
                             $b['init_index']++;
@@ -1742,7 +1755,7 @@ JS;
                                 $somaDosDadosFA += $_POST['dado'.$i] ?? [0];
                             }
 
-                            $out = brilhoExplosivo($b, $pl, $tgt, $somaDosDadosFA, $dadoFD);
+                            $out = brilhoExplosivo($pl, $tgt, $somaDosDadosFA, $dadoFD);
                         
                             unset($b['playingAlly']);
                             $b['init_index']++;
@@ -1752,6 +1765,18 @@ JS;
                             $tgt = $_POST['target'] ?? [''];
 
                             $out = morteEstelar( $pl, $tgt);
+                        
+                            unset($b['playingAlly']);
+                            $b['init_index']++;
+                            break;
+
+                        case 'enxame_de_trovoes':
+                            $tgt = $_POST['target'] ?? [''];
+                            $dFA1 = $_POST['dadoFA1'] ?? [''];
+                            $dFA2 = $_POST['dadoFA2'] ?? [''];
+                            $dFD = $_POST['dadoFD'] ?? [''];
+
+                            $out = enxameDeTrovoes( $b, $pl, $tgt, $dFA1, $dFA2, $dFD);
                         
                             unset($b['playingAlly']);
                             $b['init_index']++;
