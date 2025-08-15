@@ -42,6 +42,38 @@ function renderMagicInputs($slug, $caster, &$battle) {
             inputBolaDeFogoInstavel($caster, $battle);
             break;            
 
+        case 'bola_de_lama':
+            inputBolaDeLama($caster, $battle);
+            break;  
+            
+        case 'bomba_de_luz':
+            inputBombaDeLuz($caster, $battle);
+            break; 
+
+        case 'bomba_de_terra':
+            inputBombaDeTerra($caster, $battle);
+            break; 
+
+        case 'solisanguis':
+            inputSolisanguis($caster, $battle);
+            break;
+
+        case 'solisanguis_ruptura':
+            inputSolisanguisRuptura($caster, $battle);
+            break;
+
+        case 'solisanguis_evisceratio':
+            inputSolisanguisEvisceratio($caster, $battle);
+            break;
+
+        case 'sortilegium':
+            inputSortilegium($caster, $battle);
+            break;
+
+        case 'sancti_sanguis':
+            inputSanctiSanguis($caster, $battle);
+            break;
+
         default:
             echo 'Essa magia ainda não foi implementada';
             break;
@@ -50,17 +82,16 @@ function renderMagicInputs($slug, $caster, &$battle) {
 
 function inputBolaDeFogo($caster, &$b) {
     $validTargets = getValidTargets($caster, $b, 'enemies');
-    echo 'Custo em PMs (1-10): <input type="number" id="magic_pm_cost_instavel" name="magic_pm_cost" value="2" min="2" max="10" step="1" required><br>';
-    echo 'Quantidade de inimigos na área: <input type="number" id="magic_num_targets_instavel" name="magic_num_targets" value="1" min="1" required><br>';
-    echo 'Dado de ataque: <input type="number" name="dadoFA" value="1" min="6" required><br>';
+    echo 'Custo em PMs (1-10): <input type="number" id="magic_pm_cost" name="magic_pm_cost" value="1" min="1" max="10" step="1" required><br>';
+    echo 'Quantidade de inimigos na área: <input type="number" id="magic_num_targets" name="magic_num_targets" value="1" min="1" required><br>';
+    echo 'Dado de ataque: <input type="number" name="dadoFA" value="1" min="1" max="6" required><br>';
 
-    echo '<hr><h4>Dados de Ataque</h4><div id="magic_dice_container"></div><hr>';
     echo '<h4>Alvos na Área</h4><div id="magic_targets_container"></div>';
     ?>
     <script>
     (function() {
-        const pmCostInput = document.getElementById('magic_pm_cost_instavel');
-        const numTargetsInput = document.getElementById('magic_num_targets_instavel');
+        const pmCostInput = document.getElementById('magic_pm_cost');
+        const numTargetsInput = document.getElementById('magic_num_targets');
         const targetsContainer = document.getElementById('magic_targets_container');
         const validTargets = <?php echo json_encode($validTargets); ?>;
         function generateTargetInputs() {
@@ -77,16 +108,14 @@ function inputBolaDeFogo($caster, &$b) {
                     targetSelectHTML += `<option value="${target}">${target}</option>`;
                 });
                 targetSelectHTML += '</select></label>';
-                targetFDHTML = `<br><label>Dado de defesa: <input type="number" name="magic_targets[${i}][dFD]" required></label>`;
+                targetFDHTML = `<br><label>Dado de defesa: <input type="number" name="magic_targets[${i}][dFD]" min="1" max="6" required></label>`;
                 fieldset.innerHTML += targetSelectHTML + targetFDHTML;
                 targetsContainer.appendChild(fieldset);
             }
         }
         function updateAllInputs() {
-            generateDiceInputs();
             generateTargetInputs();
         }
-        pmCostInput.addEventListener('input', updateAllInputs);
         numTargetsInput.addEventListener('input', updateAllInputs);
         updateAllInputs();
     })();
@@ -153,8 +182,8 @@ function inputAtaqueMagico($caster, &$b) {
                 reactionSelectHTML += `<option value="indefeso">Indefeso</option>`;
                 reactionSelectHTML += `</select></label><br>`;
 
-                const reactionRollFDHTML = `<label>Dado de Reação: <input type="number" name="magic_targets[${i}][rollFD]" required></label><br>`;
-                const reactionRollFAHTML = `<label>Dado de Ataque: <input type="number" name="magic_targets[${i}][rollFA]" required></label>`;
+                const reactionRollFDHTML = `<label>Dado de Reação: <input type="number" name="magic_targets[${i}][rollFD]" min="1" max="6" required></label><br>`;
+                const reactionRollFAHTML = `<label>Dado de Ataque: <input type="number" name="magic_targets[${i}][rollFA]" min="1" max="6" required></label>`;
                 fieldset.innerHTML += targetSelectHTML + reactionSelectHTML + reactionRollFDHTML + reactionRollFAHTML;
                 targetsContainer.appendChild(fieldset);
             }
@@ -238,9 +267,9 @@ function inputBrilhoExplosivo($caster, &$b){
     }
     echo '</select></label><br>';
     for ($i = 1; $i < 11; $i++){
-        echo '<label>'.$i.'° dado: <input type="number" name="dado'.$i.'" required></label><br>';
+        echo '<label>'.$i.'° dado: <input type="number" name="dado'.$i.'" min="1" max="6" required></label><br>';
     }
-    echo '<label>Dado de defesa: <input type="number" name="dadoFD" required></label>';
+    echo '<label>Dado de defesa: <input type="number" name="dadoFD" min="1" max="6" required></label>';
 }
 
 
@@ -260,6 +289,7 @@ function inputMorteEstelar($caster, &$b){
         const select = document.getElementById('morte_estelar_select');
         const container = document.getElementById('morte_estelar_confirm_container');
         const magicForm = document.getElementById('magicForm');
+
         select.addEventListener('change', function() {
             const alvo = select.value;
             if (!alvo) {
@@ -296,9 +326,9 @@ function inputEnxameDeTrovoes($caster, &$b){
         echo '<option value="'.$target.'">'.$target.'</option>';
     }
     echo '</select></label><br>';
-    echo '<br><label>1° dado de ataque: <input type="number" name="dadoFA1" required></label>';
-    echo '<br><label>2° dado de ataque: <input type="number" name="dadoFA2" required></label>';
-    echo '<br><label>Dado de defesa: <input type="number" name="dadoFD" required></label>';
+    echo '<br><label>1° dado de ataque: <input type="number" name="dadoFA1" min="1" max="6" required></label>';
+    echo '<br><label>2° dado de ataque: <input type="number" name="dadoFA2" min="1" max="6" required></label>';
+    echo '<br><label>Dado de defesa: <input type="number" name="dadoFD" min="1" max="6" required></label>';
 }
 
 
@@ -330,7 +360,7 @@ function inputNulificacaoTotalDeTalude($caster, &$b){
                 <div style="margin-bottom:8px;color:darkred;font-weight:600;">
                     Confirmar: -50 PMs para apagar <strong>${alvo}</strong> da existência?
                 </div>
-                <label>Teste de resistência: <input type="number" name="RTest" required></label><br>
+                <label>Teste de resistência: <input type="number" name="RTest" min="1" max="6" required></label><br>
                 <button type="submit" form="magicForm" style="margin-right:8px;">Confirmar</button>
                 <button type="button" id="nulificacao_cancel">Cancelar</button>
             `;
@@ -368,7 +398,7 @@ function inputBolaDeFogoInstavel($caster, &$b) {
             const currentPmCost = parseInt(pmCostInput.value, 10);
             const numDice = 1 + Math.floor(currentPmCost / 2);
             for (let i = 0; i < numDice; i++) {
-                let dInputHTML = `<label>Rolagem do Dado ${i + 1}: <input type="number" name="dados[${i}]" required></label><br>`;
+                let dInputHTML = `<label>${i + 1} dado de ataque: <input type="number" name="dados[${i}]" min="1" max="6" required></label><br>`;
                 diceContainer.innerHTML += dInputHTML;
             }
         }
@@ -386,7 +416,7 @@ function inputBolaDeFogoInstavel($caster, &$b) {
                     targetSelectHTML += `<option value="${target}">${target}</option>`;
                 });
                 targetSelectHTML += '</select></label>';
-                targetFDHTML = `<br><label>Dado de defesa: <input type="number" name="magic_targets[${i}][dFD]" required></label>`;
+                targetFDHTML = `<br><label>Dado de defesa: <input type="number" name="magic_targets[${i}][dFD]" min="1" max="6" required></label>`;
                 fieldset.innerHTML += targetSelectHTML + targetFDHTML;
                 targetsContainer.appendChild(fieldset);
             }
@@ -404,6 +434,145 @@ function inputBolaDeFogoInstavel($caster, &$b) {
 }
 
 
+function inputBolaDeLama($caster, &$b) {
+    $validTargets = getValidTargets($caster, $b, 'enemies');
+    echo '<label>Selecionar Alvo: <select name="target" required>';
+    foreach ($validTargets as $target){
+        echo '<option value="'.$target.'">'.$target.'</option>';
+    }
+    echo '</select></label>';
+    echo '<br><label>Dado de defesa: <input type="number" name="dadoFD" min="1" max="6" required></label>';
+    echo '<h4>Dados de Ataque</h4>';
+    for ($i = 0; $i < getPlayerStat($caster, 'H'); $i++){
+        echo '<label>'.($i+1).'° dado de ataque: <input type="number" name="dadosFA['.$i.']" min="1" max="6" required></label><br>';
+    }
+}
+
+
+function inputBombaDeLuz($caster, &$b) {
+    $validTargets = getValidTargets($caster, $b, 'enemies');
+    echo 'Custo em PMs (1-5): <input type="number" id="magic_pm_cost" name="magic_pm_cost" value="1" min="1" max="5" step="1" required><br>';
+    echo 'Quantidade de inimigos na área: <input type="number" id="magic_num_targets" name="magic_num_targets" value="1" min="1" required><br>';
+
+    echo '<h4>Alvos na Área</h4><div id="magic_targets_container"></div>';
+    ?>
+    <script>
+    (function() {
+        const pmCostInput = document.getElementById('magic_pm_cost');
+        const numTargetsInput = document.getElementById('magic_num_targets');
+        const targetsContainer = document.getElementById('magic_targets_container');
+        const validTargets = <?php echo json_encode($validTargets); ?>;
+        function generateTargetInputs() {
+            targetsContainer.innerHTML = '';
+            const numTargets = parseInt(numTargetsInput.value, 10);
+            for (let i = 0; i < numTargets; i++) {
+                const fieldset = document.createElement('fieldset');
+                fieldset.style.marginTop = '10px';
+                const legend = document.createElement('legend');
+                legend.textContent = `Alvo ${i + 1}`;
+                fieldset.appendChild(legend);
+                let targetSelectHTML = `<label>Selecionar Alvo: <select name="magic_targets[${i}][name]" required>`;
+                validTargets.forEach(target => {
+                    targetSelectHTML += `<option value="${target}">${target}</option>`;
+                });
+                targetSelectHTML += '</select></label>';
+                targetFDHTML = `<br><label>Dado de defesa: <input type="number" name="magic_targets[${i}][dFD]" min="1" max="6" required></label>`;
+                fieldset.innerHTML += targetSelectHTML + targetFDHTML;
+                targetsContainer.appendChild(fieldset);
+            }
+        }
+        function updateAllInputs() {
+            generateTargetInputs();
+        }
+        numTargetsInput.addEventListener('input', updateAllInputs);
+        updateAllInputs();
+    })();
+    </script>
+    <?php
+}
+
+
+function inputBombaDeTerra($caster, &$b) {
+    $validTargets = getValidTargets($caster, $b, 'enemies');
+    echo '<label>Selecionar Alvo: <select name="target" required>';
+    foreach ($validTargets as $target){
+        echo '<option value="'.$target.'">'.$target.'</option>';
+    }
+    echo '</select></label>';
+    echo '<br><label>Dado de defesa: <input type="number" name="dadoFD" min="1" max="6" required></label>';
+}
+
+
+function inputSolisanguis($caster, &$b) {
+    $validTargets = getValidTargets($caster, $b, 'enemies');
+    echo '<label>Selecionar Alvo: <select name="target" required>';
+    foreach ($validTargets as $target){
+        echo '<option value="'.$target.'">'.$target.'</option>';
+    }
+    echo '</select></label>';
+    echo '<br><label>Dado do custo: <input type="number" name="dadoCusto" min="1" max="6" required></label>';
+    echo '<br><label>1° dado de ataque: <input type="number" name="dadoFA1" min="1" max="6" required></label>';
+    echo '<br><label>2° dado de ataque: <input type="number" name="dadoFA2" min="1" max="6" required></label>';
+
+}
+
+
+function inputSolisanguisRuptura($caster, &$b) {
+    $validTargets = getValidTargets($caster, $b, 'enemies');
+    echo '<label>Selecionar Alvo: <select name="target" required>';
+    foreach ($validTargets as $target){
+        echo '<option value="'.$target.'">'.$target.'</option>';
+    }
+    echo '</select></label>';
+    echo '<br><label>Dado do custo: <input type="number" name="dadoCusto" min="1" max="6" required></label>';
+    echo '<br><label>1° dado de ataque: <input type="number" name="dadoFA1" min="1" max="6" required></label>';
+    echo '<br><label>2° dado de ataque: <input type="number" name="dadoFA2" min="1" max="6" required></label>';
+    echo '<br><label>3° dado de ataque: <input type="number" name="dadoFA3" min="1" max="6" required></label>';
+    echo '<br><label>4° dado de ataque: <input type="number" name="dadoFA4" min="1" max="6" required></label>';
+
+}
+
+
+function inputSolisanguisEvisceratio($caster, &$b) {
+    $validTargets = getValidTargets($caster, $b, 'enemies');
+    echo '<label>Selecionar Alvo: <select name="target" required>';
+    foreach ($validTargets as $target){
+        echo '<option value="'.$target.'">'.$target.'</option>';
+    }
+    echo '</select></label>';
+    echo '<br><label>Dado de Custo & Ataque: <input type="number" name="dado" min="1" max="6" required></label>';
+}
+
+
+
+function inputSortilegium($caster, &$b) {
+    $validTargets = getValidTargets($caster, $b, 'allies');
+    echo '<label>Selecionar Alvo: <select name="target" required>';
+    foreach ($validTargets as $target){
+        echo '<option value="'.$target.'">'.$target.'</option>';
+    }
+    echo '</select></label>';
+    echo '<br><label>Dado de Custo: <input type="number" name="dadoCusto" min="1" max="6" required></label>';
+    echo '<br><label>1° dado de recuperação: <input type="number" name="dadoPV1" min="1" max="6" required></label>';
+    echo '<br><label>2° dado de recuperação: <input type="number" name="dadoPV2" min="1" max="6" required></label>';
+}
+
+
+
+function inputSanctiSanguis($caster, &$b) {
+    $validTargets = getValidTargets($caster, $b, 'allies');
+    echo '<label>Selecionar Alvo: <select name="target" required>';
+    foreach ($validTargets as $target){
+        echo '<option value="'.$target.'">'.$target.'</option>';
+    }
+    echo '</select></label>';
+    echo '<br><label>Trânsferencia: <input type="number" name="qtd" min="1"required></label>';
+}
+
+
+
+function inputLuxcruentha($caster, &$b) {}
+
 
 
 function inputCancelamento($caster, &$b){
@@ -418,21 +587,11 @@ function inputCancelamento($caster, &$b){
 
 function getValidTargets($caster, &$b, $type = 'enemies') {
     $targets = [];
-    $caster_notes = $b['notes'][$caster] ?? [];
-    $caster_is_incorp = !empty($caster_notes['incorp_active']);
-
     if ($type === 'allies') {
         $targets[] = $caster;
     }
     foreach ($b['order'] as $p) {
         if ($p === $caster && $type === 'enemies') continue;
-        
-        $target_notes = $b['notes'][$p] ?? [];
-        $target_is_incorp = !empty($target_notes['incorp_active']);
-
-        if ($caster_is_incorp !== $target_is_incorp) {
-            continue;
-        }
         
         if ($type === 'enemies' && $p !== $caster) {
             $targets[] = $p;

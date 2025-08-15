@@ -117,7 +117,7 @@ include_once 'traitFuncs.php';
                 return FAFDindefeso($atacante, $defensor, $dadoFA, $atkType, $dmgType, $H);
             }
         }
-        if ($meta>6){
+        if ($meta>=6){
             return 0;
         }
     }
@@ -250,14 +250,14 @@ include_once 'traitFuncs.php';
 
 
 
-    function spendPM(string $player, int $cost): bool {
+    function spendPM(string $player, int $cost, $sangue = false): bool {
         $cost -= itemDePoder($player); if ($cost < 1){$cost = 1;}
         $pm   = getPlayerStat($player, 'PM');
         $pv   = getPlayerStat($player, 'PV');
         $traits = listPlayerTraits($player);
         $hasEV = in_array('energia_vital', $traits, true);
         $usePv = $_SESSION['battle']['notes'][$player]['use_pv'] ?? false;
-        if ($usePv) {
+        if ($usePv || $sangue) {
             $ratio = in_array('magia_de_sangue', $traits, true) ? 1 : 2;
             $pvNeeded = $cost * $ratio;
             if ($pv >= $pvNeeded) {

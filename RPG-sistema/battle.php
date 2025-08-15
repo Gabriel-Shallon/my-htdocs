@@ -518,7 +518,11 @@ switch ($step) {
 
 
         // Limpa os espaços em branco.
-        $b['notes'][$cur]['efeito'] = ltrim($b['notes'][$cur]['efeito']);
+        $efeito_atual = $b['notes'][$cur]['efeito'];
+        $efeito_limpo = preg_replace('/(?:\r\n?|\n){2,}/', "\n", $efeito_atual);
+        $efeito_limpo = trim($efeito_limpo);
+        $_SESSION['battle']['notes'][$cur]['efeito'] = $efeito_limpo;
+        $notes['efeito'] = $efeito_limpo; 
 
 
         
@@ -652,6 +656,10 @@ switch ($step) {
             if (in_array('invisibilidade', listPlayerTraits($cur), true) && !empty($b['notes'][$cur]['invisivel'])) {
                 echo '<option value="deactivate_invisibilidade">Voltar a ser visível</option>';
             }  
+
+            if (strpos(getPlayerStat($cur, 'equipado'), 'Luxcruentha') != false){
+                echo '<option value="sword_luxcruentha">Atacar com a Espada Luxcruentha</option>';
+            }
 
             if (!$concentrando && !$agarrado && !$agarrando) {
                 echo '<option value="ataque">Atacar</option>';
@@ -796,6 +804,24 @@ switch ($step) {
                 }
             }
 
+            if ($hasTargets) {
+                echo '<div id="atkLuxcruentha" style="display:none;"><fieldset><legend>Ataque com Luxcruentha</legend>'
+                    . 'Roll FA1: <input id="luxDadoFA1" type="number" name="luxDadoFA1" required><br>'
+                    . 'Roll FA2: <input id="luxDadoFA2" type="number" name="luxDadoFA2" required><br>'
+                    . 'Alvo: <select name="luxTarget">';
+                selectTarget($cur, $validTargets);
+                echo '</select><br>'
+                    . 'Reação do Alvo: <select name="luxDefesa">'
+                    . '<option value="defender">Defender</option>'
+                    . '<option value="defender_esquiva">Esquivar</option>'
+                    . '<option value="indefeso">Indefeso</option>'
+                    . '<option id="opt-deflexao-tiro" value="defender_esquiva_deflexao">Deflexão (2 PM)</option>'
+                    . '</select><br>'
+                    . '<label>'
+                    . 'Roll FD/Esq do Alvo: <input id="luxDadoFD" type="number" name="luxDadoFD" required>'
+                    . '</label>'
+                    . '</fieldset></div>';
+            }
 
             //Agarrão
             if ($hasTargets) {
@@ -920,7 +946,7 @@ switch ($step) {
                     echo '<div id="magicInfo" style="display:none; width: 440px; min-height: 120px; border: 1px solid #ccc; padding: 10px; margin-top: 10px;"></div>';
                     echo '<div id="magicInputsContainer" style="display:none; width: 465px;"><fieldset><legend>Opções da Magia</legend>';
                     echo '</fieldset></div>';
-                    echo '<button type="submit">Lançar Magia</button>';
+                    echo '<button type="submit" id="lancar_magia">Lançar Magia</button>';
                     echo '</form>';
                 } else {
                     echo '<p>Este personagem não conhece nenhuma magia.</p>';
@@ -1010,6 +1036,7 @@ document.addEventListener('DOMContentLoaded', () => {
   const atkTiro     = document.getElementById('atkTiroMulti');
   const atkAgarrao  = document.getElementById('atkAgarrao');
   const soltarAgarr = document.getElementById('soltarAgarrao');
+  const atkLuxcruen = document.getElementById('atkLuxcruentha');
 
   const atkTypeSimp = document.getElementById('atkTypeSimple');
   const atkTypeMult = document.getElementById('atkTypeMulti');
@@ -1020,6 +1047,8 @@ document.addEventListener('DOMContentLoaded', () => {
 
   const faInput     = document.getElementById('dadoFA');
   const fdInput     = document.getElementById('dadoFD');
+  const luxFa1      = document.getElementById('luxDadoFA1');
+  const luxFa2      = document.getElementById('luxDadoFA2');
 
   const quant       = document.getElementById('quant');
   const quantTiro   = document.getElementById('quantTiro');
@@ -1047,6 +1076,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
   const magicSelect = document.getElementById('magicSelect');
   const magicInfo   = document.getElementById('magicInfo');
+  const magicCastButton = document.getElementById('lancar_magia');
   const magicInputsContainer = document.getElementById('magicInputsContainer');
   const isInculto   = {$isInculto_js};
 
@@ -1082,15 +1112,31 @@ document.addEventListener('DOMContentLoaded', () => {
   async function onMagicSelect() {
     if (!magicSelect) return;
 
+    if (magicCastButton) {
+        magicCastButton.style.display = 'block'; 
+    }
+
     magicInfo.style.display = 'none';
     magicInputsContainer.innerHTML = '';
     magicInputsContainer.style.display = 'none';
 
+
     const selectedOption = magicSelect.options[magicSelect.selectedIndex];
     if (!selectedOption || !selectedOption.value) {
+      if (magicCastButton) {
+          magicCastButton.style.display = 'none';
+      }
       return;
     }
     
+    const magicSlug = selectedOption.value;
+    
+    const magicsWithCustomButtons = ['morte_estelar', 'nulificacao_total_de_talude'];
+    if (magicCastButton && magicsWithCustomButtons.includes(magicSlug)) {
+        magicCastButton.style.display = 'none';
+    }
+
+
     const data = selectedOption.dataset;
     if (!isInculto) {
       magicInfo.style.display = 'block';
@@ -1103,7 +1149,6 @@ document.addEventListener('DOMContentLoaded', () => {
         '<strong>Descrição:</strong> ' + data.descricao;
     }
 
-    const magicSlug = selectedOption.value;
     magicInputsContainer.style.display = 'block';
     magicInputsContainer.innerHTML = '<fieldset><legend>Opções da Magia</legend>Carregando opções...</fieldset>';
     
@@ -1203,10 +1248,15 @@ document.addEventListener('DOMContentLoaded', () => {
     if (atkAgarrao) atkAgarrao.style.display = (act === 'agarrao') ? 'block' : 'none';
     if (soltarAgarr) soltarAgarr.style.display = (act === 'se_soltar_agarrao') ? 'block' : 'none';
     if (selStatDebi) selStatDebi.style.display = (act === 'ataque_debilitante') ? 'block' : 'none';
+    if (atkLuxcruentha) atkLuxcruentha.style.display = (act === 'sword_luxcruentha') ? 'block' : 'none';
 
+    
 
     if (faInput) faInput.required = (act === 'ataque' || act === 'release_concentrar' || act === 'ataque_debilitante');
-    
+    if (luxFa1) luxFa1.required = (act === 'sword_luxcruentha');
+    if (luxFa2) luxFa2.required = (act === 'sword_luxcruentha');
+
+
     if (dadoAgarrao) {
         dadoAgarrao.required = (act === 'agarrao');
         dadoAgarrao.disabled = (act !== 'agarrao');
@@ -1556,7 +1606,13 @@ JS;
                     $pm = getPlayerStat($pl, 'PM');
                     if (spendPM($pl, 2)) {
                         $b['notes'][$pl]['incorp_active'] = true;
-                        $b['notes'][$pl]['efeito'] .= "\nIncorpóreo: imune a dano F/PdF; não pode usar F ou PdF.";
+                        $b['notes'][$pl]['efeito'] .= "\nIncorpóreo: imune a dano F/PdF; não pode usar F ou PdF. Não pode usar ou carregar itens físicos.";
+                        if (getPlayerStat($pl, 'equipado') != '' || getPlayerStat($pl, 'inventario') != '' ){
+                            $itens = "Itens que ".$pl." dropou ao tornar-se incorpóreo: ".getPlayerStat($pl, 'equipado')."; ".getPlayerStat($pl, 'inventario');
+                            $b['arena'] .="\n".$itens;
+                            setPlayerStat($pl, 'equipado', '');
+                            setPlayerStat($pl, 'inventario', '');
+                        }
                         $out = "<strong>{$pl}</strong> tornou‑se Incorpóreo (−2 PM).";
                     } else {
                         $out = "<strong>{$pl}</strong> tentou ficar incorpóreo, mas não tem PM suficientes.";
@@ -1668,6 +1724,7 @@ JS;
                     }
                     break;
 
+                    
                 case 'activate_invisibilidade':
                     if (spendPM($pl, 1)) { 
                         setPlayerStat($pl, 'PM', getPlayerStat($pl, 'PM')+1);
@@ -1687,18 +1744,26 @@ JS;
                     break;
 
 
+                case 'sword_luxcruentha':
+                    $dFA1     = (int)($_POST['luxDadoFA1'] ?? 0);
+                    $dFA2     = (int)($_POST['luxDadoFA2'] ?? 0);
+                    $target  = $_POST['luxTarget'] ?? '';
+                    $defesa  = $_POST['luxDefesa'] ?? 'defender';
+                    $dFD     = (int)($_POST['luxDadoFD'] ?? 0);
+
+                    $out = atkLuxcruentha($b, $pl, $target, $defesa, $dFD, $dFA1, $dFA2);
+
+                    unset($b['playingAlly']);
+                    $b['init_index']++;
+                    break;
+
+
 
                 case 'fim':
                     header('Location: battle.php?step=final');
                     unset($b['playingAlly']);
                     $b['init_index']++;
                     exit;
-
-
-
-
-
-
 
 
 
@@ -1727,12 +1792,9 @@ JS;
                             break;
                         
                         case 'cura_magica':
-                            // Precisa de 'magic_target' e 'magic_heal_type'
                             $heal_type = $_POST['magic_heal_type'] ?? 'heal_pv';
                             $cost = ($heal_type === 'heal_pv') ? 2 : 4;
                             $out = "<strong>{$pl}</strong> usou Cura Mágica em <strong>{$target}</strong> (custo: {$cost} PMs).";
-                            // ... lógica de cura ...
-                            // Magias de cura geralmente não passam o turno, então não incrementamos init_index.
                             break;
                             
                         case 'ataque_magico':
@@ -1811,6 +1873,101 @@ JS;
                             unset($b['playingAlly']);
                             $b['init_index']++;
                             break;
+
+                        case 'bola_de_lama':
+                            $tgt = $_POST['target'] ?? [''];
+                            $dadosFA = $_POST['dadosFA'] ?? [''];
+                            $dadoFD = $_POST['dadoFD'] ?? [''];
+
+                            $out = bolaDeLama($pl, $tgt, $dadosFA, $dadoFD);
+                        
+                            unset($b['playingAlly']);
+                            $b['init_index']++;
+                            break;
+
+                        case 'bomba_de_luz':
+                            $tgts = $_POST['magic_targets'] ?? [''];  // Info do alvo: name + dFD
+                            $PMs = $_POST['magic_pm_cost'] ?? [''];
+
+                            $out = bombaDeLuz($pl, $tgts, $PMs);
+                        
+                            unset($b['playingAlly']);
+                            $b['init_index']++;
+                            break;
+
+                        case 'bomba_de_terra':
+                            $tgt = $_POST['target'] ?? [''];
+                            $dadoFD = $_POST['dadoFD'] ?? [''];
+
+                            $out = bombaDeTerra($pl, $tgt, $dadoFD);
+                        
+                            unset($b['playingAlly']);
+                            $b['init_index']++;
+                            break;
+
+                        case 'solisanguis':
+                            $tgt = $_POST['target'] ?? [''];
+                            $dadoCusto = $_POST['dadoCusto'] ?? [''];
+                            $dadoFA1 = $_POST['dadoFA1'] ?? [''];
+                            $dadoFA2 = $_POST['dadoFA2'] ?? [''];
+
+                            $out = solisanguis($pl, $tgt, $dadoCusto, $dadoFA1, $dadoFA2);
+                        
+                            unset($b['playingAlly']);
+                            $b['init_index']++;
+                            break;
+
+                        case 'solisanguis_ruptura':
+                            $tgt = $_POST['target'] ?? [''];
+                            $dadoCusto = $_POST['dadoCusto'] ?? [''];
+                            $dadoFA1 = $_POST['dadoFA1'] ?? [''];
+                            $dadoFA2 = $_POST['dadoFA2'] ?? [''];
+                            $dadoFA3 = $_POST['dadoFA3'] ?? [''];
+                            $dadoFA4 = $_POST['dadoFA4'] ?? [''];
+
+                            $out = solisanguisRuptura($pl, $tgt, $dadoCusto, $dadoFA1, $dadoFA2, $dadoFA3, $dadoFA4);
+                        
+                            unset($b['playingAlly']);
+                            $b['init_index']++;
+                            break;
+
+
+                        case 'solisanguis_evisceratio':
+                            $tgt = $_POST['target'] ?? [''];
+                            $dado = $_POST['dado'] ?? [''];
+
+                            $out = solisanguisEvisceratio($pl, $tgt, $dado);
+                        
+                            unset($b['playingAlly']);
+                            $b['init_index']++;
+                            break;
+
+                        case 'sortilegium':
+                            $tgt = $_POST['target'] ?? [''];
+                            $dadoCusto = $_POST['dadoCusto'] ?? [''];
+                            $dadoPV1 = $_POST['dadoPV1'] ?? [''];
+                            $dadoPV2 = $_POST['dadoPV2'] ?? [''];
+
+                            $out = sortilegium($pl, $tgt, $dadoCusto, $dadoPV1, $dadoPV2);
+                        
+                            unset($b['playingAlly']);
+                            $b['init_index']++;
+                            break;
+
+                        case 'sancti_sanguis':
+                            $tgt = $_POST['target'] ?? [''];
+                            $qtd = $_POST['qtd'] ?? [''];
+
+                            $out = sanctiSanguis($pl, $tgt, $qtd);
+                        
+                            unset($b['playingAlly']);
+                            $b['init_index']++;
+                            break;
+
+                        case 'luxcruentha':
+                            $out = luxcruentha($pl);
+                            break;
+
 
 
                         default:
