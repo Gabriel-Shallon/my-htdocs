@@ -4,7 +4,8 @@ session_start();
 include_once 'inc/generalFuncs.php';
 include_once 'inc/traitFuncs.php';
 include_once 'inc/battleFuncs.php';
-include_once 'inc/magicFuncs.php';
+include_once 'inc/magic/magicFuncs.php';
+include_once 'inc/magic/sustainMagic.php';
 
 // Inicializa sessão
 if (!isset($_SESSION['battle'])) {
@@ -159,7 +160,7 @@ switch ($step) {
         if (empty($magic_slug) || empty($cur)) {
             exit;
         }
-        include_once 'inc/magicInputs.php';
+        include_once 'inc/magic/magicInputs.php';
         renderMagicInputs($magic_slug, $cur, $b);
         exit;
 
@@ -179,11 +180,34 @@ switch ($step) {
         } else {
             $cur = $order[$b['init_index'] % count($order)];
         }
-          
+
+        $last_player = $b['last_player_turn'] ?? null;
+        if ($cur !== $last_player) {
+            unset($b['sustained_processed_this_turn'][$cur]);
+            unset($b['sustained_log']);
+            $b['last_player_turn'] = $cur;
+        }
+
         if (!empty($b['needs_reload'])) {
             unset($b['needs_reload']);
             header("Refresh:0");
         }
+
+
+        if(strpos($_SESSION['battle']['notes'][$cur]['sustained_spells'] ?? '', 'Vis Ex Vulnere') !== false){
+            if (!isset($_SESSION['battle']['sustained_effects'][$cur]['visExVulnere'])) {
+                $_SESSION['battle']['sustained_effects'][$cur]['visExVulnere'] = [
+                    'dmg' => 0, 
+                    'flag' => getPlayerStat($cur, 'PV'),
+                    'pms' => 0
+                ];
+            }
+            if ($_SESSION['battle']['sustained_effects'][$cur]['visExVulnere']['dmg'] > 0){
+                $_SESSION['battle']['sustained_effects'][$cur]['visExVulnere']['pms'] = floor($_SESSION['battle']['sustained_effects'][$cur]['visExVulnere']['dmg']/2);
+                $_SESSION['battle']['sustained_effects'][$cur]['visExVulnere']['dmg'] = 0;
+            }
+        }
+        
         syncEquipBuffs($cur);
         $stats = getPlayer($cur);
         $notes = array_merge(
@@ -193,7 +217,17 @@ switch ($step) {
         $b['notes'][$cur] = $notes;
         $maxMulti = 1 + intdiv(max($stats['H'], 0), 2);
         $isIncorp = ! empty($notes['incorp_active']);
+    
         
+        $sustainedFormHtml = '';
+        if (empty($b['sustained_processed_this_turn'][$cur])) {
+            $sustainedFormHtml = generateSustainForm($cur, $b);
+        }
+        
+        if (!empty($b['sustained_log'])) {
+            echo "<div><strong>Resultado das magias sustentadas esse turno:</strong><br>" . implode('<br>', $b['sustained_log']) . "</div><hr>";
+        }
+
 
         if (!empty($b['notes'][$cur]['use_pv'])){
             $efeitoUsePV = "\nUsando PVs invés de PMs.";
@@ -658,7 +692,7 @@ switch ($step) {
             }  
 
             if (strpos(getPlayerStat($cur, 'equipado'), 'Luxcruentha') != false){
-                echo '<option value="sword_luxcruentha">Atacar com a Espada Luxcruentha</option>';
+                echo '<option value="sword_luxcruentha">Atacar usando Luxcruentha</option>';
             }
 
             if (!$concentrando && !$agarrado && !$agarrando) {
@@ -902,7 +936,9 @@ switch ($step) {
                 .'<textarea name="sustained_spells" rows="3" cols="60" placeholder="Anote magias sustentadas aqui...">'.$susteinedSpellsText.'</textarea><br>'
                 .'<button type="submit">Salvar Anotações de Magia</button>'
                 .'</form>';
-
+                if (!empty($sustainedFormHtml)) {
+                    echo $sustainedFormHtml;
+                }
                 $player_magics = getPlayerMagics($cur);
                 if (!empty($player_magics)) {
                     echo '<form method="post" action="battle.php?step=act" id="magicForm">';
@@ -1049,6 +1085,7 @@ document.addEventListener('DOMContentLoaded', () => {
   const fdInput     = document.getElementById('dadoFD');
   const luxFa1      = document.getElementById('luxDadoFA1');
   const luxFa2      = document.getElementById('luxDadoFA2');
+  const luxFd       = document.getElementById('luxDadoFD');
 
   const quant       = document.getElementById('quant');
   const quantTiro   = document.getElementById('quantTiro');
@@ -1255,7 +1292,7 @@ document.addEventListener('DOMContentLoaded', () => {
     if (faInput) faInput.required = (act === 'ataque' || act === 'release_concentrar' || act === 'ataque_debilitante');
     if (luxFa1) luxFa1.required = (act === 'sword_luxcruentha');
     if (luxFa2) luxFa2.required = (act === 'sword_luxcruentha');
-
+    if (luxFd) luxFd.required = (act === 'sword_luxcruentha');
 
     if (dadoAgarrao) {
         dadoAgarrao.required = (act === 'agarrao');
@@ -1364,7 +1401,11 @@ JS;
             switch ($_POST['action'] ?? '') {
 
                 case 'pass':
-                    $out = "<strong>{$pl}</strong> passou seu turno.";
+                    if (!empty($b['notes'][$pl]['sustained_spells']) && empty($b['sustained_processed_this_turn'][$pl])) {
+                        $b['notes'][$pl]['sustained_spells'] = '';
+                        $out = "<strong>{$pl}</strong> não sustentou suas magias e elas se dissiparam. ";
+                    }
+                    $out .= "<strong>{$pl}</strong> passou seu turno.";
                     unset($b['playingAlly']);
                     $b['init_index']++;
                     break;
@@ -1758,6 +1799,13 @@ JS;
                     break;
 
 
+                case 'sustain_act':
+                    $logMessages = processSustainedSpells($pl, $_POST, $b);
+                    $b['sustained_log'] = $logMessages;
+                    $b['sustained_processed_this_turn'][$pl] = true;
+                    header('Location: battle.php?step=turn');
+                    break;
+
 
                 case 'fim':
                     header('Location: battle.php?step=final');
@@ -1777,8 +1825,7 @@ JS;
                         $out = 'Nenhuma magia foi selecionada.';
                         break;
                     }
-
-                    // Switch interno para lidar com cada magia
+                    
                     switch ($magic_slug) {
                         case 'bola_de_fogo':
                             $tgts = $_POST['magic_targets'] ?? ['']; // Info do alvo: name + dFD
@@ -1968,7 +2015,50 @@ JS;
                             $out = luxcruentha($pl);
                             break;
 
+                        case 'artifanguis':
+                            $obj = $_POST['obj'] ?? [''];
+                            $cost = $_POST['cost'] ?? [''];
 
+                            $out = artifanguis($pl, $obj, $cost);
+                            break;
+
+                        case 'excruentio':
+                            $tgt = $_POST['target'] ?? [''];
+                            $dFD = $_POST['dadoFD'] ?? [''];
+                            $dFA1 = $_POST['dadoFA1'] ?? [''];
+                            $dFA2 = $_POST['dadoFA2'] ?? [''];                            
+
+                            $out = excruentio($pl, $tgt, $dFD, $dFA1, $dFA2);
+
+                            unset($b['playingAlly']);
+                            $b['init_index']++;
+                            break;
+
+
+                        case 'speculusanguis':
+                            $tgt = $_POST['target'] ?? [''];                        
+
+                            $out = speculusanguis($pl, $tgt);
+
+                            unset($b['playingAlly']);
+                            $b['init_index']++;
+                            break;
+
+
+                        case 'vis_ex_vulnere':                      
+                            $out = visExVulnere($pl);
+                            unset($b['playingAlly']);
+                            $b['init_index']++;
+                            break;
+
+                        case 'solcruoris':
+                            $cost = $_POST['cost'] ?? [''];                        
+
+                            $out = solcruoris($pl, $cost);
+
+                            unset($b['playingAlly']);
+                            $b['init_index']++;
+                            break;
 
                         default:
                             $out = "A magia '{$magic_slug}' foi selecionada, mas sua lógica ainda não foi implementada.";
@@ -1983,7 +2073,6 @@ JS;
                     $out = 'Ação inválida ou não reconhecida.';
                     break;
             }
-
 
 
 

@@ -250,22 +250,40 @@ include_once 'traitFuncs.php';
 
 
 
-    function spendPM(string $player, int $cost, $sangue = false): bool {
-        $cost -= itemDePoder($player); if ($cost < 1){$cost = 1;}
+    function spendPM(string $player, int $cost, $sangue = false, $ignoreDiscount = false): bool {
+        $discount = 0; 
+        if (!$ignoreDiscount){
+            if (!empty($_SESSION['battle']['sustained_effects'][$player]['visExVulnere']['pms'])){
+                $discount += min($_SESSION['battle']['sustained_effects'][$player]['visExVulnere']['pms'], $cost);
+                if ($cost < $_SESSION['battle']['sustained_effects'][$player]['visExVulnere']['pms']){
+                    $_SESSION['battle']['sustained_effects'][$player]['visExVulnere']['pms'] -= $cost;
+                } else {
+                    $_SESSION['battle']['sustained_effects'][$player]['visExVulnere']['pms'] = 0;
+                }
+            }
+        }
+        $cost -= itemDePoder($player) + $discount; if ($cost < 0){$cost = 0;}
+        if ($cost <= 0) {
+            return true;
+        }
         $pm   = getPlayerStat($player, 'PM');
         $pv   = getPlayerStat($player, 'PV');
         $traits = listPlayerTraits($player);
         $hasEV = in_array('energia_vital', $traits, true);
         $usePv = $_SESSION['battle']['notes'][$player]['use_pv'] ?? false;
-        if ($usePv || $sangue) {
+        
+        if ($usePv || $sangue ) {
             $ratio = in_array('magia_de_sangue', $traits, true) ? 1 : 2;
             $pvNeeded = $cost * $ratio;
             if ($pv >= $pvNeeded) {
                 setPlayerStat($player, 'PV', $pv - $pvNeeded);
+                monitorPVChange($player, $pvNeeded);
                 return true;
             }
             return false;
         }
+
+
         if ($pm >= $cost) {
             setPlayerStat($player, 'PM', $pm - $cost);
             return true;
@@ -279,6 +297,7 @@ include_once 'traitFuncs.php';
         $pvNeeded = $remaining * $ratio;
         if ($pv >= $pvNeeded) {
             setPlayerStat($player, 'PV', $pv - $pvNeeded);
+            monitorPVChange($player, $pvNeeded);
             return true;
         }
         return false;
@@ -294,7 +313,7 @@ include_once 'traitFuncs.php';
         }
     }
 
-    function applyDamage(string $pl, string $tgt, int $dano, string $tipoAtk, string &$out){
+    function applyDamage(string $pl, string $tgt, int $dano, string $tipoAtk, string &$out = ''){
         if (!empty($_SESSION['battle']['notes'][$tgt]['incorp_active']) && in_array($tipoAtk, ['F','PdF'], true) && empty($_SESSION['battle']['notes'][$pl]['incorp_active'])) {
             $dano = 0;
             $out .= " (inútil: alvo incorpóreo)";
@@ -313,6 +332,7 @@ include_once 'traitFuncs.php';
                 setPlayerStat($tgt, 'PV', max(getPlayerStat($tgt,'PV') - $dano, 0));
             }
             $ligacaoNatural = false;
+            monitorPVChange($tgt, $dano);
         }
        return $out; 
     }

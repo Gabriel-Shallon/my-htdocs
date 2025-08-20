@@ -74,6 +74,30 @@ function renderMagicInputs($slug, $caster, &$battle) {
             inputSanctiSanguis($caster, $battle);
             break;
 
+        case 'luxcruentha':
+            inputLuxcruentha();
+            break;
+
+        case 'artifanguis':
+            inputArtifanguis();
+            break;
+
+        case 'excruentio':
+            inputExcruentio($caster, $battle);
+            break;
+
+        case 'speculusanguis':
+            inputSpeculusanguis($caster, $battle);
+            break;
+
+        case 'vis_ex_vulnere':
+            inputVisExVulnere();
+            break;
+
+        case 'solcruoris':
+            inputSolcruoris();
+            break;
+
         default:
             echo 'Essa magia ainda não foi implementada';
             break;
@@ -571,7 +595,51 @@ function inputSanctiSanguis($caster, &$b) {
 
 
 
-function inputLuxcruentha($caster, &$b) {}
+function inputLuxcruentha() {
+    echo 'Essa magia não precisa de nenhum input.';
+}
+
+
+
+function inputArtifanguis() {
+    echo '<label>Objeto: <input type="text" name="obj" required></label>';
+    echo '<br><label>Custo (0 ou 2): <input type="text" name="cost" min="0" max="2" required></label>';
+}
+
+
+
+function inputExcruentio($caster, &$b) {
+    $validTargets = getValidTargets($caster, $b, 'enemies');
+    echo '<label>Selecionar Alvo: <select name="target" required>';
+    foreach ($validTargets as $target){
+        echo '<option value="'.$target.'">'.$target.'</option>';
+    }
+    echo '</select></label>';
+    echo '<br><label>Dado de defesa: <input type="number" name="dadoFD" min="1" max="6" required></label>';
+    echo '<br><label>1° dado de Ataque: <input type="number" name="dadoFA1" min="1" max="6" required></label>';
+    echo '<br><label>2° dado de Ataque: <input type="number" name="dadoFA2" min="1" max="6" required></label>';
+}
+
+
+
+function inputSpeculusanguis($caster, &$b) {
+    $validTargets = getValidTargets($caster, $b, 'enemies');
+    echo '<label>Selecionar Alvo: <select name="target" required>';
+    foreach ($validTargets as $target){
+        echo '<option value="'.$target.'">'.$target.'</option>';
+    }
+    echo '</select></label>';
+}
+
+
+function inputVisExVulnere() {
+    echo 'Essa magia não precisa de inputs.';
+}
+
+
+function inputSolcruoris(){
+    echo '<label>Custo: <input type="number" name="cost" min="3" required></label>';
+}
 
 
 

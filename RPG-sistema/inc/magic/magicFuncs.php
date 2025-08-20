@@ -1,7 +1,7 @@
 <?php
 
-include_once 'inc/generalFuncs.php';
-include_once 'inc/battleFuncs.php';
+include_once './inc/generalFuncs.php';
+include_once './inc/battleFuncs.php';
 
 function getMagic($magic) {
     $conn = conecta();
@@ -196,7 +196,7 @@ function lancaInfalivelDeTalude($mago, $alvosInfo, $PMs){
     if (spendPM($mago,$PMs)){
         foreach ($alvosInfo as $tgt) {
             $tgtName = $tgt['name'];
-            $FA = invulnerabilitieTest($tgt, 'Magia',$tgt['qtdAtk'] * 2);
+            $FA = invulnerabilitieTest($tgtName, 'Magia',$tgt['qtdAtk'] * 2);
             $dano = max($FA - (FDindefeso($tgtName, 'Magia')+resistenciaMagia($tgtName)), 0);
             $out .= applyDamage($mago, $tgtName, $dano, 'Magico', $out);
             $out .= "<strong>{$mago}</strong> usou ".getMagicSpecialName($mago, 'lanca_infalivel_de_talude')." (A Lança Infalível de Talude) em <strong>{$tgtName}</strong>. PMs = {$PMs}; Dano = {$dano}<br>";
@@ -230,6 +230,7 @@ function morteEstelar($mago, $alvo){
         if (bccomp($resultado, '0', 0) <= 0){
             setPlayerStat($mago, 'PM_max', getPlayerStat($mago, 'PM_max')-5);
             setPlayerStat($alvo, 'PV', 0);
+            monitorPVChange($alvo, getPlayerStat($alvo, 'PV_max'));
             return "<strong>{$mago}</strong> aniquilou <strong>{$alvo}</strong> com <strong>".$dano."</strong> de dano!";
         } else {
             setPlayerStat($mago, 'PM_max', getPlayerStat($mago, 'PM_max')-5);
@@ -334,7 +335,7 @@ function bolaDeFogoInstavel($mago, $tgts, $PMs, $dadosFA){
         foreach ($tgts as $tgt){
             $tgtName = $tgt['name'];
             $FD = FD($tgtName, $tgt['dFD'], 'Magia') + resistenciaMagia($tgtName); 
-            $dano = max(invulnerabilitieTest($tgt, 'Magia',$FA) - $FD, 0);
+            $dano = max(invulnerabilitieTest($tgtName, 'Magia',$FA) - $FD, 0);
             applyDamage($mago, $tgtName, $dano, 'Magico', $out);
             $out .= "<strong>{$mago}</strong> usou ".getMagicSpecialName($mago, 'bola_de_fogo_instavel')." (Bola de Fogo Instável) em <strong>{$tgtName}</strong>. Dano = {$dano}<br>";   
         }
@@ -354,7 +355,7 @@ function bolaDeFogo($mago, $tgts, $PMs, $dadoFA){
         foreach ($tgts as $tgt){
             $tgtName = $tgt['name'];
             $FD = FD($tgtName, $tgt['dFD'], 'Magia') + resistenciaMagia($tgtName); 
-            $dano = max(invulnerabilitieTest($tgt, 'Magia',$FA) - $FD, 0);
+            $dano = max(invulnerabilitieTest($tgtName, 'Magia',$FA) - $FD, 0);
             applyDamage($mago, $tgtName, $dano, 'Magico', $out);
             $out .= "<strong>{$mago}</strong> usou ".getMagicSpecialName($mago, 'bola_de_fogo')." (Bola de Fogo) em <strong>{$tgtName}</strong>. Dano = {$dano}<br>";   
         }
@@ -481,6 +482,7 @@ function sanctiSanguis($mago, $tgt, $qtd){
     $out = '';
     if (spendPM($mago, $qtd, true)){
         setPlayerStat($tgt, 'PV', getPlayerStat($tgt, 'PV') + $qtd);
+        monitorPVChange($tgt, getPlayerStat($tgt, 'PV') + $qtd);
         $out .= "<strong>{$mago}</strong> usou ".getMagicSpecialName($mago, 'sancti_sanguis')." (Sancti Sanguis) em <strong>{$tgt}</strong>. PVs Tranferidos: {$qtd}<br>";   
         return $out;
     } else {
@@ -507,6 +509,7 @@ function atkLuxcruentha($b, $mago, $tgt, $def, $dFD, $dFA1, $dFA2){
     $FD = 0;
     $H = invisivel_debuff($b, $mago, $tgt, 'F');
     if ($def == 'defender_esquiva' || $def == 'defender_esquiva_deflexao'){
+        $bonus = 0;
         if (in_array('aceleracao_i', listPlayerTraits($tgt), true)) {$bonus = 1;};
         if (in_array('aceleracao_ii', listPlayerTraits($tgt), true)) {$bonus = 2;};
         if (in_array('teleporte', listPlayerTraits($tgt), true)) {$bonus = 3;};
@@ -539,12 +542,94 @@ function atkLuxcruentha($b, $mago, $tgt, $def, $dFD, $dFA1, $dFA2){
         $FD = FD($tgt, $dFD, 'Magia');
         $out .= "<strong>{$mago}</strong> atacou <strong>{$tgt}</strong> usando a Espada Luxcruentha.";
     }
+    $FD += resistenciaMagia($tgt);
     $dano = max($FA - floor($FD/2), 0);
-    $out .= "Dano = ".$dano;
+    $out .= " Dano = ".$dano;
     applyDamage($mago, $tgt, $dano, 'Magico', $out);
     return $out;
 }
 
+
+
+function artifanguis($mago, $obj, $cost){
+    $out = '';
+    if (spendPM($mago, $cost, true)){
+        $addObj = getPlayerStat($mago, 'equipado')."\n".$obj.";";
+        setPlayerStat($mago, 'equipado', $addObj);
+        $out .= "<strong>{$mago}</strong> usou a magia ".getMagicSpecialName($mago, 'artifanguis')." (Artifanguis) para invocar um objeto ({$obj}). PVs: -{$cost}<br>";   
+        return $out;
+    } else {
+        return "<strong>{$mago}</strong> não tem PVs o suficiente ou não há sangue para invocar um objeto!";
+    }
+}
+
+
+
+function excruentio($mago, $tgt, $dFD, $dFA1, $dFA2){
+    $out = '';
+    if (spendPM($mago,2, true)){
+        $FA = invulnerabilitieTest($tgt, 'Magia', getPlayerStat($mago, 'H') + $dFA1 + $dFA2);
+        $FD = FD($tgt, $dFD, 'Magia') + resistenciaMagia($tgt);
+        $dano = max($FA - $FD, 0);
+        if ($dano > 0){
+            if (empty($_SESSION['battle']['notes'][$mago]['sustained_spells'])){
+                $_SESSION['battle']['notes'][$mago]['sustained_spells'] = "Excruentio(".$tgt.");\n";
+            } elseif (!empty($_SESSION['battle']['notes'][$mago]['sustained_spells'])) {
+                $_SESSION['battle']['notes'][$mago]['sustained_spells'] .= "Excruentio(".$tgt.");\n"; 
+            }
+        }
+        applyDamage($mago, $tgt, $dano, 'Magico', $out);
+        $out .= "<strong>{$mago}</strong> usou ".getMagicSpecialName($mago, 'excruentio')." (Excruentio) em <strong>{$tgt}</strong>. Dano = {$dano}; PMs = -2<br>";   
+        return $out;
+    } else {
+        return "<strong>{$mago}</strong> não tem PMs o suficiente para lançar Excruentio!";
+    }
+}
+
+
+
+
+function speculusanguis($mago, $tgt){
+    $out = '';
+    if (empty($_SESSION['battle']['notes'][$mago]['sustained_spells'])){
+        $_SESSION['battle']['notes'][$mago]['sustained_spells'] = "Speculusanguis(".$tgt.");\n";
+    } elseif (!empty($_SESSION['battle']['notes'][$mago]['sustained_spells'])) {
+        $_SESSION['battle']['notes'][$mago]['sustained_spells'] .= "Speculusanguis(".$tgt.");\n"; 
+    }
+    $_SESSION['battle']['sustained_effects'][$mago]['speculusanguis']['dmg'] = 0;
+    $out .= "<strong>{$mago}</strong> usou ".getMagicSpecialName($mago, 'speculusanguis')." (Speculusanguis) em <strong>{$tgt}</strong>.<br>";   
+    return $out;
+}
+
+
+function visExVulnere($mago){
+    $out = '';
+    if (empty($_SESSION['battle']['notes'][$mago]['sustained_spells'])){
+        $_SESSION['battle']['notes'][$mago]['sustained_spells'] = "Vis Ex Vulnere;\n";
+    } elseif (!empty($_SESSION['battle']['notes'][$mago]['sustained_spells'])) {
+        $_SESSION['battle']['notes'][$mago]['sustained_spells'] .= "Vis Ex Vulnere;\n"; 
+    }
+    $_SESSION['battle']['sustained_effects'][$mago]['visExVulnere']['dmg'] = 0;
+    $_SESSION['battle']['sustained_effects'][$mago]['visExVulnere']['pms'] = 0;
+    $out .= "<strong>{$mago}</strong> usou ".getMagicSpecialName($mago, 'vis_ex_vulnere')." (Vis Ex Vulnere).<br>";   
+    return $out;
+}
+
+
+function solcruoris($mago, $cost){
+    $out = '';
+    if (spendPM($mago, $cost, true)){
+        if (empty($_SESSION['battle']['notes'][$mago]['sustained_spells'])){
+            $_SESSION['battle']['notes'][$mago]['sustained_spells'] = "Solcruoris;\n";
+        } elseif (!empty($_SESSION['battle']['notes'][$mago]['sustained_spells'])) {
+            $_SESSION['battle']['notes'][$mago]['sustained_spells'] .= "Solcruoris;\n"; 
+        }
+        $out .= "<strong>{$mago}</strong> usou ".getMagicSpecialName($mago, 'vis_ex_vulnere')." (Vis Ex Vulnere).<br>";
+        return '';
+    } else {
+        return '';    
+    }   
+}
 
 
 ?>
