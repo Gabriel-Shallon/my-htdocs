@@ -42,6 +42,13 @@ $catalogoMagiasSustentadas = [
         'precisa_input' => false,
         'funcao_aplicar' => 'applySustainVisExVulnere',
         'custo_texto' => '2 PVs'
+    ],    
+    'solcruoris' => [
+        'nome' => 'Solcruoris',
+        'parametros' => ['custo'],
+        'precisa_input' => false,
+        'funcao_aplicar' => 'applySustainSolcruoris',
+        'custo_texto' => 'Custo único'
     ],
 ];
 
@@ -155,8 +162,12 @@ function applySustainSpeculusanguis($caster, $params) {
     }
 }
 
-function applySustainVisExVulnere($caster, $params) {
+function applySustainVisExVulnere($caster) {
     if (spendPM($caster, 2, true, true)) {
+        if ($_SESSION['battle']['sustained_effects'][$caster]['visExVulnere']['dmg'] > 0){
+            $_SESSION['battle']['sustained_effects'][$caster]['visExVulnere']['pms'] = floor($_SESSION['battle']['sustained_effects'][$caster]['visExVulnere']['dmg']/2);
+            $_SESSION['battle']['sustained_effects'][$caster]['visExVulnere']['dmg'] = 0;
+        }
         $extra_pms = $_SESSION['battle']['sustained_effects'][$caster]['visExVulnere']['pms'] ?? 0;
         $_SESSION['battle']['sustained_effects'][$caster]['visExVulnere']['dmg'] = 0;
         return "<strong>{$caster}</strong> sustenta Vis Ex Vulnere (-2 PV). PMs temporários disponíveis neste turno: {$extra_pms}.";
@@ -186,6 +197,13 @@ function applySustainExcruentio($caster, $params) {
     }
 }
 
+
+function applySustainSolcruoris($caster, $params) {
+    $custo = $params['custo'];
+    $extraA = floor($custo/3);
+    $_SESSION['battle']['sustained_effects'][$caster]['solcruoris']['extraA'] = $extraA;
+    return "<strong>{$caster}</strong> sustenta armadura de sangue Solcruoris. A +{$extraA}";
+}
 
 
 function applySustainProtecaoMagica($caster, $params, &$b, $inputs = []) {

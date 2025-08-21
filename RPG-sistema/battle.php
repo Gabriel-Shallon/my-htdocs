@@ -168,7 +168,7 @@ switch ($step) {
 
         // 3) initiative atual
     case 'turn':
-        
+
         $order = $b['order'];
         if (count($order) === 0) {
             echo "<p>Nenhum lutador na batalha.</p>";
@@ -193,21 +193,13 @@ switch ($step) {
             header("Refresh:0");
         }
 
+        $b['started_turn_with_sustained_spells'] = !empty($b['notes'][$cur]['sustained_spells']);
 
-        if(strpos($_SESSION['battle']['notes'][$cur]['sustained_spells'] ?? '', 'Vis Ex Vulnere') !== false){
-            if (!isset($_SESSION['battle']['sustained_effects'][$cur]['visExVulnere'])) {
-                $_SESSION['battle']['sustained_effects'][$cur]['visExVulnere'] = [
-                    'dmg' => 0, 
-                    'flag' => getPlayerStat($cur, 'PV'),
-                    'pms' => 0
-                ];
-            }
-            if ($_SESSION['battle']['sustained_effects'][$cur]['visExVulnere']['dmg'] > 0){
-                $_SESSION['battle']['sustained_effects'][$cur]['visExVulnere']['pms'] = floor($_SESSION['battle']['sustained_effects'][$cur]['visExVulnere']['dmg']/2);
-                $_SESSION['battle']['sustained_effects'][$cur]['visExVulnere']['dmg'] = 0;
-            }
+        if (isset($_SESSION['battle']['sustained_effects'][$cur]['solcruoris']) && strpos($_SESSION['battle']['notes'][$cur]['sustained_spells'] ?? '', 'Solcruoris') === false) {
+            setPlayerStat($cur, 'A', getPlayerStat($cur, 'A') - $_SESSION['battle']['sustained_effects'][$cur]['solcruoris']['extraA']);
+            unset($_SESSION['battle']['sustained_effects'][$cur]['solcruoris']);
         }
-        
+
         syncEquipBuffs($cur);
         $stats = getPlayer($cur);
         $notes = array_merge(
@@ -1401,10 +1393,6 @@ JS;
             switch ($_POST['action'] ?? '') {
 
                 case 'pass':
-                    if (!empty($b['notes'][$pl]['sustained_spells']) && empty($b['sustained_processed_this_turn'][$pl])) {
-                        $b['notes'][$pl]['sustained_spells'] = '';
-                        $out = "<strong>{$pl}</strong> não sustentou suas magias e elas se dissiparam. ";
-                    }
                     $out .= "<strong>{$pl}</strong> passou seu turno.";
                     unset($b['playingAlly']);
                     $b['init_index']++;
@@ -2075,6 +2063,18 @@ JS;
             }
 
 
+            if (isset($_SESSION['battle']['sustained_effects'][$pl]['solcruoris']) && strpos($_SESSION['battle']['notes'][$pl]['sustained_spells'] ?? '', 'Solcruoris') === false) {
+                setPlayerStat($pl, 'A', getPlayerStat($pl, 'A') - $_SESSION['battle']['sustained_effects'][$pl]['solcruoris']['extraA']);
+                unset($_SESSION['battle']['sustained_effects'][$pl]['solcruoris']);
+            }
+            
+
+            if ($origInitIndex != $b['init_index']) {
+                if (!empty($b['notes'][$pl]['sustained_spells']) && empty($b['sustained_processed_this_turn'][$pl]) && $b['started_turn_with_sustained_spells']) {
+                    $b['notes'][$pl]['sustained_spells'] = '';
+                    $out = "<strong>{$pl}</strong> não sustentou suas magias e elas se dissiparam.<br>" . $out;
+                }
+            }
 
 
             if ($b['notes'][$pl]['draco_active'] && empty($b['notes'][$pl]['draco_flag'])){

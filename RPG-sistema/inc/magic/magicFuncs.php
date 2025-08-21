@@ -620,14 +620,16 @@ function solcruoris($mago, $cost){
     $out = '';
     if (spendPM($mago, $cost, true)){
         if (empty($_SESSION['battle']['notes'][$mago]['sustained_spells'])){
-            $_SESSION['battle']['notes'][$mago]['sustained_spells'] = "Solcruoris;\n";
+            $_SESSION['battle']['notes'][$mago]['sustained_spells'] = "Solcruoris(".$cost.");\n";
         } elseif (!empty($_SESSION['battle']['notes'][$mago]['sustained_spells'])) {
-            $_SESSION['battle']['notes'][$mago]['sustained_spells'] .= "Solcruoris;\n"; 
+            $_SESSION['battle']['notes'][$mago]['sustained_spells'] .= "Solcruoris(".$cost.");\n"; 
         }
-        $out .= "<strong>{$mago}</strong> usou ".getMagicSpecialName($mago, 'vis_ex_vulnere')." (Vis Ex Vulnere).<br>";
-        return '';
+        $extraFD = floor($cost/3);
+        $_SESSION['battle']['sustained_effects'][$mago]['solcruoris']['extraA'] = $extraFD;
+        setPlayerStat($mago, 'A', getPlayerStat($mago, 'A') + $extraFD);
+        return "<strong>{$mago}</strong> usou ".getMagicSpecialName($mago, 'solcruoris')." (Solcruoris). Armadura +{$extraFD}<br>";
     } else {
-        return '';    
+        return "<strong>{$mago}</strong> não tem PVs o suficiente para usar Solcruoris!";    
     }   
 }
 

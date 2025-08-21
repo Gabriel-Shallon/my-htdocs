@@ -282,8 +282,6 @@ include_once 'traitFuncs.php';
             }
             return false;
         }
-
-
         if ($pm >= $cost) {
             setPlayerStat($player, 'PM', $pm - $cost);
             return true;
