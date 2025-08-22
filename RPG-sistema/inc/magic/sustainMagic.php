@@ -50,6 +50,14 @@ $catalogoMagiasSustentadas = [
         'funcao_aplicar' => 'applySustainSolcruoris',
         'custo_texto' => 'Custo único'
     ],
+    'spectraematum' => [
+        'nome' => 'Spectraematum',
+        'parametros' => ['alvo'],
+        'precisa_input' => true,
+        'funcao_gerar_form' => 'getFormSpectraematum',
+        'funcao_aplicar' => 'applySustainSpectraematum',
+        'custo_texto' => '2 PVs'
+    ],
 ];
 
 
@@ -205,6 +213,28 @@ function applySustainSolcruoris($caster, $params) {
     return "<strong>{$caster}</strong> sustenta armadura de sangue Solcruoris. A +{$extraA}";
 }
 
+function applySustainSpectraematum($caster, $params, $b, $inputs = []) {
+    $target = $params['alvo'];
+    $debuffCost = (int)($inputs['debuffCost'] ?? 0); 
+    if (spendPM($caster, 2+$debuffCost, true)) { 
+        $debuff = floor($debuffCost/2);
+        setPlayerStat($target, 'H', $_SESSION['battle']['sustained_effects'][$caster]['spectraematum'][$target]['origH'] - $debuff);
+        applyDamage($caster, $target, 1, 'Magico');
+        return "<strong>{$caster}</strong> sustenta Spectraematum em <strong>{$target}</strong>. Custo: ".(2+$debuffCost)."; Dano: 1; Debuff H: ".$debuff;
+    } else {
+        return "<strong>{$caster}</strong> não tem PVs para sustentar Spectraematum.";
+    }
+}
+function getFormSpectraematum($caster, $params, $instanceIndex) {
+    $slug = 'spectraematum';
+    $target = htmlspecialchars($params['alvo'], ENT_QUOTES);
+    $html = "<fieldset><legend>Spectraematum em {$target}</legend>";
+    $html .= "<label>Custo do Debuff: 
+                <input type='number' name='inputs[{$slug}][{$instanceIndex}][debuffCost]' min='0' value='0' required>
+              </label><br>";
+    $html .= "</fieldset>";
+    return $html;
+}
 
 function applySustainProtecaoMagica($caster, $params, &$b, $inputs = []) {
     $cost = (int)$params['custo_pms'];

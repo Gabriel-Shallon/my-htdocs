@@ -634,4 +634,34 @@ function solcruoris($mago, $cost){
 }
 
 
+function spectraematum($mago, $debuff, $tgt){
+    $out = '';
+    if (spendPM($mago, 2+$debuff, true)){
+        if (empty($_SESSION['battle']['notes'][$mago]['sustained_spells'])){
+            $_SESSION['battle']['notes'][$mago]['sustained_spells'] = "Spectraematum(".$tgt.");\n";
+        } elseif (!empty($_SESSION['battle']['notes'][$mago]['sustained_spells'])) {
+            $_SESSION['battle']['notes'][$mago]['sustained_spells'] .= "Spectraematum(".$tgt.");\n"; 
+        }
+        $debuffH = floor($debuff/2);
+        $_SESSION['battle']['sustained_effects'][$mago]['spectraematum'][$tgt]['origH'] = getPlayerStat($tgt, 'H');
+        setPlayerStat($tgt, 'H', max(getPlayerStat($tgt, 'H')-$debuffH, 0));
+        applyDamage($mago, $tgt, 1, 'Magico');
+        return "<strong>{$mago}</strong> usou ".getMagicSpecialName($mago, 'spectraematum')." (Spectraematum) em <strong>{$tgt}</strong>. Habilidade do Alvo -{$debuffH}<br>";
+    } else {
+        return "<strong>{$mago}</strong> não tem PVs o suficiente para lançar Spectraematum!";    
+    }   
+}
+
+
+
+function aeternumTribuo($mago, $tgt){
+    $out = '';
+    spendPM($mago,getPlayerStat($mago, 'PV'), true);
+    setPlayerStat($tgt, 'PV', getPlayerStat($tgt, 'PV_max'));
+    setPlayerStat($tgt, 'PM', getPlayerStat($tgt, 'PM_max'));
+    $out .= "<strong>{$mago}</strong> usou ".getMagicSpecialName($mago, 'aeternum_tribuo')." (Aeternum Tribuo) em <strong>{$tgt}</strong>. Custo: Morte; Alvo: Mais vivo do que nunca;<br>";   
+    return $out;
+}
+
+
 ?>

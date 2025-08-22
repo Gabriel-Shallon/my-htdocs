@@ -2048,6 +2048,25 @@ JS;
                             $b['init_index']++;
                             break;
 
+                        case 'spectraematum':
+                            $debuff = $_POST['debuff'] ?? [''];                        
+                            $tgt = $_POST['target'] ?? [''];
+
+                            $out = spectraematum($pl, $debuff, $tgt);
+
+                            unset($b['playingAlly']);
+                            $b['init_index']++;
+                            break;
+
+                        case 'aeternum_tribuo':                       
+                            $tgt = $_POST['target'] ?? [''];
+
+                            $out = aeternumTribuo($pl, $tgt);
+
+                            unset($b['playingAlly']);
+                            $b['init_index']++;
+                            break;
+
                         default:
                             $out = "A magia '{$magic_slug}' foi selecionada, mas sua lógica ainda não foi implementada.";
                             unset($b['playingAlly']);
@@ -2062,18 +2081,23 @@ JS;
                     break;
             }
 
+            if ($origInitIndex != $b['init_index']) {
+                if (!empty($b['notes'][$pl]['sustained_spells']) && empty($b['sustained_processed_this_turn'][$pl]) && $b['started_turn_with_sustained_spells']) {
+                    $b['notes'][$pl]['sustained_spells'] = '';
+                    $out = "<strong>{$pl}</strong> não sustentou suas magias e elas se dissiparam.<br>" . $out;
+                }
+            }
 
             if (isset($_SESSION['battle']['sustained_effects'][$pl]['solcruoris']) && strpos($_SESSION['battle']['notes'][$pl]['sustained_spells'] ?? '', 'Solcruoris') === false) {
                 setPlayerStat($pl, 'A', getPlayerStat($pl, 'A') - $_SESSION['battle']['sustained_effects'][$pl]['solcruoris']['extraA']);
                 unset($_SESSION['battle']['sustained_effects'][$pl]['solcruoris']);
             }
             
-
-            if ($origInitIndex != $b['init_index']) {
-                if (!empty($b['notes'][$pl]['sustained_spells']) && empty($b['sustained_processed_this_turn'][$pl]) && $b['started_turn_with_sustained_spells']) {
-                    $b['notes'][$pl]['sustained_spells'] = '';
-                    $out = "<strong>{$pl}</strong> não sustentou suas magias e elas se dissiparam.<br>" . $out;
+            if (isset($_SESSION['battle']['sustained_effects'][$pl]['spectraematum']) && strpos($_SESSION['battle']['notes'][$pl]['sustained_spells'] ?? '', 'Spectraematum') === false){
+                foreach($_SESSION['battle']['sustained_effects'][$pl]['spectraematum'] as $tgt => $tgtInfo){
+                    setPlayerStat($tgt, 'H', $tgtInfo['origH']);
                 }
+                unset($_SESSION['battle']['sustained_effects'][$pl]['spectraematum']);
             }
 
 

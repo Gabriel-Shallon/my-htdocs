@@ -98,6 +98,14 @@ function renderMagicInputs($slug, $caster, &$battle) {
             inputSolcruoris();
             break;
 
+        case 'spectraematum':
+            inputSpectraematum($caster, $battle);
+            break;
+
+        case 'aeternum_tribuo':
+            inputAeternumTribuo($caster, $battle);
+            break;
+
         default:
             echo 'Essa magia ainda não foi implementada';
             break;
@@ -641,6 +649,28 @@ function inputSolcruoris(){
     echo '<label>Custo: <input type="number" name="cost" min="3" required></label>';
 }
 
+
+function inputSpectraematum($caster, $b){
+    $validTargets = getValidTargets($caster, $b, 'enemies');
+    echo '<label>Selecionar Alvo: <select name="target" required>';
+    foreach ($validTargets as $target){
+        echo '<option value="'.$target.'">'.$target.'</option>';
+    }
+    echo '</select></label>';
+    echo '<br><label>Custo do debuff H: <input type="number" name="debuff" min="2" value="0" required></label>';
+}
+
+
+function inputAeternumTribuo($caster, $b){
+    $validTargets = getValidTargets($caster, $b, 'enemies');
+    echo '<label>Selecionar Alvo: <select name="target" required>';
+    foreach ($validTargets as $target){
+        if (getPlayerStat($target, 'PV') <= 0){
+            echo '<option value="'.$target.'">'.$target.'</option>';
+        }
+    }
+    echo '</select></label>';
+}
 
 
 function inputCancelamento($caster, &$b){
