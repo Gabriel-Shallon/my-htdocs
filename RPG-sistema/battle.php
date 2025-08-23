@@ -24,7 +24,6 @@ $b = &$_SESSION['battle'];
 // Passos
 $step = $_GET['step'] ?? 'select';
 switch ($step) {
-
     // 1) Seleção de players
     case 'select':
         if ($_SERVER['REQUEST_METHOD'] === 'POST') {
@@ -42,14 +41,12 @@ switch ($step) {
                 'arena'       => '',
             ];
             $b['hasAlly'] = [];
-
             header('Location: battle.php?step=initiative');
             exit;
         }
         $all = getAllPlayers();
         $exclude = getAllAllies();
         echo '<h1>Iniciar Batalha</h1><form method="post">';
-
         foreach ($all as $p) {
             $n = $p['nome'];
             if (in_array($n, $exclude, true)) {
@@ -58,7 +55,6 @@ switch ($step) {
             $safe = htmlspecialchars($n, ENT_QUOTES);
             echo '<label><input type="checkbox" name="players[]" value="' . $n . '"> ' . $n . '</label><br>';
         }
-
         echo '<br><button type="submit">Confirmar</button></form>';
         break;
 
@@ -66,11 +62,11 @@ switch ($step) {
     // 2) Iniciativa
     case 'initiative':
         $rolls = $_POST['rolls'] ?? [];
-        
+
         if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $_SESSION['battle']['arena'] = trim($_POST['arena'] ?? '');
-            foreach ($b['players'] as $i => $pl) { 
-                syncEquipBuffs($pl);  
+            foreach ($b['players'] as $i => $pl) {
+                syncEquipBuffs($pl);
                 if (!isset($b['orig'][$pl])) {
                     $b['orig'][$pl] = [];
                     foreach (['F', 'H', 'R', 'A', 'PdF'] as $s) {
@@ -92,10 +88,8 @@ switch ($step) {
                     }
                 }
             }
-
             $inicList     = iniciativa($b['players'], $rolls);
             $b['order']   = array_column($inicList, 'nome');
-
             header('Location: battle.php?step=turn');
             exit;
         }
@@ -133,19 +127,19 @@ switch ($step) {
         header('Location: battle.php?step=turn');
         exit;
 
-    // 2.2) Atualizar arena    
+        // 2.2) Atualizar arena    
     case 'update_arena':
-        if ($_SERVER['REQUEST_METHOD'] === 'POST'){
+        if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $_SESSION['battle']['arena'] = trim($_POST['arena'] ?? '');
         }
         header('Location: battle.php?step=turn');
         exit;
 
-    // 2.3) Atualizar magias sustentadas
+        // 2.3) Atualizar magias sustentadas
     case 'update_sustained_spells':
-        if ($_SERVER['REQUEST_METHOD'] === 'POST'){
+        if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $pl = $_GET['player'] ?? '';
-            if ($pl && in_array($pl, $b['players'], true)){
+            if ($pl && in_array($pl, $b['players'], true)) {
                 $_SESSION['battle']['notes'][$pl]['sustained_spells'] = trim($_POST['sustained_spells'] ?? '');
             }
         }
@@ -153,7 +147,7 @@ switch ($step) {
         exit;
 
 
-    // 2.4) Gerar inputs de magias    
+        // 2.4) Gerar inputs de magias    
     case 'get_magic_inputs':
         $magic_slug = $_GET['magic'] ?? '';
         $cur = $b['order'][$b['init_index'] % count($b['order'])];
@@ -163,7 +157,6 @@ switch ($step) {
         include_once 'inc/magic/magicInputs.php';
         renderMagicInputs($magic_slug, $cur, $b);
         exit;
-
 
 
         // 3) initiative atual
@@ -200,28 +193,31 @@ switch ($step) {
             unset($_SESSION['battle']['sustained_effects'][$cur]['solcruoris']);
         }
 
+        if (isset($_SESSION['battle']['sustained_effects'][$cur]['visExVulnere']['pms']) && $cur != $last_player) {
+            unset($_SESSION['battle']['sustained_effects'][$cur]['visExVulnere']['pms']);
+        }
+
         syncEquipBuffs($cur);
         $stats = getPlayer($cur);
-        $notes = array_merge(
-            ['efeito' => '', 'posicao' => '', 'concentrado' => 0, 'draco_active' => false, 'incorp_active' => false],
+        $notes = array_merge(            ['efeito' => '', 'posicao' => '', 'concentrado' => 0, 'draco_active' => false, 'incorp_active' => false],
             $b['notes'][$cur] ?? []
         );
         $b['notes'][$cur] = $notes;
         $maxMulti = 1 + intdiv(max($stats['H'], 0), 2);
         $isIncorp = ! empty($notes['incorp_active']);
-    
-        
+
+
         $sustainedFormHtml = '';
         if (empty($b['sustained_processed_this_turn'][$cur])) {
             $sustainedFormHtml = generateSustainForm($cur, $b);
         }
-        
+
         if (!empty($b['sustained_log'])) {
             echo "<div><strong>Resultado das magias sustentadas esse turno:</strong><br>" . implode('<br>', $b['sustained_log']) . "</div><hr>";
         }
 
 
-        if (!empty($b['notes'][$cur]['use_pv'])){
+        if (!empty($b['notes'][$cur]['use_pv'])) {
             $efeitoUsePV = "\nUsando PVs invés de PMs.";
             if (strpos($b['notes'][$cur]['efeito'], trim($efeitoUsePV)) === false) {
                 $b['notes'][$cur]['efeito'] .= $efeitoUsePV;
@@ -272,17 +268,17 @@ switch ($step) {
             $b['notes'][$cur]['efeito'] = removeEffect($b['notes'][$cur]['efeito'], ['Magia extra aplicada: PMs restaurados ao máximo.']);
         }
 
-        if (!empty($b['notes'][$cur]['invisivel']) && !empty($b['notes'][$cur]['invisivel_flag'])){
+        if (!empty($b['notes'][$cur]['invisivel']) && !empty($b['notes'][$cur]['invisivel_flag'])) {
             unset($b['notes'][$cur]['invisivel_flag']);
-            if (!spendPM($cur, 1)){
+            if (!spendPM($cur, 1)) {
                 unset($b['notes'][$cur]['invisivel']);
                 $efeitoInvisibilidade = "\nInvisibilidade desativada por falta de PMs.";
-                if (strpos($b['notes'][$cur]['efeito'], trim($efeitoInvisibilidade )) === false) {
+                if (strpos($b['notes'][$cur]['efeito'], trim($efeitoInvisibilidade)) === false) {
                     $b['notes'][$cur]['efeito'] .= $efeitoInvisibilidade;
                 }
                 $b['notes'][$cur]['efeito'] = removeEffect($b['notes'][$cur]['efeito'], ['Você está invisível.']);
             }
-        } else if(empty($notes['invisivel'])){
+        } else if (empty($notes['invisivel'])) {
             $b['notes'][$cur]['efeito'] = removeEffect($b['notes'][$cur]['efeito'], ['Você está invisível.']);
         }
 
@@ -347,7 +343,7 @@ switch ($step) {
             if (strpos($b['notes'][$cur]['efeito'], trim($efeitoAceli)) === false) {
                 $b['notes'][$cur]['efeito'] .= $efeitoAceli;
             }
-        }  
+        }
 
         if (in_array('aceleracao_ii', listPlayerTraits($cur), true)) {
             $efeitoAcelii = "\nAceleração II: H +2 situações de perseguição/fuga & 2 Movimentos extras ou 1 ação extra.";
@@ -361,21 +357,21 @@ switch ($step) {
             if (strpos($b['notes'][$cur]['efeito'], trim($efeitoAudicao)) === false) {
                 $b['notes'][$cur]['efeito'] .= $efeitoAudicao;
             }
-        } 
+        }
 
         if (in_array('visao_360', listPlayerTraits($cur), true)) {
             $efeitoVisao = "\nVisão 360°: H +2 para perceber inimigos escondidos e ataques surpresas.";
             if (strpos($b['notes'][$cur]['efeito'], trim($efeitoVisao)) === false) {
                 $b['notes'][$cur]['efeito'] .= $efeitoVisao;
             }
-        } 
+        }
 
         if (in_array('visao_penumbra', listPlayerTraits($cur), true)) {
             $efeitoPenumbra = "\nVisão Penumbra: Não sofre debuffs de H quando no escuro.";
             if (strpos($b['notes'][$cur]['efeito'], trim($efeitoPenumbra)) === false) {
                 $b['notes'][$cur]['efeito'] .= $efeitoPenumbra;
             }
-        } 
+        }
 
         if (in_array('faro_agucado', listPlayerTraits($cur), true)) {
             $efeitoFaro = "\nFaro Aguçado: Identifica cheiros com facilidade.";
@@ -469,12 +465,12 @@ switch ($step) {
         }
 
         if (in_array('teleporte', listPlayerTraits($cur), true)) {
-            $efeitoTelep = "\nTeleporte: H+3 para esquiva. Alcance do teleporte = ".getPlayerStat($cur, 'H')*10;
+            $efeitoTelep = "\nTeleporte: H+3 para esquiva. Alcance do teleporte = " . getPlayerStat($cur, 'H') * 10;
             if (strpos($b['notes'][$cur]['efeito'], trim($efeitoTelep)) === false) {
                 $b['notes'][$cur]['efeito'] .= $efeitoTelep;
             }
         } else {
-            $b['notes'][$cur]['efeito'] = removeEffect($b['notes'][$cur]['efeito'], ["Teleporte: H+3 para esquiva. Alcance do teleporte = ".getPlayerStat($cur, 'H')*10]);
+            $b['notes'][$cur]['efeito'] = removeEffect($b['notes'][$cur]['efeito'], ["Teleporte: H+3 para esquiva. Alcance do teleporte = " . getPlayerStat($cur, 'H') * 10]);
         }
 
         if (in_array('armadura_extra_fogo', listPlayerTraits($cur), true)) {
@@ -502,6 +498,13 @@ switch ($step) {
             $efeitoMagiaNegra = "\nMagia negra.";
             if (strpos($b['notes'][$cur]['efeito'], trim($efeitoMagiaNegra)) === false) {
                 $b['notes'][$cur]['efeito'] .= $efeitoMagiaNegra;
+            }
+        }
+
+        if (in_array('muggles', listPlayerTraits($cur), true)) {
+            $efeitoMuggles = "\nMuggles: Não pode usar qualquer tipo de magia.";
+            if (strpos($b['notes'][$cur]['efeito'], trim($efeitoMuggles)) === false) {
+                $b['notes'][$cur]['efeito'] .= $efeitoMuggles;
             }
         }
 
@@ -541,17 +544,14 @@ switch ($step) {
         }
 
 
-
-
         // Limpa os espaços em branco.
         $efeito_atual = $b['notes'][$cur]['efeito'];
         $efeito_limpo = preg_replace('/(?:\r\n?|\n){2,}/', "\n", $efeito_atual);
         $efeito_limpo = trim($efeito_limpo);
         $_SESSION['battle']['notes'][$cur]['efeito'] = $efeito_limpo;
-        $notes['efeito'] = $efeito_limpo; 
+        $notes['efeito'] = $efeito_limpo;
 
 
-        
         if (!empty($b['playingPartner'][$cur])) {
             echo '<h1>Iniciativa da dupla <strong>' . $cur . ' & ' . $b['playingPartner'][$cur]['name'] . '</strong> <small>(Rodada ' . $b['round'] . ')</small></h1>';
         } else {
@@ -570,10 +570,6 @@ switch ($step) {
 
 
 
-
-
-
-
         // Form de ações
         echo '<h2>Ações</h2>';
 
@@ -587,7 +583,7 @@ switch ($step) {
         echo '<option value="fim">Terminar Batalha</option>';
 
         $isDefeated = ($stats['PV'] <= 0);
-        if (!$isDefeated){
+        if (!$isDefeated) {
 
             $concentrando = false;
             $agarrando = false;
@@ -666,7 +662,6 @@ switch ($step) {
                 echo '<option value="end_partner">Separar Dupla</option>';
             }
 
-
             if (!empty($b['agarrao'][$cur]['agarrando'])) {
                 echo '<option value="soltar_agarrao">Soltar agarrão (' . $b['agarrao'][$cur]['agarrando'] . ')</option>';
             }
@@ -677,13 +672,13 @@ switch ($step) {
 
             if (in_array('invisibilidade', listPlayerTraits($cur), true) && empty($b['notes'][$cur]['invisivel'])) {
                 echo '<option value="activate_invisibilidade">Ficar invisível (1PM/turno)</option>';
-            }      
+            }
 
             if (in_array('invisibilidade', listPlayerTraits($cur), true) && !empty($b['notes'][$cur]['invisivel'])) {
                 echo '<option value="deactivate_invisibilidade">Voltar a ser visível</option>';
-            }  
+            }
 
-            if (strpos(getPlayerStat($cur, 'equipado'), 'Luxcruentha') != false){
+            if (strpos(getPlayerStat($cur, 'equipado'), 'Luxcruentha') != false) {
                 echo '<option value="sword_luxcruentha">Atacar usando Luxcruentha</option>';
             }
 
@@ -691,31 +686,27 @@ switch ($step) {
                 echo '<option value="ataque">Atacar</option>';
                 echo '<option value="multiple">Múltiplo</option>';
 
-
-                if (in_array('tiro_multiplo', listPlayerTraits($cur)) ||
+                if  (in_array('tiro_multiplo', listPlayerTraits($cur)) ||
                     (in_array('tiro_multiplo', listPlayerTraits(getAlliePlayer($cur))) &&
-                        in_array('ligacao_natural', listPlayerTraits(getAlliePlayer($cur)))) ||
+                    in_array('ligacao_natural', listPlayerTraits(getAlliePlayer($cur)))) ||
                     (!empty($b['playingPartner'][$cur]) &&
-                        in_array('tiro_multiplo', listPlayerTraits($b['playingPartner'][$cur]['name'])))
-                ) {
+                    in_array('tiro_multiplo', listPlayerTraits($b['playingPartner'][$cur]['name'])))){
                     echo '<option value="tiro_multiplo">Tiro Múltiplo</option>';
                 }
 
-                if (in_array('agarrao', listPlayerTraits($cur)) ||
+                if  (in_array('agarrao', listPlayerTraits($cur)) ||
                     (in_array('agarrao', listPlayerTraits(getAlliePlayer($cur))) &&
-                        in_array('ligacao_natural', listPlayerTraits(getAlliePlayer($cur)))) ||
+                    in_array('ligacao_natural', listPlayerTraits(getAlliePlayer($cur)))) ||
                     (!empty($b['playingPartner'][$cur]) &&
-                        in_array('agarrao', listPlayerTraits($b['playingPartner'][$cur]['name'])))
-                ) {
+                    in_array('agarrao', listPlayerTraits($b['playingPartner'][$cur]['name'])))){
                     echo '<option value="agarrao">Agarrão</option>';
                 }
 
-                if (in_array('ataque_debilitante', listPlayerTraits($cur)) ||
+                if  (in_array('ataque_debilitante', listPlayerTraits($cur)) ||
                     (in_array('ataque_debilitante', listPlayerTraits(getAlliePlayer($cur))) &&
-                        in_array('ligacao_natural', listPlayerTraits(getAlliePlayer($cur)))) ||
+                    in_array('ligacao_natural', listPlayerTraits(getAlliePlayer($cur)))) ||
                     (!empty($b['playingPartner'][$cur]) &&
-                        in_array('ataque_debilitante', listPlayerTraits($b['playingPartner'][$cur]['name'])))
-                ) {
+                    in_array('ataque_debilitante', listPlayerTraits($b['playingPartner'][$cur]['name'])))){
                     echo '<option value="ataque_debilitante">Ataque Debilitante</option>';
                 }
             }
@@ -744,12 +735,11 @@ switch ($step) {
 
             $hasTargets = count($validTargets) > 0;
 
-
             // Ataque simples
             if ($hasTargets) {
                 echo '<div id="atkSimple" style="display: none;"><fieldset><legend>Ataque</legend>'
                     . 'Tipo de Ataque: <select name="atkType" id="atkTypeSimple"><option value="F">F</option><option value="PdF">PdF</option></select><br>'
-                    . 'Tipo de Dano: <select name="dmgType">'; 
+                    . 'Tipo de Dano: <select name="dmgType">';
                 selectDmgType($cur);
                 echo '</select><br>'
                     . 'Roll FA: <input id="dadoFA" type="number" name="dadoFA" required><br>'
@@ -765,10 +755,10 @@ switch ($step) {
                     . '<label>'
                     . 'Roll FD/Esq.: <input id="dadoFD" type="number" name="dadoFD" required>'
                     . '</label>'
-                //Ataque debilitante
+                    //Ataque debilitante
                     . '<br><div id="stat_debili">'
                     . '<label>Stat a ser debilitado: '
-                    . '<select name="stat"> ' 
+                    . '<select name="stat"> '
                     . '<option value="F">F</option> <option value="H">H</option> <option value="R">R</option> <option value="A">A</option> <option value="PdF">PdF</option>'
                     . '</select></label></div>'
                     . '</div></div>';
@@ -776,36 +766,36 @@ switch ($step) {
 
             // Ataque múltiplo
             if ($hasTargets) {
-                    echo '<div id="atkMulti" style="display:none"><fieldset><legend>Múltiplo</legend>';
-                    if ($maxMulti >= 2){
-                        echo 'Tipo de Ataque: <select name="atkType" id="atkTypeMulti"><option value="F">F</option><option value="PdF">PdF</option></select><br>'
-                            . 'Tipo de Dano: <select name="dmgType">'; 
-                        selectDmgType($cur); 
-                        echo '</select><br>'
-                            . 'Quantidade (2-' . $maxMulti . '): <input id="quant" type="number" name="quant" '
-                            . 'min="2" max="' . $maxMulti . '" value="2"><br>'
-                            . 'Alvo: <select name="targetMulti">';
-                        selectTarget($cur, $validTargets);
-                        echo '</select><br>'
-                            . 'Reação: <select id="defM" name="defesaMulti">'
-                            . '<option value="defender">Defender</option>'
-                            . '<option id="opt-esquiva-multi" value="defender_esquiva">Esquivar</option>'
-                            . '<option value="indefeso">Indefeso</option>'
-                            . '<option id="opt-deflexao-multi" value="defender_esquiva_deflexao">Deflexão (2 PM)</option>'
-                            . '</select>'
-                            . '<div id="dCont"></div>';
-                    } else {
-                        echo 'Este personagem não tem H o suficiente para usar ataque múltiplo.';
-                    }
-                    echo '</fieldset></div>';
+                echo '<div id="atkMulti" style="display:none"><fieldset><legend>Múltiplo</legend>';
+                if ($maxMulti >= 2) {
+                    echo 'Tipo de Ataque: <select name="atkType" id="atkTypeMulti"><option value="F">F</option><option value="PdF">PdF</option></select><br>'
+                        . 'Tipo de Dano: <select name="dmgType">';
+                    selectDmgType($cur);
+                    echo '</select><br>'
+                        . 'Quantidade (2-' . $maxMulti . '): <input id="quant" type="number" name="quant" '
+                        . 'min="2" max="' . $maxMulti . '" value="2"><br>'
+                        . 'Alvo: <select name="targetMulti">';
+                    selectTarget($cur, $validTargets);
+                    echo '</select><br>'
+                        . 'Reação: <select id="defM" name="defesaMulti">'
+                        . '<option value="defender">Defender</option>'
+                        . '<option id="opt-esquiva-multi" value="defender_esquiva">Esquivar</option>'
+                        . '<option value="indefeso">Indefeso</option>'
+                        . '<option id="opt-deflexao-multi" value="defender_esquiva_deflexao">Deflexão (2 PM)</option>'
+                        . '</select>'
+                        . '<div id="dCont"></div>';
+                } else {
+                    echo 'Este personagem não tem H o suficiente para usar ataque múltiplo.';
+                }
+                echo '</fieldset></div>';
             }
 
             //Tiro múltiplo
             if ($hasTargets) {
-                if (!$stats['H'] == 0){
+                if (!$stats['H'] == 0) {
                     echo '<div id="atkTiroMulti" style="display:none"><fieldset><legend>Tiro Múltiplo</legend>'
-                        . 'Tipo de Dano: <select name="dmgType">'; 
-                    selectDmgType($cur); 
+                        . 'Tipo de Dano: <select name="dmgType">';
+                    selectDmgType($cur);
                     echo '</select><br>'
                         . 'Quantidade (1-' . $stats['H'] . '): <input id="quantTiro" type="number" name="quantTiro" '
                         . 'min="1" max="' . $stats['H'] . '" value="1"><br>'
@@ -869,8 +859,7 @@ switch ($step) {
                 . '</fieldset></div>';
 
 
-
-                    //Parceiro
+            //Parceiro
             echo '<div id="partnerSelect" style="display:none;margin-top:0.5em;">'
                 . '<fieldset><legend>Selecione o Parceiro</legend>'
                 . '<select name="partner">';
@@ -882,7 +871,6 @@ switch ($step) {
             echo '</select>'
                 . '</fieldset>'
                 . '</div>';
-
         }
 
         //Aliado
@@ -899,20 +887,15 @@ switch ($step) {
             . '</div>';
 
 
-
-
         echo '<br><button type="submit">Executar</button> ';
         echo '<button type="button" onclick="history.back()">Voltar</button>';
         echo '</form>';
 
-        
-
-
-
 
 
         // Form de Magias
-        if(!$isDefeated){
+        if ($isDefeated || muggles($cur) || fetiche($cur)) {
+        } else {
             $has_magic_school = false;
             foreach (['magia_branca', 'magia_negra', 'magia_elemental', 'magia_de_sangue', 'arcano'] as $school) {
                 if (in_array($school, listPlayerTraits($cur))) {
@@ -922,12 +905,11 @@ switch ($step) {
             }
             if ($has_magic_school && empty($notes['furia'])) {
                 echo '<h2>Magias</h2>';
-
                 $susteinedSpellsText = htmlspecialchars($_SESSION['battle']['notes'][$cur]['sustained_spells'] ?? '', ENT_QUOTES);
                 echo '<form method="post" action="?step=update_sustained_spells&player=' . urlencode($cur) . '">'
-                .'<textarea name="sustained_spells" rows="3" cols="60" placeholder="Anote magias sustentadas aqui...">'.$susteinedSpellsText.'</textarea><br>'
-                .'<button type="submit">Salvar Anotações de Magia</button>'
-                .'</form>';
+                    . '<textarea name="sustained_spells" rows="3" cols="60" placeholder="Anote magias sustentadas aqui...">' . $susteinedSpellsText . '</textarea><br>'
+                    . '<button type="submit">Salvar Anotações de Magia</button>'
+                    . '</form>';
                 if (!empty($sustainedFormHtml)) {
                     echo $sustainedFormHtml;
                 }
@@ -952,7 +934,6 @@ switch ($step) {
                         } else {
                             $displayText = $nome;
                         }
-
                         $magic_nome = (string)($magic['nome'] ?? '');
                         $magic_escola = (string)($magic['escola'] ?? '');
                         $magic_custo_desc = (string)($magic['custo_descricao'] ?? '');
@@ -960,14 +941,13 @@ switch ($step) {
                         $magic_alcance = (string)($magic['alcance'] ?? '');
                         $magic_descricao = str_replace(["\r", "\n"], ' ', (string)($magic['descricao'] ?? ''));
 
-                        // Adicionando todos os dados da magia como data-attributes
                         echo "<option value=\"{$slug}\" " .
-                             "data-nome=\"" . htmlspecialchars($magic['nome'], ENT_QUOTES) . "\" " .
-                             "data-escola=\"" . htmlspecialchars($magic['escola'], ENT_QUOTES) . "\" " .
-                             "data-custo-descricao=\"" . htmlspecialchars($magic['custo_descricao'], ENT_QUOTES) . "\" " .
-                             "data-duracao=\"" . htmlspecialchars($magic['duracao'], ENT_QUOTES) . "\" " .
-                             "data-alcance=\"" . htmlspecialchars($magic['alcance'], ENT_QUOTES) . "\" " .
-                             "data-descricao=\"" . htmlspecialchars(str_replace(["\r", "\n"], ' ', $magic['descricao']), ENT_QUOTES) . "\">
+                            "data-nome=\"" . htmlspecialchars($magic['nome'], ENT_QUOTES) . "\" " .
+                            "data-escola=\"" . htmlspecialchars($magic['escola'], ENT_QUOTES) . "\" " .
+                            "data-custo-descricao=\"" . htmlspecialchars($magic['custo_descricao'], ENT_QUOTES) . "\" " .
+                            "data-duracao=\"" . htmlspecialchars($magic['duracao'], ENT_QUOTES) . "\" " .
+                            "data-alcance=\"" . htmlspecialchars($magic['alcance'], ENT_QUOTES) . "\" " .
+                            "data-descricao=\"" . htmlspecialchars(str_replace(["\r", "\n"], ' ', $magic['descricao']), ENT_QUOTES) . "\">
                              " . $displayText . "</option>";
                     }
                     echo '</select><br>';
@@ -982,6 +962,7 @@ switch ($step) {
             }
         }
 
+
         //Arena
         echo '<h2>Arena</h2>';
         echo '<form method="post" action="?step=update_arena">';
@@ -990,12 +971,10 @@ switch ($step) {
         echo '<button type="submit">Salvar Arena</button></form>';
 
 
-
         // Resumo Parcial
         echo '<h2>Resumo Parcial da Batalha</h2>';
         echo '<form method="post" action="?step=save_partial">';
         $lutadores = $b['players'];
-
         foreach ($b['players'] as $hasAlly) {
             if (getPlayerAllies($hasAlly)) {
                 $lutadores = array_merge($lutadores, getPlayerAllies($hasAlly));
@@ -1017,32 +996,25 @@ switch ($step) {
                     . '<input type="number" name="partial_stats[' . $pl . '][' . $c . ']" '
                     . 'value="' . $val . '" required></label>';
             }
-
             echo '<button type="button" onclick="toggleSection(\'sec_' . $id . '\')">'
                 . 'Mostrar/Ocultar Detalhes</button>';
-
             echo '<div id="sec_' . $id . '" style="display:none;margin-top:.5em;">';
-
             echo 'Inventário:<br>'
                 . '<textarea name="partial_stats[' . $pl . '][inventario]" rows="4" cols="60">'
                 . htmlspecialchars($ps['inventario'] ?? '', ENT_QUOTES)
                 . '</textarea><br>';
-
             echo 'Equipado:<br>'
                 . '<textarea name="partial_stats[' . $pl . '][equipado]" rows="2" cols="60">'
                 . htmlspecialchars($ps['equipado'] ?? '', ENT_QUOTES)
                 . '</textarea><br>';
-
             echo 'Efeito:<br>'
                 . '<textarea name="partial_stats[' . $pl . '][efeito]" rows="4" cols="60">'
                 . htmlspecialchars($note['efeito'], ENT_QUOTES)
                 . '</textarea><br>';
-
             echo 'Posição:<br>'
                 . '<textarea name="partial_stats[' . $pl . '][posicao]" rows="2" cols="60">'
                 . htmlspecialchars($note['posicao'], ENT_QUOTES)
                 . '</textarea><br>';
-
             echo '</div>';
             echo '</fieldset>';
         }
@@ -1052,7 +1024,7 @@ switch ($step) {
 
         $isInculto_php = in_array('inculto', listPlayerTraits($cur), true);
         $isInculto_js = $isInculto_php ? 'true' : 'false';
-        
+
         echo <<<JS
 <script>
 document.addEventListener('DOMContentLoaded', () => {
@@ -1149,7 +1121,6 @@ document.addEventListener('DOMContentLoaded', () => {
     magicInputsContainer.innerHTML = '';
     magicInputsContainer.style.display = 'none';
 
-
     const selectedOption = magicSelect.options[magicSelect.selectedIndex];
     if (!selectedOption || !selectedOption.value) {
       if (magicCastButton) {
@@ -1230,7 +1201,6 @@ document.addEventListener('DOMContentLoaded', () => {
       el.style.display = (el.style.display === 'none') ? 'block' : 'none';
     }
   };
-
 
   function manageDeflexaoSimple() {
     if (!atkTypeSimp || !selAlvoSi || !deflexSim) return;
@@ -1389,7 +1359,7 @@ JS;
                 $b['notes'][$pl]['concentrado'] = (int)($_POST['concentrado'] ?? 0);
             }
             $origInitIndex = $b['init_index'];
-            syncEquipBuffs($pl); 
+            syncEquipBuffs($pl);
             switch ($_POST['action'] ?? '') {
 
                 case 'pass':
@@ -1456,7 +1426,7 @@ JS;
                     $b['init_index']++;
                     break;
 
-                    
+
 
 
                 case 'start_concentrar':
@@ -1545,7 +1515,7 @@ JS;
                         $out = "<strong>{$pl}</strong> se soltou do agarrão de <strong>{$tgt}</strong>!";
                     } else {
                         $out = "<strong>{$pl}</strong> tentou se soltar do agarrão de <strong>{$tgt}</strong> mas falhou!";
-                    } 
+                    }
                     unset($b['playingAlly']);
                     $b['init_index']++;
                     break;
@@ -1561,14 +1531,14 @@ JS;
                     $dmgType = $_POST['dmgType'] ?? '';
 
                     $dano = defaultReactionTreatment($b, $tgt, $pl, $def, $dFA, $dFD, $tipo, $dmgType);
-                    
+
                     $result = '';
-                    if ($dano > 0){
-                       $result = debilitateStat($tgt, $stat, $dFD);
+                    if ($dano > 0) {
+                        $result = debilitateStat($tgt, $stat, $dFD);
                     }
 
                     $out = "<strong>{$pl}</strong> atacou <strong>{$tgt}</strong> (F): dano = {$dano} <br>"
-                        . applyDamage($pl, $tgt, $dano, 'F', $out)."<br>"
+                        . applyDamage($pl, $tgt, $dano, 'F', $out) . "<br>"
                         . $result;
 
                     unset($b['playingAlly']);
@@ -1605,7 +1575,7 @@ JS;
                     if ($pm >= 3) {
                         fusaoEterna($pl, $b['orig'][$pl]['PdF'], true);
                         $b['notes'][$pl]['fusao_active'] = true;
-                        $out = "<strong>{$pl}</strong> ativou Fusão Eterna (F = ".($b['orig'][$pl]['PdF']*2)."; PdF = 0; -3 PMs.)";
+                        $out = "<strong>{$pl}</strong> ativou Fusão Eterna (F = " . ($b['orig'][$pl]['PdF'] * 2) . "; PdF = 0; -3 PMs.)";
                         $b['notes'][$pl]['efeito'] .= "\nForma Demoníaca:";
                         $b['notes'][$pl]['efeito'] .= "\nInvulnerável a fogo.(dano de fogo dividido por 10)";
                         $b['notes'][$pl]['efeito'] .= "\nVulnerável a Sônico e Elétrico.(Ignora sua armadura na FD)";
@@ -1636,9 +1606,9 @@ JS;
                     if (spendPM($pl, 2)) {
                         $b['notes'][$pl]['incorp_active'] = true;
                         $b['notes'][$pl]['efeito'] .= "\nIncorpóreo: imune a dano F/PdF; não pode usar F ou PdF. Não pode usar ou carregar itens físicos.";
-                        if (getPlayerStat($pl, 'equipado') != '' || getPlayerStat($pl, 'inventario') != '' ){
-                            $itens = "Itens que ".$pl." dropou ao tornar-se incorpóreo: ".getPlayerStat($pl, 'equipado')."; ".getPlayerStat($pl, 'inventario');
-                            $b['arena'] .="\n".$itens;
+                        if (getPlayerStat($pl, 'equipado') != '' || getPlayerStat($pl, 'inventario') != '') {
+                            $itens = "Itens que " . $pl . " dropou ao tornar-se incorpóreo: " . getPlayerStat($pl, 'equipado') . "; " . getPlayerStat($pl, 'inventario');
+                            $b['arena'] .= "\n" . $itens;
                             setPlayerStat($pl, 'equipado', '');
                             setPlayerStat($pl, 'inventario', '');
                         }
@@ -1691,7 +1661,7 @@ JS;
                     } else {
                         $out = "<strong>{$pl}</strong> não está perto da morte para usar Magia Extra.";
                     }
-                    break;                    
+                    break;
 
 
 
@@ -1753,13 +1723,13 @@ JS;
                     }
                     break;
 
-                    
+
                 case 'activate_invisibilidade':
-                    if (spendPM($pl, 1)) { 
-                        setPlayerStat($pl, 'PM', getPlayerStat($pl, 'PM')+1);
+                    if (spendPM($pl, 1)) {
+                        setPlayerStat($pl, 'PM', getPlayerStat($pl, 'PM') + 1);
                         $b['notes'][$pl]['invisivel'] = true;
                         $efeitoInvisibilidade = "\nVocê está invisível.";
-                        if (strpos($b['notes'][$pl]['efeito'], trim($efeitoInvisibilidade )) === false) {
+                        if (strpos($b['notes'][$pl]['efeito'], trim($efeitoInvisibilidade)) === false) {
                             $b['notes'][$pl]['efeito'] .= $efeitoInvisibilidade;
                         }
                         $out = "<strong>{$pl}</strong> está invisível (1PM/turno)";
@@ -1803,17 +1773,17 @@ JS;
 
 
 
-                // Processamento de dados de magias
+                    // Processamento de dados de magias
                 case 'cast_magic':
                     $magic_slug = $_POST['magic'] ?? '';
                     $target = $_POST['magic_target'] ?? $pl; // Alvo padrão é o próprio conjurador
                     $pm_cost = (int)($_POST['magic_pm_cost'] ?? 1);
-                    
+
                     if (empty($magic_slug)) {
                         $out = 'Nenhuma magia foi selecionada.';
                         break;
                     }
-                    
+
                     switch ($magic_slug) {
                         case 'bola_de_fogo':
                             $tgts = $_POST['magic_targets'] ?? ['']; // Info do alvo: name + dFD
@@ -1821,24 +1791,24 @@ JS;
                             $dadoFA = $_POST['dadoFA'] ?? [''];
 
                             $out = bolaDeFogo($pl, $tgts, $PMs, $dadoFA);
-                        
+
                             unset($b['playingAlly']);
                             $b['init_index']++;
                             break;
-                        
+
                         case 'cura_magica':
                             $heal_type = $_POST['magic_heal_type'] ?? 'heal_pv';
                             $cost = ($heal_type === 'heal_pv') ? 2 : 4;
                             $out = "<strong>{$pl}</strong> usou Cura Mágica em <strong>{$target}</strong> (custo: {$cost} PMs).";
                             break;
-                            
+
                         case 'ataque_magico':
                             $pmCost = $_POST['magic_pm_cost'] ?? 1;
                             $atkType = $_POST['magic_attack_type'] ?? 'F';
                             $tgtsInfo = $_POST['magic_targets'] ?? ['']; //alvos [name] + reação [reaction] + dado de defesa [rollFD] + dado de ataque [rollFA]
 
                             $out = ataqueMagico($b, $pl, $tgtsInfo, $pmCost, $atkType);
-                        
+
                             unset($b['playingAlly']);
                             $b['init_index']++;
                             break;
@@ -1848,7 +1818,7 @@ JS;
                             $tgtsInfo = $_POST['magic_targets'] ?? ['']; //alvos [name] + lancas atacando ele [qtdAtk]
 
                             $out = lancaInfalivelDeTalude($pl, $tgtsInfo, $pmCost);
-                        
+
                             unset($b['playingAlly']);
                             $b['init_index']++;
                             break;
@@ -1857,21 +1827,21 @@ JS;
                             $tgt = $_POST['target'] ?? [''];
                             $dadoFD = $_POST['dadoFD'] ?? [''];
                             $somaDosDadosFA = 0;
-                            for ($i = 1; $i < 11; $i++){
-                                $somaDosDadosFA += $_POST['dado'.$i] ?? [0];
+                            for ($i = 1; $i < 11; $i++) {
+                                $somaDosDadosFA += $_POST['dado' . $i] ?? [0];
                             }
 
                             $out = brilhoExplosivo($pl, $tgt, $somaDosDadosFA, $dadoFD);
-                        
+
                             unset($b['playingAlly']);
                             $b['init_index']++;
                             break;
-                            
+
                         case 'morte_estelar':
                             $tgt = $_POST['target'] ?? [''];
 
-                            $out = morteEstelar( $pl, $tgt);
-                        
+                            $out = morteEstelar($pl, $tgt);
+
                             unset($b['playingAlly']);
                             $b['init_index']++;
                             break;
@@ -1882,8 +1852,8 @@ JS;
                             $dFA2 = $_POST['dadoFA2'] ?? [''];
                             $dFD = $_POST['dadoFD'] ?? [''];
 
-                            $out = enxameDeTrovoes( $b, $pl, $tgt, $dFA1, $dFA2, $dFD);
-                        
+                            $out = enxameDeTrovoes($b, $pl, $tgt, $dFA1, $dFA2, $dFD);
+
                             unset($b['playingAlly']);
                             $b['init_index']++;
                             break;
@@ -1893,7 +1863,7 @@ JS;
                             $RTest = $_POST['RTest'] ?? [''];
 
                             $out = nulificacaoTotalDeTalude($pl, $tgt, $RTest);
-                        
+
                             unset($b['playingAlly']);
                             $b['init_index']++;
                             break;
@@ -1904,7 +1874,7 @@ JS;
                             $dadosFA = $_POST['dados'] ?? [''];
 
                             $out = bolaDeFogoInstavel($pl, $tgts, $PMs, $dadosFA);
-                        
+
                             unset($b['playingAlly']);
                             $b['init_index']++;
                             break;
@@ -1915,7 +1885,7 @@ JS;
                             $dadoFD = $_POST['dadoFD'] ?? [''];
 
                             $out = bolaDeLama($pl, $tgt, $dadosFA, $dadoFD);
-                        
+
                             unset($b['playingAlly']);
                             $b['init_index']++;
                             break;
@@ -1925,7 +1895,7 @@ JS;
                             $PMs = $_POST['magic_pm_cost'] ?? [''];
 
                             $out = bombaDeLuz($pl, $tgts, $PMs);
-                        
+
                             unset($b['playingAlly']);
                             $b['init_index']++;
                             break;
@@ -1935,7 +1905,7 @@ JS;
                             $dadoFD = $_POST['dadoFD'] ?? [''];
 
                             $out = bombaDeTerra($pl, $tgt, $dadoFD);
-                        
+
                             unset($b['playingAlly']);
                             $b['init_index']++;
                             break;
@@ -1947,7 +1917,7 @@ JS;
                             $dadoFA2 = $_POST['dadoFA2'] ?? [''];
 
                             $out = solisanguis($pl, $tgt, $dadoCusto, $dadoFA1, $dadoFA2);
-                        
+
                             unset($b['playingAlly']);
                             $b['init_index']++;
                             break;
@@ -1961,7 +1931,7 @@ JS;
                             $dadoFA4 = $_POST['dadoFA4'] ?? [''];
 
                             $out = solisanguisRuptura($pl, $tgt, $dadoCusto, $dadoFA1, $dadoFA2, $dadoFA3, $dadoFA4);
-                        
+
                             unset($b['playingAlly']);
                             $b['init_index']++;
                             break;
@@ -1972,7 +1942,7 @@ JS;
                             $dado = $_POST['dado'] ?? [''];
 
                             $out = solisanguisEvisceratio($pl, $tgt, $dado);
-                        
+
                             unset($b['playingAlly']);
                             $b['init_index']++;
                             break;
@@ -1984,7 +1954,7 @@ JS;
                             $dadoPV2 = $_POST['dadoPV2'] ?? [''];
 
                             $out = sortilegium($pl, $tgt, $dadoCusto, $dadoPV1, $dadoPV2);
-                        
+
                             unset($b['playingAlly']);
                             $b['init_index']++;
                             break;
@@ -1994,7 +1964,7 @@ JS;
                             $qtd = $_POST['qtd'] ?? [''];
 
                             $out = sanctiSanguis($pl, $tgt, $qtd);
-                        
+
                             unset($b['playingAlly']);
                             $b['init_index']++;
                             break;
@@ -2014,7 +1984,7 @@ JS;
                             $tgt = $_POST['target'] ?? [''];
                             $dFD = $_POST['dadoFD'] ?? [''];
                             $dFA1 = $_POST['dadoFA1'] ?? [''];
-                            $dFA2 = $_POST['dadoFA2'] ?? [''];                            
+                            $dFA2 = $_POST['dadoFA2'] ?? [''];
 
                             $out = excruentio($pl, $tgt, $dFD, $dFA1, $dFA2);
 
@@ -2024,7 +1994,7 @@ JS;
 
 
                         case 'speculusanguis':
-                            $tgt = $_POST['target'] ?? [''];                        
+                            $tgt = $_POST['target'] ?? [''];
 
                             $out = speculusanguis($pl, $tgt);
 
@@ -2033,14 +2003,14 @@ JS;
                             break;
 
 
-                        case 'vis_ex_vulnere':                      
+                        case 'vis_ex_vulnere':
                             $out = visExVulnere($pl);
                             unset($b['playingAlly']);
                             $b['init_index']++;
                             break;
 
                         case 'solcruoris':
-                            $cost = $_POST['cost'] ?? [''];                        
+                            $cost = $_POST['cost'] ?? [''];
 
                             $out = solcruoris($pl, $cost);
 
@@ -2049,7 +2019,7 @@ JS;
                             break;
 
                         case 'spectraematum':
-                            $debuff = $_POST['debuff'] ?? [''];                        
+                            $debuff = $_POST['debuff'] ?? [''];
                             $tgt = $_POST['target'] ?? [''];
 
                             $out = spectraematum($pl, $debuff, $tgt);
@@ -2058,7 +2028,7 @@ JS;
                             $b['init_index']++;
                             break;
 
-                        case 'aeternum_tribuo':                       
+                        case 'aeternum_tribuo':
                             $tgt = $_POST['target'] ?? [''];
 
                             $out = aeternumTribuo($pl, $tgt);
@@ -2066,6 +2036,23 @@ JS;
                             unset($b['playingAlly']);
                             $b['init_index']++;
                             break;
+
+                        case 'inhaerescorpus':
+                            $tgt = $_POST['target'] ?? [''];
+                            $testR = $_POST['testR'] ?? [''];
+
+                            $out = inhaerescorpus($pl, $tgt, $testR);
+
+                            unset($b['playingAlly']);
+                            $b['init_index']++;
+                            break;
+
+                        case 'hemeopsia':
+                            $out = hemeopsia($pl);
+                            unset($b['playingAlly']);
+                            $b['init_index']++;
+                            break;
+
 
                         default:
                             $out = "A magia '{$magic_slug}' foi selecionada, mas sua lógica ainda não foi implementada.";
@@ -2075,7 +2062,7 @@ JS;
                     }
                     break;
 
-                    
+
                 default:
                     $out = 'Ação inválida ou não reconhecida.';
                     break;
@@ -2092,24 +2079,24 @@ JS;
                 setPlayerStat($pl, 'A', getPlayerStat($pl, 'A') - $_SESSION['battle']['sustained_effects'][$pl]['solcruoris']['extraA']);
                 unset($_SESSION['battle']['sustained_effects'][$pl]['solcruoris']);
             }
-            
-            if (isset($_SESSION['battle']['sustained_effects'][$pl]['spectraematum']) && strpos($_SESSION['battle']['notes'][$pl]['sustained_spells'] ?? '', 'Spectraematum') === false){
-                foreach($_SESSION['battle']['sustained_effects'][$pl]['spectraematum'] as $tgt => $tgtInfo){
+
+            if (isset($_SESSION['battle']['sustained_effects'][$pl]['spectraematum']) && strpos($_SESSION['battle']['notes'][$pl]['sustained_spells'] ?? '', 'Spectraematum') === false) {
+                foreach ($_SESSION['battle']['sustained_effects'][$pl]['spectraematum'] as $tgt => $tgtInfo) {
                     setPlayerStat($tgt, 'H', $tgtInfo['origH']);
                 }
                 unset($_SESSION['battle']['sustained_effects'][$pl]['spectraematum']);
             }
 
 
-            if ($b['notes'][$pl]['draco_active'] && empty($b['notes'][$pl]['draco_flag'])){
+            if ($b['notes'][$pl]['draco_active'] && empty($b['notes'][$pl]['draco_flag'])) {
                 $b['notes'][$pl]['draco_flag'] = true;
             }
-            if (!empty($b['notes'][$pl]['invisivel']) && empty($b['notes'][$pl]['invisivel_flag'])){
+            if (!empty($b['notes'][$pl]['invisivel']) && empty($b['notes'][$pl]['invisivel_flag'])) {
                 $b['notes'][$pl]['invisivel_flag'] = true;
             }
 
 
-            if ($origInitIndex != $b['init_index'] && !empty($b['notes'][$pl]['aceleracao_ii_active'])){
+            if ($origInitIndex != $b['init_index'] && !empty($b['notes'][$pl]['aceleracao_ii_active'])) {
                 $b['init_index']--;
                 unset($b['notes'][$pl]['aceleracao_ii_active']);
             }
@@ -2139,7 +2126,6 @@ JS;
             $names        = $_POST['player_names']   ?? [];
             $partialStats = $_POST['partial_stats']  ?? [];
             $partialNotes = $_POST['partial_stats']  ?? [];
-
             foreach ($names as $pl) {
                 if (isset($partialStats[$pl])) {
                     foreach ($partialStats[$pl] as $campo => $valor) {
@@ -2163,8 +2149,7 @@ JS;
 
         // 5) Tela Final
     case 'final':
-
-        if (!empty($b['orig'])){
+        if (!empty($b['orig'])) {
             foreach ($b['orig'] as $pl => $origStats) {
                 foreach ($origStats as $stat => $valor) {
                     setPlayerStat($pl, $stat, $valor);
@@ -2197,12 +2182,15 @@ JS;
                 . '<textarea name="stats[' . htmlspecialchars($pl, ENT_QUOTES) . '][equipado]" rows="2" cols="60">'
                 . $eq . '</textarea><br>';
             echo '</fieldset>';
+            if (isset($_SESSION['battle']['notes'][$pl]['aeternum_tribuo']['origH'])) {
+                setPlayerStat($pl, 'H', $_SESSION['battle']['notes'][$pl]['aeternum_tribuo']['origH']);
+            }
         }
         // Reseta sessão de batalha
         $b['init_index'] = 0;
         $b['round']      = 1;
         $b['notes']      = [];
-        echo '<button type="submit">Salvar Alterações</button> '
+        echo '<button type="submit">Salvar Alterações</button>'
             . '<a href="index.php">Nova Batalha</a></form>';
         exit;
 
@@ -2228,5 +2216,3 @@ JS;
         header('Location: battle.php');
         exit;
 }
-
-?>

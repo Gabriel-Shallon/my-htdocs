@@ -1,5 +1,4 @@
 <?php
-
 $catalogoMagiasSustentadas = [
     'speculusanguis' => [
         'nome' => 'Speculusanguis',
@@ -42,7 +41,7 @@ $catalogoMagiasSustentadas = [
         'precisa_input' => false,
         'funcao_aplicar' => 'applySustainVisExVulnere',
         'custo_texto' => '2 PVs'
-    ],    
+    ],
     'solcruoris' => [
         'nome' => 'Solcruoris',
         'parametros' => ['custo'],
@@ -58,10 +57,25 @@ $catalogoMagiasSustentadas = [
         'funcao_aplicar' => 'applySustainSpectraematum',
         'custo_texto' => '2 PVs'
     ],
+    'inhaerescorpus' => [
+        'nome' => 'Inhaerescorpus',
+        'parametros' => ['alvo'],
+        'precisa_input' => true,
+        'funcao_gerar_form' => 'getFormInhaerescorpus',
+        'funcao_aplicar' => 'applySustainInhaerescorpus',
+        'custo_texto' => '2 PVs'
+    ],
+    'hemeopsia' => [
+        'nome' => 'Hemeópsia',
+        'parametros' => [],
+        'precisa_input' => false,
+        'funcao_aplicar' => 'applySustainHemeopsia',
+        'custo_texto' => '1 PV'
+    ],
 ];
 
 
-function parseSustainedSpellsString(string $spellString): array {
+function parseSustainedSpellsString(string $spellString): array{
     if (empty(trim($spellString))) return [];
     $parsedSpells = [];
     $spellEntries = preg_split('/;\s*/', $spellString, -1, PREG_SPLIT_NO_EMPTY);
@@ -72,13 +86,13 @@ function parseSustainedSpellsString(string $spellString): array {
         $spellName = trim($matches[1] ?? '');
         $paramsStr = $matches[2] ?? '';
         if (empty($spellName)) continue;
-        $params = !empty($paramsStr) ? array_map('trim', explode(',', $paramsStr)) : [];        
+        $params = !empty($paramsStr) ? array_map('trim', explode(',', $paramsStr)) : [];
         $parsedSpells[] = ['nome' => $spellName, 'params' => $params];
     }
     return $parsedSpells;
 }
 
-function generateSustainForm(string $caster, array &$b): string {
+function generateSustainForm(string $caster, array &$b): string{
     global $catalogoMagiasSustentadas;
     $sustainedString = $b['notes'][$caster]['sustained_spells'] ?? '';
     $parsedSpells = parseSustainedSpellsString($sustainedString);
@@ -88,19 +102,19 @@ function generateSustainForm(string $caster, array &$b): string {
     }
 
     $htmlOut = '<h2>Sustentar Magias</h2>';
-    $htmlOut .= '<form method="post" action="?step=act">'; 
-    $htmlOut .= '<input type="hidden" name="action" value="sustain_act">'; 
+    $htmlOut .= '<form method="post" action="?step=act">';
+    $htmlOut .= '<input type="hidden" name="action" value="sustain_act">';
     $htmlOut .= '<input type="hidden" name="player" value="' . htmlspecialchars($caster, ENT_QUOTES) . '">';
-    
+
     $spellInstanceCounter = [];
 
     foreach ($parsedSpells as $spell) {
         $slug = slugify($spell['nome']);
         if (!isset($catalogoMagiasSustentadas[$slug])) continue;
-        
+
         $spellDef = $catalogoMagiasSustentadas[$slug];
         $namedParams = array_combine($spellDef['parametros'], $spell['params']);
-        
+
         if ($spellDef['precisa_input']) {
             $instanceIndex = $spellInstanceCounter[$slug] ?? 0;
             $htmlOut .= call_user_func($spellDef['funcao_gerar_form'], $caster, $namedParams, $instanceIndex);
@@ -117,13 +131,13 @@ function generateSustainForm(string $caster, array &$b): string {
 
     $htmlOut .= '<br><button type="submit">Confirmar Sustento</button>';
     $htmlOut .= '</form>';
-    
+
     return $htmlOut;
 }
 
-function processSustainedSpells(string $caster, array $postData, array &$b): array {
+function processSustainedSpells(string $caster, array $postData, array &$b): array{
     global $catalogoMagiasSustentadas;
-    
+
     $sustainedString = $b['notes'][$caster]['sustained_spells'] ?? '';
     $parsedSpells = parseSustainedSpellsString($sustainedString);
     $logMsgs = [];
@@ -132,100 +146,153 @@ function processSustainedSpells(string $caster, array $postData, array &$b): arr
     foreach ($parsedSpells as $spell) {
         $slug = slugify($spell['nome']);
         if (!isset($catalogoMagiasSustentadas[$slug])) continue;
-        
+
         $spellDef = $catalogoMagiasSustentadas[$slug];
         $namedParams = array_combine($spellDef['parametros'], $spell['params']);
         $inputs = [];
-        
+
         if ($spellDef['precisa_input']) {
             $instanceIndex = $spellInstanceCounter[$slug] ?? 0;
             $inputs = $postData['inputs'][$slug][$instanceIndex] ?? [];
             $spellInstanceCounter[$slug] = $instanceIndex + 1;
         }
-        
+
         $logMsg = call_user_func_array($spellDef['funcao_aplicar'], [$caster, $namedParams, &$b, $inputs]);
         if ($logMsg) {
             $logMsgs[] = $logMsg;
         }
     }
-    
+
     return $logMsgs;
+}
+
+function removeSustainedSpell(string $caster, string $spellName, array $params, array &$b): void{
+    $sustainedString = $b['notes'][$caster]['sustained_spells'] ?? '';
+    if (empty($sustainedString)) {
+        return;
+    }
+    $paramsString = implode(', ', $params);
+    $spellToRemove = $spellName;
+    if (!empty($params)) {
+        $paramsString = implode(', ', $params);
+        $spellToRemove .= "({$paramsString})";
+    }
+    $spellEntries = preg_split('/;\s*/', $sustainedString, -1, PREG_SPLIT_NO_EMPTY);
+    $spellEntries = array_filter($spellEntries, function ($entry) use ($spellToRemove) {
+        return str_replace(' ', '', $entry) !== str_replace(' ', '', $spellToRemove);
+    });
+    $b['notes'][$caster]['sustained_spells'] = implode(";\n", $spellEntries);
+    if (!empty($b['notes'][$caster]['sustained_spells'])) {
+        $b['notes'][$caster]['sustained_spells'] .= ';';
+    }
 }
 
 
 
 
-function applySustainSpeculusanguis($caster, $params) {
+
+function applySustainSpeculusanguis($caster, $params, &$b, $inputs = []){
     $target = $params['alvo'];
     if (spendPM($caster, 2, true)) {
         $dmg = 0;
         if (!empty($_SESSION['battle']['sustained_effects'][$caster]['speculusanguis']['dmg'])) {
-            $dmg = floor(num: $_SESSION['battle']['sustained_effects'][$caster]['speculusanguis']['dmg']/2) - resistenciaMagia($target);
+            $dmg = floor(num: $_SESSION['battle']['sustained_effects'][$caster]['speculusanguis']['dmg'] / 2) - resistenciaMagia($target);
         }
         applyDamage($caster, $target, $dmg, 'Magico');
         $_SESSION['battle']['sustained_effects'][$caster]['speculusanguis']['dmg'] = 0;
         return "<strong>{$caster}</strong> sustenta Speculusanguis em <strong>{$target}</strong> (-2 PV). Dano Refletido = {$dmg}.";
     } else {
+        removeSustainedSpell($caster, 'Speculusanguis', $params, $b);
         return "<strong>{$caster}</strong> não tem PVs para sustentar Speculusanguis.";
     }
 }
 
-function applySustainVisExVulnere($caster) {
+function applySustainVisExVulnere($caster, $params, &$b, $inputs = []){
     if (spendPM($caster, 2, true, true)) {
-        if ($_SESSION['battle']['sustained_effects'][$caster]['visExVulnere']['dmg'] > 0){
-            $_SESSION['battle']['sustained_effects'][$caster]['visExVulnere']['pms'] = floor($_SESSION['battle']['sustained_effects'][$caster]['visExVulnere']['dmg']/2);
+        $_SESSION['battle']['sustained_effects'][$caster]['visExVulnere']['pms'] = 0;
+        if ($_SESSION['battle']['sustained_effects'][$caster]['visExVulnere']['dmg'] > 0) {
+            $_SESSION['battle']['sustained_effects'][$caster]['visExVulnere']['pms'] = floor($_SESSION['battle']['sustained_effects'][$caster]['visExVulnere']['dmg'] / 2);
             $_SESSION['battle']['sustained_effects'][$caster]['visExVulnere']['dmg'] = 0;
         }
-        $extra_pms = $_SESSION['battle']['sustained_effects'][$caster]['visExVulnere']['pms'] ?? 0;
         $_SESSION['battle']['sustained_effects'][$caster]['visExVulnere']['dmg'] = 0;
+        $_SESSION['battle']['sustained_effects'][$caster]['visExVulnere']['flag'] = $b['init_index'] % count(value: $b['order']);
+        $extra_pms = $_SESSION['battle']['sustained_effects'][$caster]['visExVulnere']['pms'];
         return "<strong>{$caster}</strong> sustenta Vis Ex Vulnere (-2 PV). PMs temporários disponíveis neste turno: {$extra_pms}.";
     } else {
+        removeSustainedSpell($caster, 'Vis Ex Vulnere', [], $b);
         return "<strong>{$caster}</strong> não tem PVs para sustentar Speculusanguis.";
     }
 }
 
-function monitorPVChange($pl, $dano){
-    if (isset($_SESSION['battle']['sustained_effects'][$pl]['visExVulnere']['dmg'])){
-        $_SESSION['battle']['sustained_effects'][$pl]['visExVulnere']['dmg'] += $dano;
-    }
-    if (isset($_SESSION['battle']['sustained_effects'][$pl]['speculusanguis']['dmg'])){
-        $_SESSION['battle']['sustained_effects'][$pl]['speculusanguis']['dmg'] += $dano;
+function applySustainInhaerescorpus($caster, $params, &$b, $inputs = []){
+    $target = $params['alvo'];
+    $testDiff = (int)($inputs['testDiff'] ?? 0);
+    $testR = (int)($inputs['testR'] ?? 1);
+    if (spendPM($caster, $testDiff, true)) {
+        if (!statTest($target, 'R', floor($testDiff / 2), $testR)) {
+            $dmg = 0;
+            if (!empty($_SESSION['battle']['sustained_effects'][$caster]['inhaerescorpus']['dmg'])) {
+                $dmg = $_SESSION['battle']['sustained_effects'][$caster]['inhaerescorpus']['dmg'];
+            }
+            applyDamage($caster, $target, $dmg, 'Magico');
+            $_SESSION['battle']['sustained_effects'][$caster]['inhaerescorpus']['dmg'] = 0;
+            return "<strong>{$caster}</strong> sustenta Inhaerescorpus em <strong>{$target}</strong>. Dano Refletido = {$dmg}.";
+        } else {
+            removeSustainedSpell($caster, 'Inhaerescorpus', $params, $b);
+            return "<strong>{$target}</strong> passou no teste de resistência e saiu da magia Inhaerescorpus de <strong>{$caster}</strong>.";
+        }
+    } else {
+        removeSustainedSpell($caster, 'Inhaerescorpus', $params, $b);
+        return "<strong>{$caster}</strong> não tem PVs para sustentar Inhaerescorpus.";
     }
 }
+function getFormInhaerescorpus($caster, $params, $instanceIndex){
+    $slug = 'inhaerescorpus';
+    $target = htmlspecialchars($params['alvo'], ENT_QUOTES);
+    $html = "<fieldset><legend>Inhaerescorpus em {$target}</legend>";
+    $html .= "<label>Custo para dificultar teste de R:
+            <input type='number' name='inputs[{$slug}][{$instanceIndex}][testDiff]' min='0' required>
+            </label><br>";
+    $html .= "<label>Teste R:
+            <input type='number' name='inputs[{$slug}][{$instanceIndex}][testR]' min='1' max='6' required>
+            </label><br>";
+    $html .= "</fieldset>";
+    return $html;
+}
 
-
-
-function applySustainExcruentio($caster, $params) {
+function applySustainExcruentio($caster, $params, &$b, $inputs = []){
     $target = $params['alvo'];
-    if (spendPM($caster, 1, true)) { 
+    if (spendPM($caster, 1, true)) {
         applyDamage($caster, $target, 2, 'Magico');
         return "<strong>{$caster}</strong> sustenta Excruentio em <strong>{$target}</strong> (-1 PV)(2 de dano).";
     } else {
+        removeSustainedSpell($caster, 'Excruentio', $params, $b);
         return "<strong>{$caster}</strong> não tem PVs para sustentar Excruentio.";
     }
 }
 
 
-function applySustainSolcruoris($caster, $params) {
+function applySustainSolcruoris($caster, $params, &$b, $inputs = []){
     $custo = $params['custo'];
-    $extraA = floor($custo/3);
+    $extraA = floor($custo / 3);
     $_SESSION['battle']['sustained_effects'][$caster]['solcruoris']['extraA'] = $extraA;
     return "<strong>{$caster}</strong> sustenta armadura de sangue Solcruoris. A +{$extraA}";
 }
 
-function applySustainSpectraematum($caster, $params, $b, $inputs = []) {
+function applySustainSpectraematum($caster, $params, &$b, $inputs = []){
     $target = $params['alvo'];
-    $debuffCost = (int)($inputs['debuffCost'] ?? 0); 
-    if (spendPM($caster, 2+$debuffCost, true)) { 
-        $debuff = floor($debuffCost/2);
+    $debuffCost = (int)($inputs['debuffCost'] ?? 0);
+    if (spendPM($caster, 2 + $debuffCost, true)) {
+        $debuff = floor($debuffCost / 2);
         setPlayerStat($target, 'H', $_SESSION['battle']['sustained_effects'][$caster]['spectraematum'][$target]['origH'] - $debuff);
         applyDamage($caster, $target, 1, 'Magico');
-        return "<strong>{$caster}</strong> sustenta Spectraematum em <strong>{$target}</strong>. Custo: ".(2+$debuffCost)."; Dano: 1; Debuff H: ".$debuff;
+        return "<strong>{$caster}</strong> sustenta Spectraematum em <strong>{$target}</strong>. Custo: " . (2 + $debuffCost) . "; Dano: 1; Debuff H: " . $debuff;
     } else {
+        removeSustainedSpell($caster, 'Spectraematum', $params, $b);
         return "<strong>{$caster}</strong> não tem PVs para sustentar Spectraematum.";
     }
 }
-function getFormSpectraematum($caster, $params, $instanceIndex) {
+function getFormSpectraematum($caster, $params, $instanceIndex){
     $slug = 'spectraematum';
     $target = htmlspecialchars($params['alvo'], ENT_QUOTES);
     $html = "<fieldset><legend>Spectraematum em {$target}</legend>";
@@ -236,7 +303,16 @@ function getFormSpectraematum($caster, $params, $instanceIndex) {
     return $html;
 }
 
-function applySustainProtecaoMagica($caster, $params, &$b, $inputs = []) {
+function applySustainHemeopsia($caster, $params, &$b, $inputs = []){
+    if (spendPM($caster, 1, true)) {
+        return "<strong>{$caster}</strong> sustenta Hemeópsia.";
+    } else {
+        removeSustainedSpell($caster, 'Spectraematum', $params, $b);
+        return "<strong>{$caster}</strong> não tem PVs para sustentar Hemeópsia.";
+    }
+}
+
+function applySustainProtecaoMagica($caster, $params, &$b, $inputs = []){
     $cost = (int)$params['custo_pms'];
     if (spendPM($caster, $cost)) {
         $b['notes'][$caster]['efeito'] .= "\nProteção Mágica Superior: A+{$cost} (-{$cost} PM).";
@@ -247,7 +323,7 @@ function applySustainProtecaoMagica($caster, $params, &$b, $inputs = []) {
     }
 }
 
-function applySustainCriarVento($caster, $params, &$b, $inputs = []) {
+function applySustainCriarVento($caster, $params, &$b, $inputs = []){
     $cost = (int)$params['custo_pms'];
     if (spendPM($caster, $cost)) {
         $b['notes'][$caster]['efeito'] .= "\nCriar Vento: FD+{$cost} (-{$cost} PM).";
@@ -258,7 +334,7 @@ function applySustainCriarVento($caster, $params, &$b, $inputs = []) {
     }
 }
 
-function getFormOracaoCombate($caster, $params, $instanceIndex) {
+function getFormOracaoCombate($caster, $params, $instanceIndex){
     $slug = 'oracao_de_combate';
     $bonusMax = $params['bonus_max'];
     $html = "<fieldset><legend>Oração de Combate (Bônus Máx: +{$bonusMax})</legend>";
@@ -268,10 +344,10 @@ function getFormOracaoCombate($caster, $params, $instanceIndex) {
     return $html;
 }
 
-function applySustainOracaoCombate($caster, $params, &$b, $inputs = []) {
+function applySustainOracaoCombate($caster, $params, &$b, $inputs = []){
     $cost = (int)($inputs['pm_cost'] ?? 1);
     $roll = (int)($inputs['roll'] ?? 0);
-    
+
     if (spendPM($caster, $cost)) {
         if (statTest($caster, 'H', 3, $roll)) {
             $bonus = $cost;
@@ -285,4 +361,3 @@ function applySustainOracaoCombate($caster, $params, &$b, $inputs = []) {
         return "<strong>{$caster}</strong> não tem PMs para sustentar Oração de Combate.";
     }
 }
-?>
