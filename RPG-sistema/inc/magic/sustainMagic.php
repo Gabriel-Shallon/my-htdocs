@@ -66,14 +66,16 @@ $catalogoMagiasSustentadas = [
         'custo_texto' => '2 PVs'
     ],
     'hemeopsia' => [
-        'nome' => 'Hemeópsia',
+        'nome' => 'Hemeopsia',
         'parametros' => [],
         'precisa_input' => false,
         'funcao_aplicar' => 'applySustainHemeopsia',
-        'custo_texto' => '1 PV'
+        'custo_texto' => 'Custo único'
     ],
 ];
 
+
+// Sustained magic managers
 
 function parseSustainedSpellsString(string $spellString): array{
     if (empty(trim($spellString))) return [];
@@ -107,7 +109,6 @@ function generateSustainForm(string $caster, array &$b): string{
     $htmlOut .= '<input type="hidden" name="player" value="' . htmlspecialchars($caster, ENT_QUOTES) . '">';
 
     $spellInstanceCounter = [];
-
     foreach ($parsedSpells as $spell) {
         $slug = slugify($spell['nome']);
         if (!isset($catalogoMagiasSustentadas[$slug])) continue;
@@ -137,12 +138,10 @@ function generateSustainForm(string $caster, array &$b): string{
 
 function processSustainedSpells(string $caster, array $postData, array &$b): array{
     global $catalogoMagiasSustentadas;
-
     $sustainedString = $b['notes'][$caster]['sustained_spells'] ?? '';
     $parsedSpells = parseSustainedSpellsString($sustainedString);
     $logMsgs = [];
     $spellInstanceCounter = [];
-
     foreach ($parsedSpells as $spell) {
         $slug = slugify($spell['nome']);
         if (!isset($catalogoMagiasSustentadas[$slug])) continue;
@@ -156,7 +155,6 @@ function processSustainedSpells(string $caster, array $postData, array &$b): arr
             $inputs = $postData['inputs'][$slug][$instanceIndex] ?? [];
             $spellInstanceCounter[$slug] = $instanceIndex + 1;
         }
-
         $logMsg = call_user_func_array($spellDef['funcao_aplicar'], [$caster, $namedParams, &$b, $inputs]);
         if ($logMsg) {
             $logMsgs[] = $logMsg;
@@ -189,7 +187,7 @@ function removeSustainedSpell(string $caster, string $spellName, array $params, 
 
 
 
-
+// Sustained magic inputs and aplication
 
 function applySustainSpeculusanguis($caster, $params, &$b, $inputs = []){
     $target = $params['alvo'];
@@ -198,7 +196,7 @@ function applySustainSpeculusanguis($caster, $params, &$b, $inputs = []){
         if (!empty($_SESSION['battle']['sustained_effects'][$caster]['speculusanguis']['dmg'])) {
             $dmg = floor(num: $_SESSION['battle']['sustained_effects'][$caster]['speculusanguis']['dmg'] / 2) - resistenciaMagia($target);
         }
-        applyDamage($caster, $target, $dmg, 'Magico');
+        applyDamage($caster, $target, $dmg, 'Magia');
         $_SESSION['battle']['sustained_effects'][$caster]['speculusanguis']['dmg'] = 0;
         return "<strong>{$caster}</strong> sustenta Speculusanguis em <strong>{$target}</strong> (-2 PV). Dano Refletido = {$dmg}.";
     } else {
@@ -234,7 +232,7 @@ function applySustainInhaerescorpus($caster, $params, &$b, $inputs = []){
             if (!empty($_SESSION['battle']['sustained_effects'][$caster]['inhaerescorpus']['dmg'])) {
                 $dmg = $_SESSION['battle']['sustained_effects'][$caster]['inhaerescorpus']['dmg'];
             }
-            applyDamage($caster, $target, $dmg, 'Magico');
+            applyDamage($caster, $target, $dmg, 'Magia');
             $_SESSION['battle']['sustained_effects'][$caster]['inhaerescorpus']['dmg'] = 0;
             return "<strong>{$caster}</strong> sustenta Inhaerescorpus em <strong>{$target}</strong>. Dano Refletido = {$dmg}.";
         } else {
@@ -263,7 +261,7 @@ function getFormInhaerescorpus($caster, $params, $instanceIndex){
 function applySustainExcruentio($caster, $params, &$b, $inputs = []){
     $target = $params['alvo'];
     if (spendPM($caster, 1, true)) {
-        applyDamage($caster, $target, 2, 'Magico');
+        applyDamage($caster, $target, 2, 'Magia');
         return "<strong>{$caster}</strong> sustenta Excruentio em <strong>{$target}</strong> (-1 PV)(2 de dano).";
     } else {
         removeSustainedSpell($caster, 'Excruentio', $params, $b);
@@ -285,7 +283,7 @@ function applySustainSpectraematum($caster, $params, &$b, $inputs = []){
     if (spendPM($caster, 2 + $debuffCost, true)) {
         $debuff = floor($debuffCost / 2);
         setPlayerStat($target, 'H', $_SESSION['battle']['sustained_effects'][$caster]['spectraematum'][$target]['origH'] - $debuff);
-        applyDamage($caster, $target, 1, 'Magico');
+        applyDamage($caster, $target, 1, 'Magia');
         return "<strong>{$caster}</strong> sustenta Spectraematum em <strong>{$target}</strong>. Custo: " . (2 + $debuffCost) . "; Dano: 1; Debuff H: " . $debuff;
     } else {
         removeSustainedSpell($caster, 'Spectraematum', $params, $b);
@@ -304,12 +302,7 @@ function getFormSpectraematum($caster, $params, $instanceIndex){
 }
 
 function applySustainHemeopsia($caster, $params, &$b, $inputs = []){
-    if (spendPM($caster, 1, true)) {
-        return "<strong>{$caster}</strong> sustenta Hemeópsia.";
-    } else {
-        removeSustainedSpell($caster, 'Spectraematum', $params, $b);
-        return "<strong>{$caster}</strong> não tem PVs para sustentar Hemeópsia.";
-    }
+    return "<strong>{$caster}</strong> sustenta Hemeópsia.";
 }
 
 function applySustainProtecaoMagica($caster, $params, &$b, $inputs = []){

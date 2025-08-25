@@ -2,10 +2,10 @@
 // battle.php - Sistema de Combate 3D&T
 session_start();
 include_once 'inc/generalFuncs.php';
-include_once 'inc/traitFuncs.php';
 include_once 'inc/battleFuncs.php';
+include_once 'inc/action/actSwitch.php';
+include_once 'inc/trait/traitFuncs.php';
 include_once 'inc/magic/magicFuncs.php';
-include_once 'inc/magic/sustainMagic.php';
 
 // Inicializa sessão
 if (!isset($_SESSION['battle'])) {
@@ -24,8 +24,11 @@ $b = &$_SESSION['battle'];
 // Passos
 $step = $_GET['step'] ?? 'select';
 switch ($step) {
+
+
     // 1) Seleção de players
     case 'select':
+        // Processamento do Form de seleção de player
         if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $selected = array_map('trim', $_POST['players'] ?? []);
             if (count($selected) < 2) {
@@ -44,6 +47,8 @@ switch ($step) {
             header('Location: battle.php?step=initiative');
             exit;
         }
+
+        // Form de seleção de player
         $all = getAllPlayers();
         $exclude = getAllAllies();
         echo '<h1>Iniciar Batalha</h1><form method="post">';
@@ -61,8 +66,8 @@ switch ($step) {
 
     // 2) Iniciativa
     case 'initiative':
+        // Processamento do form de inciativa
         $rolls = $_POST['rolls'] ?? [];
-
         if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $_SESSION['battle']['arena'] = trim($_POST['arena'] ?? '');
             foreach ($b['players'] as $i => $pl) {
@@ -73,18 +78,14 @@ switch ($step) {
                         $b['orig'][$pl][$s] = getPlayerStat($pl, $s);
                     }
                 }
-            }
-            if (!empty($_POST['roll_assombrado'])) {
-                foreach ($b['players'] as $i => $pl) {
-                    if (isset($_POST['roll_assombrado'][$i])) {
-                        // Aplica Desvantagem Assombrado
-                        $msg = assombrado($pl, [
-                            'roll_assombrado' => $_POST['roll_assombrado'][$i]
-                        ]);
-                        if ($msg !== null) {
-                            $b['notes'][$pl]['efeito']     = $msg;
-                            $b['notes'][$pl]['assombrado'] = true;
-                        }
+                if (isset($_POST['roll_assombrado'][$i])) {
+                    // Aplica Desvantagem Assombrado
+                    $msg = assombrado($pl, [
+                        'roll_assombrado' => $_POST['roll_assombrado'][$i]
+                    ]);
+                    if ($msg !== null) {
+                        $b['notes'][$pl]['efeito']     = $msg;
+                        $b['notes'][$pl]['assombrado'] = true;
                     }
                 }
             }
@@ -94,23 +95,25 @@ switch ($step) {
             exit;
         }
 
+        // Form de iniciativa
         echo '<h1>Iniciativa</h1>
-          <form method="post" action="battle.php?step=initiative">';
+              <form method="post" action="battle.php?step=initiative">';
         foreach ($b['players'] as $i => $nome) {
             echo '<label>' . htmlspecialchars($nome, ENT_QUOTES) . ':
-                <input type="number" name="rolls[' . $i . ']" required>
-              </label><br>';
+                  <input type="number" name="rolls[' . $i . ']" required>
+                  </label><br>';
             if (in_array('assombrado', listPlayerTraits($nome), true)) {
                 echo '<label>' . htmlspecialchars($nome, ENT_QUOTES) . ' Assombrado (1–6), dado:
-                    <input type="number" name="roll_assombrado[' . $i . ']" min="1" max="6" required>
-                  </label>';
+                      <input type="number" name="roll_assombrado[' . $i . ']" min="1" max="6" required>
+                      </label>';
             }
         }
-        echo '<h2>Arena</h2>';
-        echo '<textarea name="arena" rows="8" cols="60"></textarea><br>';
-        echo '<br><button type="submit">Ok</button>
-          </form>';
+        echo '<h2>Arena</h2>
+              <textarea name="arena" rows="8" cols="60"></textarea><br>
+              <br><button type="submit">Ok</button>
+              </form>';
         break;
+
 
     // 2.1) Atualizar stats
     case 'update_stats':
@@ -146,7 +149,6 @@ switch ($step) {
         header('Location: battle.php?step=turn');
         exit;
 
-
         // 2.4) Gerar inputs de magias    
     case 'get_magic_inputs':
         $magic_slug = $_GET['magic'] ?? '';
@@ -154,7 +156,6 @@ switch ($step) {
         if (empty($magic_slug) || empty($cur)) {
             exit;
         }
-        include_once 'inc/magic/magicInputs.php';
         renderMagicInputs($magic_slug, $cur, $b);
         exit;
 
@@ -199,7 +200,8 @@ switch ($step) {
 
         syncEquipBuffs($cur);
         $stats = getPlayer($cur);
-        $notes = array_merge(            ['efeito' => '', 'posicao' => '', 'concentrado' => 0, 'draco_active' => false, 'incorp_active' => false],
+        $notes = array_merge(
+            ['efeito' => '', 'posicao' => '', 'concentrado' => 0, 'draco_active' => false, 'incorp_active' => false],
             $b['notes'][$cur] ?? []
         );
         $b['notes'][$cur] = $notes;
@@ -216,93 +218,10 @@ switch ($step) {
             echo "<div><strong>Resultado das magias sustentadas esse turno:</strong><br>" . implode('<br>', $b['sustained_log']) . "</div><hr>";
         }
 
-
-        if (!empty($b['notes'][$cur]['use_pv'])) {
-            $efeitoUsePV = "\nUsando PVs invés de PMs.";
-            if (strpos($b['notes'][$cur]['efeito'], trim($efeitoUsePV)) === false) {
-                $b['notes'][$cur]['efeito'] .= $efeitoUsePV;
-            }
-        } else {
-            $b['notes'][$cur]['efeito'] = removeEffect($b['notes'][$cur]['efeito'], ['Usando PVs invés de PMs.']);
-        }
-
-        if ($b['notes'][$cur]['draco_active'] && !empty($b['notes'][$cur]['draco_flag'])) {
-            unset($b['notes'][$cur]['draco_flag']);
-            if (!spendPM($cur, 1)) {
-                draconificacao($cur, false);
-                $b['notes'][$cur]['draco_active'] = false;
-                $efeitoDraco = "\nDraconificação desativada (PM esgotado) e Instável.";
-                if (strpos($b['notes'][$cur]['efeito'], trim($efeitoDraco)) === false) {
-                    $b['notes'][$cur]['efeito'] .= $efeitoDraco;
-                }
-            }
-        } else {
-            $b['notes'][$cur]['efeito'] = removeEffect($b['notes'][$cur]['efeito'], ['Draconificação desativada (PM esgotado) e Instável.']);
-        }
-
-        if (!empty($notes['fusao_active'])) {
-            $curPV = getPlayerStat($cur, 'PV');
-            $curR  = getPlayerStat($cur, 'R');
-            if ($curPV <= $curR) {
-                $b['notes'][$cur]['furia'] = true;
-                $efeitoFuria = "\nEm Fúria até o fim da batalha (Não pode usar magia nem esquiva).";
-                if (strpos($b['notes'][$cur]['efeito'], trim($efeitoFuria)) === false) {
-                    $b['notes'][$cur]['efeito'] .= $efeitoFuria;
-                }
-            }
-        }
-
-        if (!empty($notes['extra_energy_next'])) {
-            energiaExtra($cur);
-            $b['notes'][$cur]['efeito'] .= "\nEnergia extra aplicada: PVs restaurados ao máximo.";
-            unset($b['notes'][$cur]['extra_energy_next']);
-        } else {
-            $b['notes'][$cur]['efeito'] = removeEffect($b['notes'][$cur]['efeito'], ['Energia extra aplicada: PVs restaurados ao máximo.']);
-        }
-
-        if (!empty($notes['magia_extra_next'])) {
-            magiaExtra($cur, 'apply');
-            $b['notes'][$cur]['efeito'] .= "\nMagia extra aplicada: PMs restaurados ao máximo.";
-            unset($b['notes'][$cur]['magia_extra_next']);
-        } else {
-            $b['notes'][$cur]['efeito'] = removeEffect($b['notes'][$cur]['efeito'], ['Magia extra aplicada: PMs restaurados ao máximo.']);
-        }
-
-        if (!empty($b['notes'][$cur]['invisivel']) && !empty($b['notes'][$cur]['invisivel_flag'])) {
-            unset($b['notes'][$cur]['invisivel_flag']);
-            if (!spendPM($cur, 1)) {
-                unset($b['notes'][$cur]['invisivel']);
-                $efeitoInvisibilidade = "\nInvisibilidade desativada por falta de PMs.";
-                if (strpos($b['notes'][$cur]['efeito'], trim($efeitoInvisibilidade)) === false) {
-                    $b['notes'][$cur]['efeito'] .= $efeitoInvisibilidade;
-                }
-                $b['notes'][$cur]['efeito'] = removeEffect($b['notes'][$cur]['efeito'], ['Você está invisível.']);
-            }
-        } else if (empty($notes['invisivel'])) {
-            $b['notes'][$cur]['efeito'] = removeEffect($b['notes'][$cur]['efeito'], ['Você está invisível.']);
-        }
-
-
-        if (in_array('furia', listPlayerTraits($cur), true)) {
-            $curPV = getPlayerStat($cur, 'PV');
-            $curR  = getPlayerStat($cur, 'R');
-            if ($curPV <= $curR) {
-                $b['notes'][$cur]['furia'] = true;
-                $efeitoFuria = "\nEm Fúria até o fim da batalha (Não pode usar magia nem esquiva).";
-                if (strpos($b['notes'][$cur]['efeito'], trim($efeitoFuria)) === false) {
-                    $b['notes'][$cur]['efeito'] .= $efeitoFuria;
-                }
-            }
-        }
+        // Efeitos Variáveis
+        manageEffects($cur);
 
         // Efeitos estáticos
-        if (in_array('invulnerabilidade_fogo', listPlayerTraits($cur), true)) {
-            $efeitoInvuln = "\nInvulnerabilidade a fogo (dano por fogo dividido por 10).";
-            if (strpos($b['notes'][$cur]['efeito'], trim($efeitoInvuln)) === false) {
-                $b['notes'][$cur]['efeito'] .= $efeitoInvuln;
-            }
-        }
-
         if (in_array('codigo_da_derrota', listPlayerTraits($cur), true)) {
             $efeitoDerrota = "\nLute até a morte.";
             if (strpos($b['notes'][$cur]['efeito'], trim($efeitoDerrota)) === false) {
@@ -582,7 +501,7 @@ switch ($step) {
         echo '<option value="pass">Passar Iniciativa</option>';
         echo '<option value="fim">Terminar Batalha</option>';
 
-        $isDefeated = ($stats['PV'] <= 0);
+        $isDefeated = isDefeated($cur);
         if (!$isDefeated) {
 
             $concentrando = false;
@@ -650,6 +569,14 @@ switch ($step) {
                 echo '<option value="use_ally">Jogar com Aliado</option>';
             }
 
+            if (in_array('aceleracao_ii', listPlayerTraits($cur), true) && !isset($b['notes'][$pl]['aceleracao_ii_active'])) {
+                echo '<option value="aceleracao_ii">Aceleração II (2 PMs)</option>';
+            }
+
+            if (in_array('aceleracao_i', listPlayerTraits($cur), true) && !isset($b['notes'][$pl]['aceleracao_ii_active'])) {
+                echo '<option value="aceleracao_ii">Aceleração I (1 PMs)</option>';
+            }
+
             if ($cur == $b['playingAlly']) {
                 echo '<option value="back_to_owner">Voltar ao Dono</option>';
             }
@@ -686,60 +613,47 @@ switch ($step) {
                 echo '<option value="ataque">Atacar</option>';
                 echo '<option value="multiple">Múltiplo</option>';
 
-                if  (in_array('tiro_multiplo', listPlayerTraits($cur)) ||
+                if (
+                    in_array('tiro_multiplo', listPlayerTraits($cur)) ||
                     (in_array('tiro_multiplo', listPlayerTraits(getAlliePlayer($cur))) &&
-                    in_array('ligacao_natural', listPlayerTraits(getAlliePlayer($cur)))) ||
+                        in_array('ligacao_natural', listPlayerTraits(getAlliePlayer($cur)))) ||
                     (!empty($b['playingPartner'][$cur]) &&
-                    in_array('tiro_multiplo', listPlayerTraits($b['playingPartner'][$cur]['name'])))){
+                        in_array('tiro_multiplo', listPlayerTraits($b['playingPartner'][$cur]['name'])))
+                ) {
                     echo '<option value="tiro_multiplo">Tiro Múltiplo</option>';
                 }
 
-                if  (in_array('agarrao', listPlayerTraits($cur)) ||
+                if (
+                    in_array('agarrao', listPlayerTraits($cur)) ||
                     (in_array('agarrao', listPlayerTraits(getAlliePlayer($cur))) &&
-                    in_array('ligacao_natural', listPlayerTraits(getAlliePlayer($cur)))) ||
+                        in_array('ligacao_natural', listPlayerTraits(getAlliePlayer($cur)))) ||
                     (!empty($b['playingPartner'][$cur]) &&
-                    in_array('agarrao', listPlayerTraits($b['playingPartner'][$cur]['name'])))){
+                        in_array('agarrao', listPlayerTraits($b['playingPartner'][$cur]['name'])))
+                ) {
                     echo '<option value="agarrao">Agarrão</option>';
                 }
 
-                if  (in_array('ataque_debilitante', listPlayerTraits($cur)) ||
+                if (
+                    in_array('ataque_debilitante', listPlayerTraits($cur)) ||
                     (in_array('ataque_debilitante', listPlayerTraits(getAlliePlayer($cur))) &&
-                    in_array('ligacao_natural', listPlayerTraits(getAlliePlayer($cur)))) ||
+                        in_array('ligacao_natural', listPlayerTraits(getAlliePlayer($cur)))) ||
                     (!empty($b['playingPartner'][$cur]) &&
-                    in_array('ataque_debilitante', listPlayerTraits($b['playingPartner'][$cur]['name'])))){
+                        in_array('ataque_debilitante', listPlayerTraits($b['playingPartner'][$cur]['name'])))
+                ) {
                     echo '<option value="ataque_debilitante">Ataque Debilitante</option>';
                 }
             }
             echo '</select>';
 
 
-            $validTargets = [];
-            foreach ($order as $o) {
-                if ($o === $cur) continue;
-                $targetNotes   = $b['notes'][$o] ?? [];
-                $targetIncorp  = !empty($targetNotes['incorp_active']);
-                if ($isIncorp === $targetIncorp) {
-                    $validTargets[] = $o;
-                }
-            }
-
-            $allies = getAllAllies();
-            foreach ($allies as $ally) {
-                if ($ally === $cur || !in_array(getAlliePlayer($ally), $order)) continue;
-                $targetNotes  = $b['notes'][$ally] ?? [];
-                $targetIncorp = !empty($targetNotes['incorp_active']);
-                if ($isIncorp === $targetIncorp) {
-                    $validTargets[] = $ally;
-                }
-            }
-
+            $validTargets = getValidTargets($cur, $b, 'enemies', $b['order']);
             $hasTargets = count($validTargets) > 0;
 
             // Ataque simples
             if ($hasTargets) {
                 echo '<div id="atkSimple" style="display: none;"><fieldset><legend>Ataque</legend>'
-                    . 'Tipo de Ataque: <select name="atkType" id="atkTypeSimple"><option value="F">F</option><option value="PdF">PdF</option></select><br>'
-                    . 'Tipo de Dano: <select name="dmgType">';
+                    . 'Tipo de Ataque: <select name="atkTypeSimple" id="atkTypeSimple"><option value="F">F</option><option value="PdF">PdF</option></select><br>'
+                    . 'Tipo de Dano: <select name="dmgTypeSimple">';
                 selectDmgType($cur);
                 echo '</select><br>'
                     . 'Roll FA: <input id="dadoFA" type="number" name="dadoFA" required><br>'
@@ -768,8 +682,8 @@ switch ($step) {
             if ($hasTargets) {
                 echo '<div id="atkMulti" style="display:none"><fieldset><legend>Múltiplo</legend>';
                 if ($maxMulti >= 2) {
-                    echo 'Tipo de Ataque: <select name="atkType" id="atkTypeMulti"><option value="F">F</option><option value="PdF">PdF</option></select><br>'
-                        . 'Tipo de Dano: <select name="dmgType">';
+                    echo 'Tipo de Ataque: <select name="atkTypeMulti" id="atkTypeMulti"><option value="F">F</option><option value="PdF">PdF</option></select><br>'
+                        . 'Tipo de Dano: <select name="dmgTypeMulti">';
                     selectDmgType($cur);
                     echo '</select><br>'
                         . 'Quantidade (2-' . $maxMulti . '): <input id="quant" type="number" name="quant" '
@@ -794,7 +708,7 @@ switch ($step) {
             if ($hasTargets) {
                 if (!$stats['H'] == 0) {
                     echo '<div id="atkTiroMulti" style="display:none"><fieldset><legend>Tiro Múltiplo</legend>'
-                        . 'Tipo de Dano: <select name="dmgType">';
+                        . 'Tipo de Dano: <select name="dmgTypeTiro">';
                     selectDmgType($cur);
                     echo '</select><br>'
                         . 'Quantidade (1-' . $stats['H'] . '): <input id="quantTiro" type="number" name="quantTiro" '
@@ -864,9 +778,15 @@ switch ($step) {
                 . '<fieldset><legend>Selecione o Parceiro</legend>'
                 . '<select name="partner">';
             foreach (getPlayerPartner($cur) as $p) {
-                echo '<option value="' . htmlspecialchars($p, ENT_QUOTES) . '">'
-                    . htmlspecialchars($p, ENT_QUOTES)
-                    . '</option>';
+                if (!isDefeated($p)) {
+                    echo '<option value="' . htmlspecialchars($p, ENT_QUOTES) . '">'
+                        . htmlspecialchars($p, ENT_QUOTES)
+                        . '</option>';
+                } else {
+                    echo '<option value="' . htmlspecialchars($p, ENT_QUOTES) . '">'
+                        . htmlspecialchars($p, ENT_QUOTES)
+                        . '</option>';
+                }
             }
             echo '</select>'
                 . '</fieldset>'
@@ -1237,6 +1157,41 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   }
 
+  if (magicInputsContainer) {
+    magicInputsContainer.addEventListener('change', function(event) {
+      if (event.target.matches('.magic-target-select')) {
+        const targetSelect = event.target;
+        const fieldset = targetSelect.closest('fieldset');
+        if (!fieldset) return;
+        const reactionSelect = fieldset.querySelector('.magic-reaction-select');
+        if (!reactionSelect) return;
+        const deflexaoOption = reactionSelect.querySelector('option[value="defender_esquiva_deflexao"]');
+        if (!deflexaoOption) return;
+    
+        let attackType = 'F';
+        const typeSelector = fieldset.querySelector('#magic_attack_type, .magic-attack-type');
+        const hiddenProperties = fieldset.querySelector('.magic-properties');
+        if (typeSelector) {
+          attackType = typeSelector.value;
+        } else if (hiddenProperties && hiddenProperties.dataset.attackType) {
+          attackType = hiddenProperties.dataset.attackType;
+        }
+        const isRangedAttack = (attackType === 'PdF');
+        const selectedTargetOption = targetSelect.options[targetSelect.selectedIndex];
+        const targetHasDeflexao = selectedTargetOption && selectedTargetOption.dataset.temDeflexao === '1';
+        const shouldShowDeflexao = isRangedAttack && targetHasDeflexao;
+        deflexaoOption.style.display = shouldShowDeflexao ? 'block' : 'none';
+        if (!shouldShowDeflexao && reactionSelect.value === 'defender_esquiva_deflexao') {
+          if (reactionSelect.querySelector('option[value="defender_esquiva"]')) {
+            reactionSelect.value = 'defender_esquiva';
+          } else {
+            reactionSelect.value = 'defender';
+          }
+        }
+      }
+    });
+  }
+
   function onAct() {
     const act = actionSel.value;
 
@@ -1360,713 +1315,8 @@ JS;
             }
             $origInitIndex = $b['init_index'];
             syncEquipBuffs($pl);
-            switch ($_POST['action'] ?? '') {
 
-                case 'pass':
-                    $out .= "<strong>{$pl}</strong> passou seu turno.";
-                    unset($b['playingAlly']);
-                    $b['init_index']++;
-                    break;
-
-
-
-                case 'ataque':
-                    $dFA  = (int)($_POST['dadoFA'] ?? 0);
-                    $tipo = $_POST['atkType'] ?? 'F';
-                    $tgt  = $_POST['target']  ?? '';
-                    $dFD  = (int)($_POST['dadoFD'] ?? 0);
-                    $def  = $_POST['defesa']   ?? 'defender';
-                    $dmgType = $_POST['dmgType'] ?? '';
-
-                    $dano = defaultReactionTreatment($b, $tgt, $pl, $def, $dFA, $dFD, $tipo, $dmgType);
-
-                    $out = "<strong>{$pl}</strong> atacou <strong>{$tgt}</strong> ({$tipo}): dano = {$dano}"
-                        . applyDamage($pl, $tgt, $dano, $tipo, $out);
-
-                    unset($b['playingAlly']);
-                    $b['init_index']++;
-                    break;
-
-
-
-                case 'multiple':
-                    $tipo  = $_POST['atkTypeMulti']   ?? 'F';
-                    $tgt   = $_POST['targetMulti']    ?? '';
-                    $q     = (int)($_POST['quant']    ?? 1);
-                    $dados = $_POST['dadosMulti']      ?? [];
-                    $dFD   = (int)($_POST['dadoFDMulti'] ?? 0);
-                    $def   = $_POST['defesaMulti']     ?? 'defender';
-                    $dmgType = $_POST['dmgType'] ?? '';
-
-                    $dano = atkMultiReactionTreatment($b, $q, $tgt, $pl, $dados, $dFD, $def, $tipo, $dmgType);
-
-                    $out = "<strong>{$pl}</strong> fez ataque múltiplo em <strong>{$tgt}</strong> ({$q}x{$tipo}): FA total = {$faTot}, dano = {$dano}";
-                    $out .= applyDamage($pl, $tgt, $dano, $tipo, $out);
-
-                    unset($b['playingAlly']);
-                    $b['init_index']++;
-                    break;
-
-
-
-                case 'tiro_multiplo':
-                    $tgt    = $_POST['targetTiroMulti']   ?? '';
-                    $q      = (int)($_POST['quantTiro']   ?? 1);
-                    $dados  = $_POST['dadosTiroMulti']    ?? [];
-                    $dadoFD = (int)($_POST['dadoFDTiro']  ?? 0);
-                    $def    = $_POST['defesaTiroMulti']   ?? 'defender';
-                    $dmgType = $_POST['dmgType'] ?? '';
-
-                    $dano = tiroMultiReactionTreatment($b, $q, $tgt, $pl, $dados, $dadoFD, $def, $dmgType);
-
-                    $out = "<strong>{$pl}</strong> usou <em>Tiro Múltiplo</em> em <strong>{$tgt}</strong>\n({$q}xPdF): dano total = {$dano}";
-                    applyDamage($pl, $tgt, $dano, "PdF", $out);
-
-                    unset($b['playingAlly']);
-                    $b['init_index']++;
-                    break;
-
-
-
-
-                case 'start_concentrar':
-                    if (empty($b['notes'][$pl]['concentrado'])) {
-                        $b['notes'][$pl]['concentrado'] = 1;
-                    }
-                    $out = "<strong>{$pl}</strong> começou a se concentrar (rodada atual: +{$b['notes'][$pl]['concentrado']})";
-                    unset($b['playingAlly']);
-                    $b['init_index']++;
-                    break;
-                case 'release_concentrar':
-                    $bonus = $b['notes'][$pl]['concentrado'] ?? 0;
-                    $dFA  = (int)($_POST['dadoFA'] ?? 0) + $bonus;
-                    $tipo = $_POST['atkType'] ?? 'F';
-                    $tgt  = $_POST['target']  ?? '';
-                    $dFD  = (int)($_POST['dadoFD'] ?? 0);
-                    $def  = $_POST['defesa']   ?? 'defender';
-                    $dmgType = $_POST['dmgType'] ?? '';
-
-                    $dano = defaultReactionTreatment($b, $tgt, $pl, $def, $dFA, $dFD, $tipo, $dmgType);
-
-                    $out = "<strong>{$pl}</strong> atacou <strong>{$tgt}</strong> ({$tipo}): dano = {$dano} (Bonus de concentração = {$bonus})"
-                        . applyDamage($pl, $tgt, $dano, $tipo, $out);
-
-                    $b['notes'][$pl]['concentrado'] = 0;
-                    unset($b['playingAlly']);
-                    $b['init_index']++;
-                    break;
-
-
-
-                case 'agarrao':
-                    $dF   = (int)($_POST['rollAgarrao'] ?? 0);
-                    $tgt  = $_POST['targetAgarrao']  ?? '';
-
-                    $r = agarrao($pl, $tgt, $dF);
-                    if ($r) {
-                        $b['agarrao'][$pl]['agarrando'] = $tgt;
-                        $b['agarrao'][$tgt]['agarrado'] = $pl;
-                        $b['agarrao'][$tgt]['flag'] = 0;
-                        $out = "<strong>{$pl}</strong> agarrou <strong>{$tgt}</strong>!";
-                    } else {
-                        $out = "<strong>{$pl}</strong> falhou em agarrar <strong>{$tgt}</strong>!";
-                    }
-                    $b['notes'][$tgt]['efeito'] .= "\nAgarrado por um inimigo (Pode apenas tentar se soltar)(Indefeso).";
-                    $b['notes'][$pl]['efeito'] .= "\nAgarrando um inimigo (Não pode realizar ações por si mesmo).";
-                    unset($b['playingAlly']);
-                    if (!empty($b['playingPartner'][$pl])) {
-                        if (!empty($b['statsBackup'][$pl])) {
-                            foreach ($b['statsBackup'][$pl] as $campo => $valor) {
-                                setPlayerStat($pl, $campo, $valor);
-                            }
-                            unset($b['statsBackup'][$pl]);
-                        }
-                        unset($b['statsBackup'][$pl]);
-                        unset($b['playingPartner'][$pl]);
-                    }
-                    $b['init_index']++;
-                    break;
-                case 'soltar_agarrao':
-                    $tgt = $b['agarrao'][$pl]['agarrando'];
-                    $itensARemover = [
-                        'Agarrado por um inimigo (Pode apenas tentar se soltar)(Indefeso).',
-                        'Agarrando um inimigo (Não pode realizar ações por si mesmo).'
-                    ];
-                    $b['notes'][$pl]['efeito'] = removeEffect($b['notes'][$pl]['efeito'], $itensARemover);
-                    $b['notes'][$tgt]['efeito'] = removeEffect($b['notes'][$tgt]['efeito'], $itensARemover);
-                    unset($b['agarrao'][$tgt]);
-                    unset($b['agarrao'][$pl]);
-                    $out = "<strong>{$pl}</strong> soltou <strong>{$tgt}</strong> de seu agarrão!";
-                    break;
-                case 'se_soltar_agarrao':
-                    $dF   = (int)($_POST['rollSoltarAgarrao'] ?? 0) + $b['agarrao'][$pl]['flag'];
-                    $tgt = $b['agarrao'][$pl]['agarrado'];
-                    $r = agarrao($pl, $tgt, $dF);
-
-                    if ($r) {
-                        $itensARemover = [
-                            'Agarrado por um inimigo (Pode apenas tentar se soltar)(Indefeso).',
-                            'Agarrando um inimigo (Não pode realizar ações por si mesmo).'
-                        ];
-                        $b['notes'][$pl]['efeito'] = removeEffect($b['notes'][$pl]['efeito'], $itensARemover);
-                        $b['notes'][$tgt]['efeito'] = removeEffect($b['notes'][$tgt]['efeito'], $itensARemover);
-                        unset($b['agarrao'][$pl]);
-                        unset($b['agarrao'][$tgt]);
-                        $out = "<strong>{$pl}</strong> se soltou do agarrão de <strong>{$tgt}</strong>!";
-                    } else {
-                        $out = "<strong>{$pl}</strong> tentou se soltar do agarrão de <strong>{$tgt}</strong> mas falhou!";
-                    }
-                    unset($b['playingAlly']);
-                    $b['init_index']++;
-                    break;
-
-
-
-                case 'ataque_debilitante':
-                    $dFA  = (int)($_POST['dadoFA'] ?? 0);
-                    $tgt  = $_POST['target']  ?? '';
-                    $dFD  = (int)($_POST['dadoFD'] ?? 0);
-                    $def  = $_POST['defesa']   ?? 'defender';
-                    $stat = $_POST['stat'] ?? 0;
-                    $dmgType = $_POST['dmgType'] ?? '';
-
-                    $dano = defaultReactionTreatment($b, $tgt, $pl, $def, $dFA, $dFD, $tipo, $dmgType);
-
-                    $result = '';
-                    if ($dano > 0) {
-                        $result = debilitateStat($tgt, $stat, $dFD);
-                    }
-
-                    $out = "<strong>{$pl}</strong> atacou <strong>{$tgt}</strong> (F): dano = {$dano} <br>"
-                        . applyDamage($pl, $tgt, $dano, 'F', $out) . "<br>"
-                        . $result;
-
-                    unset($b['playingAlly']);
-                    $b['init_index']++;
-                    break;
-
-
-
-
-                case 'activate_draco':
-                    $pm = getPlayerStat($pl, 'PM');
-                    if ($pm >= 1) {
-                        draconificacao($pl, true);
-                        $b['notes'][$pl]['draco_active'] = true;
-                        $voo = getPlayerStat($pl, 'H') * 20;
-                        $out = "<strong>{$pl}</strong> ativou draconificação (+1PdF,+1R,+2H; Voo={$voo}m/s)";
-                        $b['notes'][$pl]['efeito'] .= "\nDracônico: (+1PdF,+1R,+2H; Voo={$voo}m/s)";
-                    } else {
-                        $out = "<strong>{$pl}</strong> não tem PM suficientes para a draconificação.";
-                    }
-                    break;
-                case 'deactivate_draco':
-                    draconificacao($pl, false);
-                    $b['notes'][$pl]['draco_active'] = false;
-                    $out = "<strong>{$pl}</strong> desativou draconificação.";
-                    unset($b['playingAlly']);
-                    $b['init_index']++;
-                    break;
-
-
-
-                case 'activate_fusao':
-                    $pm = getPlayerStat($pl, 'PM');
-                    if ($pm >= 3) {
-                        fusaoEterna($pl, $b['orig'][$pl]['PdF'], true);
-                        $b['notes'][$pl]['fusao_active'] = true;
-                        $out = "<strong>{$pl}</strong> ativou Fusão Eterna (F = " . ($b['orig'][$pl]['PdF'] * 2) . "; PdF = 0; -3 PMs.)";
-                        $b['notes'][$pl]['efeito'] .= "\nForma Demoníaca:";
-                        $b['notes'][$pl]['efeito'] .= "\nInvulnerável a fogo.(dano de fogo dividido por 10)";
-                        $b['notes'][$pl]['efeito'] .= "\nVulnerável a Sônico e Elétrico.(Ignora sua armadura na FD)";
-                    } else {
-                        $out = "<strong>{$pl}</strong> não tem PM suficientes para ser possuído.";
-                    }
-                    break;
-                case 'deactivate_fusao':
-                    $origPdF = $b['orig'][$pl]['PdF'] ?? 0;
-                    fusaoEterna($pl, $origPdF, false);
-                    $b['notes'][$pl]['fusao_active'] = false;
-                    $linhas = explode("\n", $b['notes'][$pl]['efeito']);
-                    $linhas_filtradas = array_filter($linhas, function ($linha) {
-                        return ! in_array(trim($linha), [
-                            'Forma Demoníaca:',
-                            'Invulnerável a fogo.(dano de fogo dividido por 10)',
-                            'Vulnerável a Sônico e Elétrico.(Ignora sua armadura na FD)'
-                        ], true);
-                    });
-                    $b['notes'][$pl]['efeito'] = implode("\n", $linhas_filtradas);
-                    $out = "<strong>{$pl}</strong> desativou Fusão Eterna e voltou à forma normal.";
-                    break;
-
-
-
-                case 'activate_incorp':
-                    $pm = getPlayerStat($pl, 'PM');
-                    if (spendPM($pl, 2)) {
-                        $b['notes'][$pl]['incorp_active'] = true;
-                        $b['notes'][$pl]['efeito'] .= "\nIncorpóreo: imune a dano F/PdF; não pode usar F ou PdF. Não pode usar ou carregar itens físicos.";
-                        if (getPlayerStat($pl, 'equipado') != '' || getPlayerStat($pl, 'inventario') != '') {
-                            $itens = "Itens que " . $pl . " dropou ao tornar-se incorpóreo: " . getPlayerStat($pl, 'equipado') . "; " . getPlayerStat($pl, 'inventario');
-                            $b['arena'] .= "\n" . $itens;
-                            setPlayerStat($pl, 'equipado', '');
-                            setPlayerStat($pl, 'inventario', '');
-                        }
-                        $out = "<strong>{$pl}</strong> tornou‑se Incorpóreo (−2 PM).";
-                    } else {
-                        $out = "<strong>{$pl}</strong> tentou ficar incorpóreo, mas não tem PM suficientes.";
-                    }
-                    break;
-                case 'deactivate_incorp':
-                    $b['notes'][$pl]['incorp_active'] = false;
-                    // remove apenas a linha de efeito relativa
-                    $linhas = explode("\n", $b['notes'][$pl]['efeito']);
-                    $linhas = array_filter($linhas, function ($l) {
-                        return strpos($l, 'Incorpóreo:') === false;
-                    });
-                    $b['notes'][$pl]['efeito'] = implode("\n", $linhas);
-                    $out = "<strong>{$pl}</strong> retornou ao corpo físico.";
-                    break;
-
-
-
-                case 'enable_use_pv':
-                    $b['notes'][$pl]['use_pv'] = true;
-                    $out = "<strong>{$pl}</strong> ativou uso de PV no lugar de PM.";
-                    break;
-                case 'disable_use_pv':
-                    unset($b['notes'][$pl]['use_pv']);
-                    $out = "<strong>{$pl}</strong> voltou a usar PM normalmente.";
-                    break;
-
-
-
-                case 'extra_energy':
-                    if (spendPM($pl, 2)) {
-                        $b['notes'][$pl]['extra_energy_next'] = true;
-                        $out = "<strong>{$pl}</strong> irá recuperar todos seus PVs até o próximo turno.";
-                        unset($b['playingAlly']);
-                        $b['init_index']++;
-                    } else {
-                        $out = "<strong>{$pl}</strong> não tem PMs o suficiente.";
-                    }
-                    break;
-
-                case 'magia_extra':
-                    if (magiaExtra($pl, 'spend')) {
-                        $b['notes'][$pl]['magia_extra_next'] = true;
-                        $out = "<strong>{$pl}</strong> irá recuperar todos seus PMs até o próximo turno.";
-                        unset($b['playingAlly']);
-                        $b['init_index']++;
-                    } else {
-                        $out = "<strong>{$pl}</strong> não está perto da morte para usar Magia Extra.";
-                    }
-                    break;
-
-
-
-                case 'use_ally':
-                    $b['playingAlly'] = $_POST['ally'];
-                    header('Location: battle.php?step=turn');
-                    exit;
-                case 'back_to_owner':
-                    unset($b['playingAlly']);
-                    header('Location: battle.php?step=turn');
-                    exit;
-
-
-
-                case 'start_partner':
-                    $chosen = $_POST['partner'] ?? '';
-                    $b['statsBackup'][$pl] = [
-                        'F' => getPlayerStat($pl, 'F'),
-                        'H' => getPlayerStat($pl, 'H'),
-                        'R' => getPlayerStat($pl, 'R'),
-                        'A' => getPlayerStat($pl, 'A'),
-                        'PdF' => getPlayerStat($pl, 'PdF'),
-                    ];
-                    $b['playingPartner'][$pl] = [
-                        'name'  => $chosen,
-                        'owner' => $pl,
-                        'stats' => [
-                            'F'   => max(getPlayerStat($chosen, 'F'), getPlayerStat($pl, 'F')),
-                            'H'   => max(getPlayerStat($chosen, 'H'), getPlayerStat($pl, 'H')),
-                            'R'   => max(getPlayerStat($chosen, 'R'), getPlayerStat($pl, 'R')),
-                            'A'   => max(getPlayerStat($chosen, 'A'), getPlayerStat($pl, 'A')),
-                            'PdF' => max(getPlayerStat($chosen, 'PdF'), getPlayerStat($pl, 'PdF'))
-                        ]
-                    ];
-                    foreach ($b['playingPartner'][$pl]['stats'] as $campo => $valor) {
-                        setPlayerStat($pl, $campo, $valor);
-                    }
-                    header('Location: battle.php?step=turn');
-                    exit;
-                case 'end_partner':
-                    if (!empty($b['statsBackup'][$pl])) {
-                        foreach ($b['statsBackup'][$pl] as $campo => $valor) {
-                            setPlayerStat($pl, $campo, $valor);
-                        }
-                        unset($b['statsBackup'][$pl]);
-                    }
-                    unset($b['statsBackup'][$pl]);
-                    unset($b['playingPartner'][$pl]);
-                    header('Location: battle.php?step=turn');
-                    exit;
-
-
-                case 'activate_aceleracao_ii':
-                    if (spendPM($pl, 2)) {
-                        $b['notes'][$pl]['aceleracao_ii_active'] = true;
-                        $out = "<strong>{$pl}</strong> gasta 2 PM e usa Aceleração II, ganhando uma ação extra!";
-                    } else {
-                        $out = "<strong>{$pl}</strong> não tem PMs suficientes para usar Aceleração II.";
-                    }
-                    break;
-
-
-                case 'activate_invisibilidade':
-                    if (spendPM($pl, 1)) {
-                        setPlayerStat($pl, 'PM', getPlayerStat($pl, 'PM') + 1);
-                        $b['notes'][$pl]['invisivel'] = true;
-                        $efeitoInvisibilidade = "\nVocê está invisível.";
-                        if (strpos($b['notes'][$pl]['efeito'], trim($efeitoInvisibilidade)) === false) {
-                            $b['notes'][$pl]['efeito'] .= $efeitoInvisibilidade;
-                        }
-                        $out = "<strong>{$pl}</strong> está invisível (1PM/turno)";
-                    } else {
-                        $out = "<strong>{$pl}</strong> não tem PMs suficientes para usar Invisibilidade.";
-                    }
-                    break;
-                case 'deactivate_invisibilidade':
-                    unset($b['notes'][$pl]['invisivel']);
-                    $out = "<strong>{$pl}</strong> está visível novamente.";
-                    break;
-
-
-                case 'sword_luxcruentha':
-                    $dFA1     = (int)($_POST['luxDadoFA1'] ?? 0);
-                    $dFA2     = (int)($_POST['luxDadoFA2'] ?? 0);
-                    $target  = $_POST['luxTarget'] ?? '';
-                    $defesa  = $_POST['luxDefesa'] ?? 'defender';
-                    $dFD     = (int)($_POST['luxDadoFD'] ?? 0);
-
-                    $out = atkLuxcruentha($b, $pl, $target, $defesa, $dFD, $dFA1, $dFA2);
-
-                    unset($b['playingAlly']);
-                    $b['init_index']++;
-                    break;
-
-
-                case 'sustain_act':
-                    $logMessages = processSustainedSpells($pl, $_POST, $b);
-                    $b['sustained_log'] = $logMessages;
-                    $b['sustained_processed_this_turn'][$pl] = true;
-                    header('Location: battle.php?step=turn');
-                    break;
-
-
-                case 'fim':
-                    header('Location: battle.php?step=final');
-                    unset($b['playingAlly']);
-                    $b['init_index']++;
-                    exit;
-
-
-
-                    // Processamento de dados de magias
-                case 'cast_magic':
-                    $magic_slug = $_POST['magic'] ?? '';
-                    $target = $_POST['magic_target'] ?? $pl; // Alvo padrão é o próprio conjurador
-                    $pm_cost = (int)($_POST['magic_pm_cost'] ?? 1);
-
-                    if (empty($magic_slug)) {
-                        $out = 'Nenhuma magia foi selecionada.';
-                        break;
-                    }
-
-                    switch ($magic_slug) {
-                        case 'bola_de_fogo':
-                            $tgts = $_POST['magic_targets'] ?? ['']; // Info do alvo: name + dFD
-                            $PMs = $_POST['magic_pm_cost'] ?? [''];
-                            $dadoFA = $_POST['dadoFA'] ?? [''];
-
-                            $out = bolaDeFogo($pl, $tgts, $PMs, $dadoFA);
-
-                            unset($b['playingAlly']);
-                            $b['init_index']++;
-                            break;
-
-                        case 'cura_magica':
-                            $heal_type = $_POST['magic_heal_type'] ?? 'heal_pv';
-                            $cost = ($heal_type === 'heal_pv') ? 2 : 4;
-                            $out = "<strong>{$pl}</strong> usou Cura Mágica em <strong>{$target}</strong> (custo: {$cost} PMs).";
-                            break;
-
-                        case 'ataque_magico':
-                            $pmCost = $_POST['magic_pm_cost'] ?? 1;
-                            $atkType = $_POST['magic_attack_type'] ?? 'F';
-                            $tgtsInfo = $_POST['magic_targets'] ?? ['']; //alvos [name] + reação [reaction] + dado de defesa [rollFD] + dado de ataque [rollFA]
-
-                            $out = ataqueMagico($b, $pl, $tgtsInfo, $pmCost, $atkType);
-
-                            unset($b['playingAlly']);
-                            $b['init_index']++;
-                            break;
-
-                        case 'lanca_infalivel_de_talude':
-                            $pmCost = $_POST['magic_pm_cost'] ?? 1;
-                            $tgtsInfo = $_POST['magic_targets'] ?? ['']; //alvos [name] + lancas atacando ele [qtdAtk]
-
-                            $out = lancaInfalivelDeTalude($pl, $tgtsInfo, $pmCost);
-
-                            unset($b['playingAlly']);
-                            $b['init_index']++;
-                            break;
-
-                        case 'brilho_explosivo':
-                            $tgt = $_POST['target'] ?? [''];
-                            $dadoFD = $_POST['dadoFD'] ?? [''];
-                            $somaDosDadosFA = 0;
-                            for ($i = 1; $i < 11; $i++) {
-                                $somaDosDadosFA += $_POST['dado' . $i] ?? [0];
-                            }
-
-                            $out = brilhoExplosivo($pl, $tgt, $somaDosDadosFA, $dadoFD);
-
-                            unset($b['playingAlly']);
-                            $b['init_index']++;
-                            break;
-
-                        case 'morte_estelar':
-                            $tgt = $_POST['target'] ?? [''];
-
-                            $out = morteEstelar($pl, $tgt);
-
-                            unset($b['playingAlly']);
-                            $b['init_index']++;
-                            break;
-
-                        case 'enxame_de_trovoes':
-                            $tgt = $_POST['target'] ?? [''];
-                            $dFA1 = $_POST['dadoFA1'] ?? [''];
-                            $dFA2 = $_POST['dadoFA2'] ?? [''];
-                            $dFD = $_POST['dadoFD'] ?? [''];
-
-                            $out = enxameDeTrovoes($b, $pl, $tgt, $dFA1, $dFA2, $dFD);
-
-                            unset($b['playingAlly']);
-                            $b['init_index']++;
-                            break;
-
-                        case 'nulificacao_total_de_talude':
-                            $tgt = $_POST['target'] ?? [''];
-                            $RTest = $_POST['RTest'] ?? [''];
-
-                            $out = nulificacaoTotalDeTalude($pl, $tgt, $RTest);
-
-                            unset($b['playingAlly']);
-                            $b['init_index']++;
-                            break;
-
-                        case 'bola_de_fogo_instavel':
-                            $tgts = $_POST['magic_targets'] ?? ['']; // Info do alvo: name + dFD
-                            $PMs = $_POST['magic_pm_cost'] ?? [''];
-                            $dadosFA = $_POST['dados'] ?? [''];
-
-                            $out = bolaDeFogoInstavel($pl, $tgts, $PMs, $dadosFA);
-
-                            unset($b['playingAlly']);
-                            $b['init_index']++;
-                            break;
-
-                        case 'bola_de_lama':
-                            $tgt = $_POST['target'] ?? [''];
-                            $dadosFA = $_POST['dadosFA'] ?? [''];
-                            $dadoFD = $_POST['dadoFD'] ?? [''];
-
-                            $out = bolaDeLama($pl, $tgt, $dadosFA, $dadoFD);
-
-                            unset($b['playingAlly']);
-                            $b['init_index']++;
-                            break;
-
-                        case 'bomba_de_luz':
-                            $tgts = $_POST['magic_targets'] ?? [''];  // Info do alvo: name + dFD
-                            $PMs = $_POST['magic_pm_cost'] ?? [''];
-
-                            $out = bombaDeLuz($pl, $tgts, $PMs);
-
-                            unset($b['playingAlly']);
-                            $b['init_index']++;
-                            break;
-
-                        case 'bomba_de_terra':
-                            $tgt = $_POST['target'] ?? [''];
-                            $dadoFD = $_POST['dadoFD'] ?? [''];
-
-                            $out = bombaDeTerra($pl, $tgt, $dadoFD);
-
-                            unset($b['playingAlly']);
-                            $b['init_index']++;
-                            break;
-
-                        case 'solisanguis':
-                            $tgt = $_POST['target'] ?? [''];
-                            $dadoCusto = $_POST['dadoCusto'] ?? [''];
-                            $dadoFA1 = $_POST['dadoFA1'] ?? [''];
-                            $dadoFA2 = $_POST['dadoFA2'] ?? [''];
-
-                            $out = solisanguis($pl, $tgt, $dadoCusto, $dadoFA1, $dadoFA2);
-
-                            unset($b['playingAlly']);
-                            $b['init_index']++;
-                            break;
-
-                        case 'solisanguis_ruptura':
-                            $tgt = $_POST['target'] ?? [''];
-                            $dadoCusto = $_POST['dadoCusto'] ?? [''];
-                            $dadoFA1 = $_POST['dadoFA1'] ?? [''];
-                            $dadoFA2 = $_POST['dadoFA2'] ?? [''];
-                            $dadoFA3 = $_POST['dadoFA3'] ?? [''];
-                            $dadoFA4 = $_POST['dadoFA4'] ?? [''];
-
-                            $out = solisanguisRuptura($pl, $tgt, $dadoCusto, $dadoFA1, $dadoFA2, $dadoFA3, $dadoFA4);
-
-                            unset($b['playingAlly']);
-                            $b['init_index']++;
-                            break;
-
-
-                        case 'solisanguis_evisceratio':
-                            $tgt = $_POST['target'] ?? [''];
-                            $dado = $_POST['dado'] ?? [''];
-
-                            $out = solisanguisEvisceratio($pl, $tgt, $dado);
-
-                            unset($b['playingAlly']);
-                            $b['init_index']++;
-                            break;
-
-                        case 'sortilegium':
-                            $tgt = $_POST['target'] ?? [''];
-                            $dadoCusto = $_POST['dadoCusto'] ?? [''];
-                            $dadoPV1 = $_POST['dadoPV1'] ?? [''];
-                            $dadoPV2 = $_POST['dadoPV2'] ?? [''];
-
-                            $out = sortilegium($pl, $tgt, $dadoCusto, $dadoPV1, $dadoPV2);
-
-                            unset($b['playingAlly']);
-                            $b['init_index']++;
-                            break;
-
-                        case 'sancti_sanguis':
-                            $tgt = $_POST['target'] ?? [''];
-                            $qtd = $_POST['qtd'] ?? [''];
-
-                            $out = sanctiSanguis($pl, $tgt, $qtd);
-
-                            unset($b['playingAlly']);
-                            $b['init_index']++;
-                            break;
-
-                        case 'luxcruentha':
-                            $out = luxcruentha($pl);
-                            break;
-
-                        case 'artifanguis':
-                            $obj = $_POST['obj'] ?? [''];
-                            $cost = $_POST['cost'] ?? [''];
-
-                            $out = artifanguis($pl, $obj, $cost);
-                            break;
-
-                        case 'excruentio':
-                            $tgt = $_POST['target'] ?? [''];
-                            $dFD = $_POST['dadoFD'] ?? [''];
-                            $dFA1 = $_POST['dadoFA1'] ?? [''];
-                            $dFA2 = $_POST['dadoFA2'] ?? [''];
-
-                            $out = excruentio($pl, $tgt, $dFD, $dFA1, $dFA2);
-
-                            unset($b['playingAlly']);
-                            $b['init_index']++;
-                            break;
-
-
-                        case 'speculusanguis':
-                            $tgt = $_POST['target'] ?? [''];
-
-                            $out = speculusanguis($pl, $tgt);
-
-                            unset($b['playingAlly']);
-                            $b['init_index']++;
-                            break;
-
-
-                        case 'vis_ex_vulnere':
-                            $out = visExVulnere($pl);
-                            unset($b['playingAlly']);
-                            $b['init_index']++;
-                            break;
-
-                        case 'solcruoris':
-                            $cost = $_POST['cost'] ?? [''];
-
-                            $out = solcruoris($pl, $cost);
-
-                            unset($b['playingAlly']);
-                            $b['init_index']++;
-                            break;
-
-                        case 'spectraematum':
-                            $debuff = $_POST['debuff'] ?? [''];
-                            $tgt = $_POST['target'] ?? [''];
-
-                            $out = spectraematum($pl, $debuff, $tgt);
-
-                            unset($b['playingAlly']);
-                            $b['init_index']++;
-                            break;
-
-                        case 'aeternum_tribuo':
-                            $tgt = $_POST['target'] ?? [''];
-
-                            $out = aeternumTribuo($pl, $tgt);
-
-                            unset($b['playingAlly']);
-                            $b['init_index']++;
-                            break;
-
-                        case 'inhaerescorpus':
-                            $tgt = $_POST['target'] ?? [''];
-                            $testR = $_POST['testR'] ?? [''];
-
-                            $out = inhaerescorpus($pl, $tgt, $testR);
-
-                            unset($b['playingAlly']);
-                            $b['init_index']++;
-                            break;
-
-                        case 'hemeopsia':
-                            $out = hemeopsia($pl);
-                            unset($b['playingAlly']);
-                            $b['init_index']++;
-                            break;
-
-
-                        default:
-                            $out = "A magia '{$magic_slug}' foi selecionada, mas sua lógica ainda não foi implementada.";
-                            unset($b['playingAlly']);
-                            $b['init_index']++;
-                            break;
-                    }
-                    break;
-
-
-                default:
-                    $out = 'Ação inválida ou não reconhecida.';
-                    break;
-            }
+            $out = actSwitch($_POST, $b, $pl); // Todas as ações são processadas aqui (action folder)
 
             if ($origInitIndex != $b['init_index']) {
                 if (!empty($b['notes'][$pl]['sustained_spells']) && empty($b['sustained_processed_this_turn'][$pl]) && $b['started_turn_with_sustained_spells']) {
@@ -2087,14 +1337,12 @@ JS;
                 unset($_SESSION['battle']['sustained_effects'][$pl]['spectraematum']);
             }
 
-
             if ($b['notes'][$pl]['draco_active'] && empty($b['notes'][$pl]['draco_flag'])) {
                 $b['notes'][$pl]['draco_flag'] = true;
             }
             if (!empty($b['notes'][$pl]['invisivel']) && empty($b['notes'][$pl]['invisivel_flag'])) {
                 $b['notes'][$pl]['invisivel_flag'] = true;
             }
-
 
             if ($origInitIndex != $b['init_index'] && !empty($b['notes'][$pl]['aceleracao_ii_active'])) {
                 $b['init_index']--;

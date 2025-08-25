@@ -1,7 +1,7 @@
 <?php
 // editplayer.php - Gerenciador completo de personagens
 include 'inc/generalFuncs.php';
-include 'inc/traitFuncs.php';
+include 'inc/trait/traitFuncs.php';
 
 $pdo = conecta();
 $allPlayers = getAllPlayers();
