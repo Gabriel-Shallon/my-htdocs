@@ -285,6 +285,26 @@ function magicSwitch($postData, &$b, $pl, $magic_slug, $target){
             $b['init_index']++;
             break;
 
+        case 'amor_incontestavel':
+            $tgt = $postData['magic_target'] ?? [''];
+            $tgtLove = $postData['magic_love'] ?? [''];
+            $testR = $postData['testR'] ?? [''];
+
+            $out = amorIncontestavel($pl, $tgt, $tgtLove, $testR);
+
+            unset($b['playingAlly']);
+            $b['init_index']++;
+            break;
+
+        case 'ataque_vorpal':
+            $tgt = $postData['magic_target'] ?? [''];
+
+            $out = ataqueVorpal($pl, $tgt);
+
+            unset($b['playingAlly']);
+            $b['init_index']++;
+            break;
+
         default:
             $out = "A magia '{$magic_slug}' foi selecionada, mas sua lógica ainda não foi implementada.";
             unset($b['playingAlly']);

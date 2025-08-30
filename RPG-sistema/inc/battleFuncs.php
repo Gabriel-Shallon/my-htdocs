@@ -66,6 +66,20 @@ function getValidTargets($pl, &$b, $type = 'enemies', $isIncorp = false){
     return array_unique($targets);
 }
 
+function getValidTargetsWithDetails($pl, &$b, $type = 'enemies') {
+    $targets = getValidTargets($pl, $b, $type);
+    $targetsWithDetails = [];
+    foreach ($targets as $tgt) {
+        $targetsWithDetails[] = [
+            'name' => $tgt,
+            'hasDeflexao' => in_array('deflexao', listPlayerTraits($tgt), true),
+            'isFuria' => !empty($_SESSION['battle']['notes'][$tgt]['furia']),
+            'isAgarrado' => !empty($_SESSION['battle']['agarrao'][$tgt]['agarrado'])
+        ];
+    }
+    return $targetsWithDetails;
+}
+
 // Tests
 
 function statTest($player, $stat, $diff, $dado){
@@ -91,7 +105,7 @@ function hDebuff($b, $pl, $tgt, $tipo = 'F'){
 }
 
 function applyCrit($pl, $critType, $dado){
-    if ($dado >= 6) {
+    if ($dado == 6) {
         return getPlayerStat($pl, $critType);
     } else {
         return 0;
@@ -230,6 +244,7 @@ function syncEquipBuffs($pl){
 }
 
 function monitorPVChange($pl, $dano){
+    $_SESSION['battle']['tookDmg'][$pl] = false;
     if (isset($_SESSION['battle']['sustained_effects'][$pl]['visExVulnere']['dmg'])) {
         $_SESSION['battle']['sustained_effects'][$pl]['visExVulnere']['dmg'] += $dano;
     }
@@ -239,21 +254,30 @@ function monitorPVChange($pl, $dano){
     if (isset($_SESSION['battle']['sustained_effects'][$pl]['inhaerescorpus']['dmg'])) {
         $_SESSION['battle']['sustained_effects'][$pl]['inhaerescorpus']['dmg'] += $dano;
     }
+    if (isset($_SESSION['battle']['apaixonado'][$pl])) {
+        $_SESSION['battle']['notes'][$pl]['efeito'] = removeEffect($_SESSION['battle']['notes'][$pl]['efeito'], ['Apaixonado por '.$_SESSION['battle']['apaixonado'][$pl]['love'].';']);
+        unset($_SESSION['battle']['apaixonado'][$pl]);
+    }
+    if ($dano > 0){
+        $_SESSION['battle']['tookDmg'][$pl] = true;
+    }
 }
 
 
 // Selects
 
-function selectTarget($cur, $validTargets){
-    foreach ($validTargets as $tgt) if ($tgt !== $cur) {
-        $isFuria    = ! empty($_SESSION['battle']['notes'][$tgt]['furia']);
-        $isAgarrado = ! empty($_SESSION['battle']['agarrao'][$tgt]['agarrado']);
-        $hasDeflexao = in_array('deflexao', listPlayerTraits($tgt), true);
-        echo '<option value="' . htmlspecialchars($tgt) . '" '
-            . 'data-furia="' . ($isFuria ? '1' : '0') . '" '
-            . 'data-agarrao="' . ($isAgarrado ? '1' : '0') . '" '
-            . 'data-tem-deflexao="' . ($hasDeflexao ? '1' : '0') . '">'
-            . htmlspecialchars($tgt) . '</option>';
+function selectTarget($cur, $validTargets, $includeCur = false){
+    foreach ($validTargets as $tgt) if ($tgt !== $cur || $includeCur) {
+        if ($tgt != $_SESSION['battle']['apaixonado'][$cur]['love'] || $includeCur){
+            $isFuria    = ! empty($_SESSION['battle']['notes'][$tgt]['furia']);
+            $isAgarrado = ! empty($_SESSION['battle']['agarrao'][$tgt]['agarrado']);
+            $hasDeflexao = in_array('deflexao', listPlayerTraits($tgt), true);
+            echo '<option value="' . htmlspecialchars($tgt) . '" '
+                . 'data-furia="' . ($isFuria ? '1' : '0') . '" '
+                . 'data-agarrao="' . ($isAgarrado ? '1' : '0') . '" '
+                . 'data-tem-deflexao="' . ($hasDeflexao ? '1' : '0') . '">'
+                . htmlspecialchars($tgt) . '</option>';
+        }
     }
 }
 
@@ -278,87 +302,7 @@ function selectDmgType($cur){
 }
 
 
-// Variable effects
-
-function manageEffects($cur){
-    if (!empty($_SESSION['battle']['notes'][$cur]['use_pv'])) {
-        $efeitoUsePV = "\nUsando PVs invés de PMs.";
-        if (strpos($_SESSION['battle']['notes'][$cur]['efeito'], trim($efeitoUsePV)) === false) {
-            $_SESSION['battle']['notes'][$cur]['efeito'] .= $efeitoUsePV;
-        }
-    } else {
-        $_SESSION['battle']['notes'][$cur]['efeito'] = removeEffect($_SESSION['battle']['notes'][$cur]['efeito'], ['Usando PVs invés de PMs.']);
-    }
-
-    if ($_SESSION['battle']['notes'][$cur]['draco_active'] && !empty($_SESSION['battle']['notes'][$cur]['draco_flag'])) {
-        unset($_SESSION['battle']['notes'][$cur]['draco_flag']);
-        if (!spendPM($cur, 1)) {
-            draconificacao($cur, false);
-            $_SESSION['battle']['notes'][$cur]['draco_active'] = false;
-            $efeitoDraco = "\nDraconificação desativada (PM esgotado) e Instável.";
-            if (strpos($_SESSION['battle']['notes'][$cur]['efeito'], trim($efeitoDraco)) === false) {
-                $_SESSION['battle']['notes'][$cur]['efeito'] .= $efeitoDraco;
-            }
-        }
-    } else {
-        $_SESSION['battle']['notes'][$cur]['efeito'] = removeEffect($_SESSION['battle']['notes'][$cur]['efeito'], ['Draconificação desativada (PM esgotado) e Instável.']);
-    }
-
-    if (!empty($notes['fusao_active'])) {
-        $curPV = getPlayerStat($cur, 'PV');
-        $curR  = getPlayerStat($cur, 'R');
-        if ($curPV <= $curR) {
-            $_SESSION['battle']['notes'][$cur]['furia'] = true;
-            $efeitoFuria = "\nEm Fúria até o fim da batalha (Não pode usar magia nem esquiva).";
-            if (strpos($_SESSION['battle']['notes'][$cur]['efeito'], trim($efeitoFuria)) === false) {
-                $_SESSION['battle']['notes'][$cur]['efeito'] .= $efeitoFuria;
-            }
-        }
-    }
-
-    if (!empty($notes['extra_energy_next'])) {
-        energiaExtra($cur);
-        $_SESSION['battle']['notes'][$cur]['efeito'] .= "\nEnergia extra aplicada: PVs restaurados ao máximo.";
-        unset($_SESSION['battle']['notes'][$cur]['extra_energy_next']);
-    } else {
-        $_SESSION['battle']['notes'][$cur]['efeito'] = removeEffect($_SESSION['battle']['notes'][$cur]['efeito'], ['Energia extra aplicada: PVs restaurados ao máximo.']);
-    }
-
-    if (!empty($notes['magia_extra_next'])) {
-        magiaExtra($cur, 'apply');
-        $_SESSION['battle']['notes'][$cur]['efeito'] .= "\nMagia extra aplicada: PMs restaurados ao máximo.";
-        unset($_SESSION['battle']['notes'][$cur]['magia_extra_next']);
-    } else {
-        $_SESSION['battle']['notes'][$cur]['efeito'] = removeEffect($_SESSION['battle']['notes'][$cur]['efeito'], ['Magia extra aplicada: PMs restaurados ao máximo.']);
-    }
-
-    if (!empty($_SESSION['battle']['notes'][$cur]['invisivel']) && !empty($_SESSION['battle']['notes'][$cur]['invisivel_flag'])) {
-        unset($_SESSION['battle']['notes'][$cur]['invisivel_flag']);
-        if (!spendPM($cur, 1)) {
-            unset($_SESSION['battle']['notes'][$cur]['invisivel']);
-            $efeitoInvisibilidade = "\nInvisibilidade desativada por falta de PMs.";
-            if (strpos($_SESSION['battle']['notes'][$cur]['efeito'], trim($efeitoInvisibilidade)) === false) {
-                $_SESSION['battle']['notes'][$cur]['efeito'] .= $efeitoInvisibilidade;
-            }
-            $_SESSION['battle']['notes'][$cur]['efeito'] = removeEffect($_SESSION['battle']['notes'][$cur]['efeito'], ['Você está invisível.']);
-        }
-    } else if (empty($notes['invisivel'])) {
-        $_SESSION['battle']['notes'][$cur]['efeito'] = removeEffect($_SESSION['battle']['notes'][$cur]['efeito'], ['Você está invisível.']);
-    }
-
-
-    if (in_array('furia', listPlayerTraits($cur), true)) {
-        $curPV = getPlayerStat($cur, 'PV');
-        $curR  = getPlayerStat($cur, 'R');
-        if ($curPV <= $curR) {
-            $_SESSION['battle']['notes'][$cur]['furia'] = true;
-            $efeitoFuria = "\nEm Fúria até o fim da batalha (Não pode usar magia nem esquiva).";
-            if (strpos($_SESSION['battle']['notes'][$cur]['efeito'], trim($efeitoFuria)) === false) {
-                $_SESSION['battle']['notes'][$cur]['efeito'] .= $efeitoFuria;
-            }
-        }
-    }
-}
+// Manage effects
 
 function removeEffect(string $efeito, array $remover): string{
     $linhas = explode("\n", $efeito);

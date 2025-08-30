@@ -43,14 +43,12 @@ function fusaoEterna(string $player, int $PdFOriginal, bool $active){
         addPlayerInvulnerability($player, 'Fogo');
         addPlayerVulnerability($player, 'Elétrico');
         addPlayerVulnerability($player, 'Sônico');
-        addPlayerTrait($player, 66, 'advantage');
         setPlayerStat($player, 'F', getPlayerStat($player, 'PdF') * 2);
         setPlayerStat($player, 'PdF', 0);
     } else {
         removePlayerInvulnerability($player, 'Fogo');
         removePlayerVulnerability($player, 'Sônico');
         removePlayerVulnerability($player, 'Elétrico');
-        removePlayerTrait($player, 66, 'advantage');
         setPlayerStat($player, 'F', (getPlayerStat($player, 'F') - $PdFOriginal * 2));
         setPlayerStat($player, 'PdF', $PdFOriginal);
     }

@@ -219,15 +219,10 @@ function actDeactivateFusao($postData, &$b, $pl){
     $origPdF = $b['orig'][$pl]['PdF'] ?? 0;
     fusaoEterna($pl, $origPdF, false);
     $b['notes'][$pl]['fusao_active'] = false;
-    $linhas = explode("\n", $b['notes'][$pl]['efeito']);
-    $linhas_filtradas = array_filter($linhas, function ($linha) {
-        return ! in_array(trim($linha), [
-            'Forma Demoníaca:',
-            'Invulnerável a fogo.(dano de fogo dividido por 10)',
-            'Vulnerável a Sônico e Elétrico.(Ignora sua armadura na FD)'
-        ], true);
-    });
-    $b['notes'][$pl]['efeito'] = implode("\n", $linhas_filtradas);
+    if (isset($_SESSION['battle']['notes'][$pl]['furia'])) {unset($_SESSION['battle']['notes'][$pl]['furia']); $b['notes'][$pl]['efeito'] = removeEffect($b['notes'][$pl]['efeito'], 
+    ['Em Fúria até sair de perto da morte (Não pode usar magia nem esquiva).']);}
+    $b['notes'][$pl]['efeito'] = removeEffect($b['notes'][$pl]['efeito'], 
+    ['Forma Demoníaca:', 'Invulnerável a fogo.(dano de fogo dividido por 10)', 'Vulnerável a Sônico e Elétrico.(Ignora sua armadura na FD)']);
     $out = "<strong>{$pl}</strong> desativou Fusão Eterna e voltou à forma normal.";
     return $out;
 }

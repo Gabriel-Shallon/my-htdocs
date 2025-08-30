@@ -219,7 +219,87 @@ switch ($step) {
         }
 
         // Efeitos Variáveis
-        manageEffects($cur);
+        if (!empty($_SESSION['battle']['notes'][$cur]['use_pv'])) {
+            $efeitoUsePV = "\nUsando PVs invés de PMs.";
+            if (strpos($_SESSION['battle']['notes'][$cur]['efeito'], trim($efeitoUsePV)) === false) {
+                $_SESSION['battle']['notes'][$cur]['efeito'] .= $efeitoUsePV;
+            }
+        } else {
+            $_SESSION['battle']['notes'][$cur]['efeito'] = removeEffect($_SESSION['battle']['notes'][$cur]['efeito'], ['Usando PVs invés de PMs.']);
+        }
+
+        if ($_SESSION['battle']['notes'][$cur]['draco_active'] && !empty($_SESSION['battle']['notes'][$cur]['draco_flag'])) {
+            unset($_SESSION['battle']['notes'][$cur]['draco_flag']);
+            if (!spendPM($cur, 1)) {
+                draconificacao($cur, false);
+                $_SESSION['battle']['notes'][$cur]['draco_active'] = false;
+                $efeitoDraco = "\nDraconificação desativada (PM esgotado) e Instável.";
+                if (strpos($_SESSION['battle']['notes'][$cur]['efeito'], trim($efeitoDraco)) === false) {
+                    $_SESSION['battle']['notes'][$cur]['efeito'] .= $efeitoDraco;
+                }
+            }
+        } else {
+            $_SESSION['battle']['notes'][$cur]['efeito'] = removeEffect($_SESSION['battle']['notes'][$cur]['efeito'], ['Draconificação desativada (PM esgotado) e Instável.']);
+        }
+
+        if (!empty($notes['fusao_active'])) {
+            $curPV = getPlayerStat($cur, 'PV');
+            $curR  = getPlayerStat($cur, 'R');
+            if ($curPV <= $curR) {
+                $_SESSION['battle']['notes'][$cur]['furia'] = true;
+                $efeitoFuria = "\nEm Fúria até sair de perto da morte (Não pode usar magia nem esquiva).";
+                if (strpos($_SESSION['battle']['notes'][$cur]['efeito'], trim($efeitoFuria)) === false) {
+                    $_SESSION['battle']['notes'][$cur]['efeito'] .= $efeitoFuria;
+                }
+            }
+            if ($curPV > $curR && isset($_SESSION['battle']['notes'][$cur]['furia'])){
+                unset($_SESSION['battle']['notes'][$cur]['furia']);
+                $_SESSION['battle']['notes'][$cur]['efeito'] = removeEffect($_SESSION['battle']['notes'][$cur]['efeito'], ['Em Fúria até sair de perto da morte (Não pode usar magia nem esquiva).']);
+            }
+        }
+
+        if (!empty($notes['extra_energy_next'])) {
+            energiaExtra($cur);
+            $_SESSION['battle']['notes'][$cur]['efeito'] .= "\nEnergia extra aplicada: PVs restaurados ao máximo.";
+            unset($_SESSION['battle']['notes'][$cur]['extra_energy_next']);
+        } else {
+            $_SESSION['battle']['notes'][$cur]['efeito'] = removeEffect($_SESSION['battle']['notes'][$cur]['efeito'], ['Energia extra aplicada: PVs restaurados ao máximo.']);
+        }
+
+        if (!empty($notes['magia_extra_next'])) {
+            magiaExtra($cur, 'apply');
+            $_SESSION['battle']['notes'][$cur]['efeito'] .= "\nMagia extra aplicada: PMs restaurados ao máximo.";
+            unset($_SESSION['battle']['notes'][$cur]['magia_extra_next']);
+        } else {
+            $_SESSION['battle']['notes'][$cur]['efeito'] = removeEffect($_SESSION['battle']['notes'][$cur]['efeito'], ['Magia extra aplicada: PMs restaurados ao máximo.']);
+        }
+
+        if (!empty($_SESSION['battle']['notes'][$cur]['invisivel']) && !empty($_SESSION['battle']['notes'][$cur]['invisivel_flag'])) {
+            unset($_SESSION['battle']['notes'][$cur]['invisivel_flag']);
+            if (!spendPM($cur, 1)) {
+                unset($_SESSION['battle']['notes'][$cur]['invisivel']);
+                $efeitoInvisibilidade = "\nInvisibilidade desativada por falta de PMs.";
+                if (strpos($_SESSION['battle']['notes'][$cur]['efeito'], trim($efeitoInvisibilidade)) === false) {
+                    $_SESSION['battle']['notes'][$cur]['efeito'] .= $efeitoInvisibilidade;
+                }
+                $_SESSION['battle']['notes'][$cur]['efeito'] = removeEffect($_SESSION['battle']['notes'][$cur]['efeito'], ['Você está invisível.']);
+            }
+        } else if (empty($notes['invisivel'])) {
+            $_SESSION['battle']['notes'][$cur]['efeito'] = removeEffect($_SESSION['battle']['notes'][$cur]['efeito'], ['Você está invisível.']);
+        }
+
+
+        if (in_array('furia', listPlayerTraits($cur), true)) {
+            $curPV = getPlayerStat($cur, 'PV');
+            $curR  = getPlayerStat($cur, 'R');
+            if ($curPV <= $curR) {
+                $_SESSION['battle']['notes'][$cur]['furia'] = true;
+                $efeitoFuria = "\nEm Fúria até o fim da batalha (Não pode usar magia nem esquiva).";
+                if (strpos($_SESSION['battle']['notes'][$cur]['efeito'], trim($efeitoFuria)) === false) {
+                    $_SESSION['battle']['notes'][$cur]['efeito'] .= $efeitoFuria;
+                }
+            }
+        }
 
         // Efeitos estáticos
         if (in_array('codigo_da_derrota', listPlayerTraits($cur), true)) {
@@ -656,18 +736,18 @@ switch ($step) {
                     . 'Tipo de Dano: <select name="dmgTypeSimple">';
                 selectDmgType($cur);
                 echo '</select><br>'
-                    . 'Roll FA: <input id="dadoFA" type="number" name="dadoFA" required><br>'
+                    . 'Roll FA: <input id="dadoFA" type="number" name="dadoFA" min="1" max="6" required><br>'
                     . 'Alvo: <select name="target">';
                 selectTarget($cur, $validTargets);
                 echo '</select><br>'
                     . 'Reação: <select id="def" name="defesa">'
                     . '<option value="defender">Defender</option>'
-                    . '<option value="defender_esquiva">Esquivar</option>'
+                    . '<option id="opt-esquiva-simples" value="defender_esquiva">Esquivar</option>'
                     . '<option value="indefeso">Indefeso</option>'
                     . '<option id="opt-deflexao-simples" value="defender_esquiva_deflexao">Deflexão (2 PM)</option>'
                     . '</select><br>'
                     . '<label>'
-                    . 'Roll FD/Esq.: <input id="dadoFD" type="number" name="dadoFD" required>'
+                    . 'Roll FD/Esq.: <input id="dadoFD" type="number" name="dadoFD" min="1" max="6" required>'
                     . '</label>'
                     //Ataque debilitante
                     . '<br><div id="stat_debili">'
@@ -724,7 +804,7 @@ switch ($step) {
                         . '</select><br>'
                         . '<div id="dContTiro"></div>'
                         . '<label>Roll FD/Esq.: '
-                        . '<input id="dadoFDTiro" type="number" name="dadoFDTiro" required>'
+                        . '<input id="dadoFDTiro" type="number" name="dadoFDTiro" min="1" max="6" required>'
                         . '</label>'
                         . '</fieldset></div>';
                 } else {
@@ -736,21 +816,26 @@ switch ($step) {
 
             if ($hasTargets) {
                 echo '<div id="atkLuxcruentha" style="display:none;"><fieldset><legend>Ataque com Luxcruentha</legend>'
-                    . 'Roll FA1: <input id="luxDadoFA1" type="number" name="luxDadoFA1" required><br>'
-                    . 'Roll FA2: <input id="luxDadoFA2" type="number" name="luxDadoFA2" required><br>'
-                    . 'Alvo: <select name="luxTarget">';
+                    . 'Roll FA1: <input id="luxDadoFA1" type="number" name="luxDadoFA1" min="1" max="6" required><br>'
+                    . 'Roll FA2: <input id="luxDadoFA2" type="number" name="luxDadoFA2" min="1" max="6" required><br>'
+                    . 'Alvo: <select name="luxTarget" id="luxTargetSelect">';
                 selectTarget($cur, $validTargets);
                 echo '</select><br>'
-                    . 'Reação do Alvo: <select name="luxDefesa">'
+                    . 'Reação do Alvo: <select name="luxDefesa" id="luxDefesaSelect">'
                     . '<option value="defender">Defender</option>'
-                    . '<option value="defender_esquiva">Esquivar</option>'
+                    . '<option value="defender_esquiva" id="opt-esquiva-luxcru">Esquivar</option>'
                     . '<option value="indefeso">Indefeso</option>'
-                    . '<option id="opt-deflexao-tiro" value="defender_esquiva_deflexao">Deflexão (2 PM)</option>'
+                    . '<option id="opt-deflexao-luxcru" value="defender_esquiva_deflexao">Deflexão (2 PM)</option>'
                     . '</select><br>'
                     . '<label>'
-                    . 'Roll FD/Esq do Alvo: <input id="luxDadoFD" type="number" name="luxDadoFD" required>'
+                    . 'Roll FD/Esq do Alvo: <input id="luxDadoFD" type="number" name="luxDadoFD" min="1" max="6" required>'
                     . '</label>'
                     . '</fieldset></div>';
+            }
+
+            if (strpos($_SESSION['battle']['notes'][$cur]['efeito'], 'Sob efeito da magia Ataque Vorpal;') !== false || 
+                strpos(getPlayerStat($cur, 'equipado'), '(Vorpal)') !== false){
+                echo '<div id="vorpalContainer" style="display:none;">Roll teste de armadura: <input id="vorpalTest" type="number" name="vorpalTest" min="1" max="6"></div>';
             }
 
             //Agarrão
@@ -762,8 +847,8 @@ switch ($step) {
                         . htmlspecialchars($tgt)
                         . '</option>';
                 }
-                echo '</select>'
-                    . 'Roll Teste de Força: <input id="rollAgarrao" type="number" name="rollAgarrao" required><br>'
+                echo '</select><br>'
+                    . 'Roll Teste de Força: <input id="rollAgarrao" type="number" name="rollAgarrao" min="1" max="6" required><br>'
                     . '</fieldset></div>';
             }
 
@@ -964,6 +1049,7 @@ document.addEventListener('DOMContentLoaded', () => {
   const defSimple   = document.getElementById('def');
   const defMulti    = document.getElementById('defM');
   const defTiro     = document.getElementById('defTiro');
+  const defLuxcru   = document.getElementById('luxDefesaSelect');
 
   const faInput     = document.getElementById('dadoFA');
   const fdInput     = document.getElementById('dadoFD');
@@ -984,14 +1070,17 @@ document.addEventListener('DOMContentLoaded', () => {
   const selAlvoMu   = document.querySelector('select[name="targetMulti"]');
   const selAlvoTi   = document.querySelector('select[name="targetTiroMulti"]');
   const selAlvoAg   = document.querySelector('select[name="targetAgarrao"]');
+  const selAlvoLu   = document.getElementById('luxTargetSelect');
 
   const esqSi       = document.getElementById('opt-esquiva-simples');
   const esqMu       = document.getElementById('opt-esquiva-multi');
   const esqTi       = document.getElementById('opt-esquiva-tiro');
+  const esqLu       = document.getElementById('opt-esquiva-luxcru');
   
   const deflexSim   = document.getElementById('opt-deflexao-simples');
   const deflexMulti = document.getElementById('opt-deflexao-multi');
   const deflexTiro  = document.getElementById('opt-deflexao-tiro');
+  const deflexLuxcru= document.getElementById('opt-deflexao-luxcru');
 
   const selStatDebi = document.getElementById('stat_debili');
 
@@ -1001,32 +1090,39 @@ document.addEventListener('DOMContentLoaded', () => {
   const magicInputsContainer = document.getElementById('magicInputsContainer');
   const isInculto   = {$isInculto_js};
 
+  const vorpalContainer = document.getElementById('vorpalContainer');
+  const vorpalTestInput = document.getElementById('vorpalTest');
 
-  //Funções Auxiliares
-
-  function atualizaReacao(sel, esq) {
-    if (!sel || !esq) return;
-
-    const furia = sel.selectedOptions[0].dataset.furia   === '1';
-    const agar  = sel.selectedOptions[0].dataset.agarrao === '1';
-    esq.style.display = (furia || agar) ? 'none' : '';
-
-    let reactSelId;
-    if (esq.id === 'opt-esquiva-simples')   reactSelId = 'def';
-    if (esq.id === 'opt-esquiva-multi')     reactSelId = 'defM';
-    if (esq.id === 'opt-esquiva-tiro')      reactSelId = 'defTiro';
-
-    const reactSel = document.getElementById(reactSelId);
-    if (!reactSel) return;
-
-    const defOpt = reactSel.querySelector('option[value="defender"]');
-    if (defOpt) defOpt.style.display = agar ? 'none' : '';
-
-    if (agar) {
-      reactSel.value = 'indefeso';
-      if (reactSelId === 'def')    onDef();
-      if (reactSelId === 'defM')   onDefM();
-      if (reactSelId === 'defTiro') onAct();
+  function updateReactionOptions(targetSelect, attackTypeSource, reactionSelect) {
+    if (!targetSelect || !reactionSelect) return;
+    const selectedTargetOption = targetSelect.options[targetSelect.selectedIndex];
+    if (!selectedTargetOption) return;
+    const isFuria    = selectedTargetOption.dataset.furia === '1';
+    const isAgarrado = selectedTargetOption.dataset.agarrao === '1';
+    const hasDeflexao = selectedTargetOption.dataset.temDeflexao === '1';
+    const canDodge = !isFuria && !isAgarrado;
+    let attackType = 'F';
+    if (typeof attackTypeSource === 'string') {
+      attackType = attackTypeSource;
+    } else if (attackTypeSource && attackTypeSource.value) {
+      attackType = attackTypeSource.value;
+    }
+    const isRangedAttack = attackType === 'PdF';
+    const esquivaOption  = reactionSelect.querySelector('option[value="defender_esquiva"]');
+    const deflexaoOption = reactionSelect.querySelector('option[value="defender_esquiva_deflexao"]');
+    const defenderOption = reactionSelect.querySelector('option[value="defender"]');
+    if (esquivaOption) {
+      esquivaOption.style.display = canDodge ? '' : 'none';
+    }
+    if (deflexaoOption) {
+      const showDeflexao = canDodge && isRangedAttack && hasDeflexao;
+      deflexaoOption.style.display = showDeflexao ? '' : 'none';
+    }
+    if (!canDodge && (reactionSelect.value === 'defender_esquiva' || reactionSelect.value === 'defender_esquiva_deflexao')) {
+      reactionSelect.value = 'defender';
+    }
+    if (deflexaoOption && deflexaoOption.style.display === 'none' && reactionSelect.value === 'defender_esquiva_deflexao') {
+      reactionSelect.value = 'defender_esquiva'; 
     }
   }
 
@@ -1079,19 +1175,26 @@ document.addEventListener('DOMContentLoaded', () => {
         }
         const htmlInputs = await response.text();
         if (htmlInputs.trim() !== ''){
+          const fieldsetContainer = magicInputsContainer.querySelector('fieldset');
+          if (fieldsetContainer) {
+            fieldsetContainer.innerHTML = htmlInputs;
+          } else {
             magicInputsContainer.innerHTML = '<fieldset><legend>Opções da Magia</legend>'+htmlInputs+'</fieldset>';
-            magicInputsContainer.querySelectorAll('script').forEach(script => {
-                const newScript = document.createElement('script');
-                newScript.textContent = script.textContent;
-                script.parentNode.replaceChild(newScript, script);
-            });
+          }
+          magicInputsContainer.querySelectorAll('script').forEach(script => {
+            window.eval(script.textContent);
+          });
+          const allTargetSelects = magicInputsContainer.querySelectorAll('.magic-target-select');
+          allTargetSelects.forEach(select => {
+            select.dispatchEvent(new Event('change'));
+          });
         } else {
              magicInputsContainer.style.display = 'none';
         }
     } catch (error) {
         console.error("Falha na requisição da magia:", error);
         magicInputsContainer.innerHTML = '<fieldset><legend>Erro</legend>Não foi possível carregar as opções da magia.</fieldset>';
-    }
+    }    
   }
 
   function genMulti() {
@@ -1158,81 +1261,120 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   if (magicInputsContainer) {
+    function updateEsquivaForTarget(targetSelect) {
+      const inputGroup = targetSelect.closest('.magic-input-group');
+      if (!inputGroup) return;
+      const reactionSelect = inputGroup.querySelector('.magic-reaction-select');
+      if (!reactionSelect) return;
+      const selectedTargetOption = targetSelect.options[targetSelect.selectedIndex];
+      if (!selectedTargetOption) return;
+      const targetIsFuria = selectedTargetOption.dataset.furia === '1';
+      const targetIsAgarrado = selectedTargetOption.dataset.agarrao === '1';
+      const targetHasDeflexao = selectedTargetOption.dataset.temDeflexao === '1';
+      const canDodge = !targetIsFuria && !targetIsAgarrado;
+      let attackType = 'F';
+      const typeSelector = magicInputsContainer.querySelector('.magic-attack-type');
+      const hiddenProperties = magicInputsContainer.querySelector('.magic-properties');
+      if (typeSelector) {
+        attackType = typeSelector.value;
+      } else if (hiddenProperties && hiddenProperties.dataset.attackType) {
+        attackType = hiddenProperties.dataset.attackType;
+      }
+      const isRangedAttack = (attackType === 'PdF');
+      const esquivaOption = reactionSelect.querySelector('option[value="defender_esquiva"]');
+      if (esquivaOption) {
+        esquivaOption.style.display = canDodge ? '' : 'none';
+      }
+      const deflexaoOption = reactionSelect.querySelector('option[value="defender_esquiva_deflexao"]');
+      if (deflexaoOption) {
+        const showDeflexao = canDodge && isRangedAttack && targetHasDeflexao;
+        deflexaoOption.style.display = showDeflexao ? '' : 'none';
+      }
+      if (!canDodge && (reactionSelect.value === 'defender_esquiva' || reactionSelect.value === 'defender_esquiva_deflexao')) {
+        reactionSelect.value = 'defender';
+      }
+      if (deflexaoOption && deflexaoOption.style.display === 'none' && reactionSelect.value === 'defender_esquiva_deflexao') {
+        reactionSelect.value = esquivaOption && esquivaOption.style.display !== 'none' ? 'defender_esquiva' : 'defender';
+      }
+    }
     magicInputsContainer.addEventListener('change', function(event) {
-      if (event.target.matches('.magic-target-select')) {
-        const targetSelect = event.target;
-        const fieldset = targetSelect.closest('fieldset');
-        if (!fieldset) return;
-        const reactionSelect = fieldset.querySelector('.magic-reaction-select');
-        if (!reactionSelect) return;
-        const deflexaoOption = reactionSelect.querySelector('option[value="defender_esquiva_deflexao"]');
-        if (!deflexaoOption) return;
-    
-        let attackType = 'F';
-        const typeSelector = fieldset.querySelector('#magic_attack_type, .magic-attack-type');
-        const hiddenProperties = fieldset.querySelector('.magic-properties');
-        if (typeSelector) {
-          attackType = typeSelector.value;
-        } else if (hiddenProperties && hiddenProperties.dataset.attackType) {
-          attackType = hiddenProperties.dataset.attackType;
-        }
-        const isRangedAttack = (attackType === 'PdF');
-        const selectedTargetOption = targetSelect.options[targetSelect.selectedIndex];
-        const targetHasDeflexao = selectedTargetOption && selectedTargetOption.dataset.temDeflexao === '1';
-        const shouldShowDeflexao = isRangedAttack && targetHasDeflexao;
-        deflexaoOption.style.display = shouldShowDeflexao ? 'block' : 'none';
-        if (!shouldShowDeflexao && reactionSelect.value === 'defender_esquiva_deflexao') {
-          if (reactionSelect.querySelector('option[value="defender_esquiva"]')) {
-            reactionSelect.value = 'defender_esquiva';
-          } else {
-            reactionSelect.value = 'defender';
-          }
+      if (event.target.matches('.magic-target-select, .magic-attack-type')) {
+        if (event.target.matches('.magic-attack-type')) {
+          magicInputsContainer.querySelectorAll('.magic-target-select').forEach(updateEsquivaForTarget);
+        } else {
+          updateEsquivaForTarget(event.target);
         }
       }
     });
   }
 
+  function checkVorpalCondition() {
+    if (!vorpalContainer) {
+      return;
+    }
+    let showVorpal = false;
+    const currentAction = actionSel.value;
+    if (currentAction === 'ataque' || currentAction === 'ataque_debilitante' || currentAction === 'release_concentrar') {
+      if (faInput && parseInt(faInput.value, 10) === 6) {
+        showVorpal = true;
+      }
+    } else if (currentAction === 'multiple') {
+      const multiRolls = dCont.querySelectorAll('input[name="dadosMulti[]"]');
+      multiRolls.forEach(input => {
+        if (parseInt(input.value, 10) === 6) {
+          showVorpal = true;
+        }
+      });
+    } else if (currentAction === 'tiro_multiplo') {
+      const tiroRolls = dContTiro.querySelectorAll('input[name="dadosTiroMulti[]"]');
+      tiroRolls.forEach(input => {
+        if (parseInt(input.value, 10) === 6) {
+          showVorpal = true;
+        }
+      });
+    }
+    if (showVorpal) {
+      vorpalContainer.style.display = 'block';
+      if (vorpalTestInput) vorpalTestInput.required = true;
+    } else {
+      vorpalContainer.style.display = 'none';
+      if (vorpalTestInput) vorpalTestInput.required = false;
+    }
+  }
+
   function onAct() {
     const act = actionSel.value;
-
-    //Habilitar/desabilitar inputs e torná-los required/not-required
-    if (atkSimple) atkSimple.style.display = (act === 'ataque' || act === 'release_concentrar' || act === 'ataque_debilitante') ? 'block' : 'none';
-    if (atkMulti) atkMulti.style.display  = (act === 'multiple') ? 'block' : 'none';
-    if (atkTiro) atkTiro.style.display = (act === 'tiro_multiplo') ? 'block' : 'none';
-    if (atkAgarrao) atkAgarrao.style.display = (act === 'agarrao') ? 'block' : 'none';
-    if (soltarAgarr) soltarAgarr.style.display = (act === 'se_soltar_agarrao') ? 'block' : 'none';
-    if (selStatDebi) selStatDebi.style.display = (act === 'ataque_debilitante') ? 'block' : 'none';
-    if (atkLuxcruentha) atkLuxcruentha.style.display = (act === 'sword_luxcruentha') ? 'block' : 'none';
-
-    
-
-    if (faInput) faInput.required = (act === 'ataque' || act === 'release_concentrar' || act === 'ataque_debilitante');
-    if (luxFa1) luxFa1.required = (act === 'sword_luxcruentha');
-    if (luxFa2) luxFa2.required = (act === 'sword_luxcruentha');
-    if (luxFd) luxFd.required = (act === 'sword_luxcruentha');
-
-    if (dadoAgarrao) {
-        dadoAgarrao.required = (act === 'agarrao');
-        dadoAgarrao.disabled = (act !== 'agarrao');
+    const allActions = ['ataque', 'multiple', 'tiro_multiplo', 'agarrao', 'se_soltar_agarrao', 'ataque_debilitante', 'sword_luxcruentha', 'release_concentrar'];
+    [atkSimple, atkMulti, atkTiro, atkAgarrao, soltarAgarr, atkLuxcruen].forEach(el => {
+      if(el) el.style.display = 'none';
+    });
+    if(selStatDebi) selStatDebi.style.display = 'none';
+    if (act === 'ataque' || act === 'release_concentrar' || act === 'ataque_debilitante') {
+      if(atkSimple) atkSimple.style.display = 'block';
+      if(act === 'ataque_debilitante' && selStatDebi) selStatDebi.style.display = 'block';
+      updateReactionOptions(selAlvoSi, atkTypeSimp, defSimple);
     }
-    if (dSoltAgarra) {
-        dSoltAgarra.required = (act === 'se_soltar_agarrao');
-        dSoltAgarra.disabled = (act !== 'se_soltar_agarrao');
+    if (act === 'multiple') {
+      if(atkMulti) atkMulti.style.display = 'block';
+      genMulti();
+      updateReactionOptions(selAlvoMu, atkTypeMult, defMulti);
     }
-
-    if (dadoFDTiro) {
-        const isTiroVisible = atkTiro && atkTiro.style.display === 'block';
-        dadoFDTiro.disabled = !isTiroVisible;
-        dadoFDTiro.required = isTiroVisible && defTiro && defTiro.value !== 'indefeso';
+    if (act === 'tiro_multiplo') {
+      if(atkTiro) atkTiro.style.display = 'block';
+      genTiro();
+      updateReactionOptions(selAlvoTi, 'PdF', defTiro);
     }
-
-    const needFDSimple = faInput && faInput.required && defSimple && defSimple.value !== 'indefeso';
-    if (fdInput) fdInput.required = needFDSimple;
-
-    if (act === 'multiple') { genMulti(); } else if (dCont) { dCont.innerHTML = ''; }
-    if (act === 'tiro_multiplo') { genTiro(); } else if (dContTiro) { dContTiro.innerHTML = ''; }
-
-    onDefM();
+    if (act === 'sword_luxcruentha') {
+      if(atkLuxcruen) atkLuxcruen.style.display = 'block';
+      updateReactionOptions(selAlvoLu, 'F', defLuxcru);
+    }
+    if (act === 'agarrao' && atkAgarrao) atkAgarrao.style.display = 'block';
+    if (act === 'se_soltar_agarrao' && soltarAgarr) soltarAgarr.style.display = 'block';
+    document.querySelectorAll('#actionForm input[type="number"]').forEach(input => {
+      const fieldset = input.closest('fieldset');
+      input.required = (fieldset && fieldset.parentElement.style.display === 'block');
+    });
+    checkVorpalCondition();
   }
 
   function onDef() {
@@ -1255,46 +1397,39 @@ document.addEventListener('DOMContentLoaded', () => {
 
   if (actionSel) {
     actionSel.addEventListener('change', e => {
-      const partnerDiv = document.getElementById('partnerSelect');
-      const allyDiv = document.getElementById('allySelect');
-      if(partnerDiv) partnerDiv.style.display = (e.target.value === 'start_partner') ? 'block' : 'none';
-      if(allyDiv) allyDiv.style.display = (e.target.value === 'use_ally') ? 'block' : 'none';
-      manageDeflexaoSimple();
-      manageDeflexaoMulti()
-      manageDeflexaoTiro()
+      document.getElementById('partnerSelect').style.display = (e.target.value === 'start_partner') ? 'block' : 'none';
+      document.getElementById('allySelect').style.display = (e.target.value === 'use_ally') ? 'block' : 'none';
       onAct();
     });
   }
 
-  if (selAlvoSi) selAlvoSi.addEventListener('change', () => atualizaReacao(selAlvoSi, esqSi));
-  if (selAlvoMu) selAlvoMu.addEventListener('change', () => atualizaReacao(selAlvoMu, esqMu));
-  if (selAlvoTi) selAlvoTi.addEventListener('change', () => atualizaReacao(selAlvoTi, esqTi));
-  
+  if (selAlvoSi) selAlvoSi.addEventListener('change', () => updateReactionOptions(selAlvoSi, atkTypeSimp, defSimple));
+  if (atkTypeSimp) atkTypeSimp.addEventListener('change', () => updateReactionOptions(selAlvoSi, atkTypeSimp, defSimple));
+  if (selAlvoMu) selAlvoMu.addEventListener('change', () => updateReactionOptions(selAlvoMu, atkTypeMult, defMulti));
+  if (atkTypeMult) atkTypeMult.addEventListener('change', () => updateReactionOptions(selAlvoMu, atkTypeMult, defMulti));
+  if (selAlvoTi) selAlvoTi.addEventListener('change', () => updateReactionOptions(selAlvoTi, 'PdF', defTiro));
+  if (selAlvoLu) selAlvoLu.addEventListener('change', () => updateReactionOptions(selAlvoLu, 'F', defLuxcru));
   if (defSimple) defSimple.addEventListener('change', onDef);
   if (defMulti) defMulti.addEventListener('change', onDefM);
   if (defTiro) defTiro.addEventListener('change', onAct);
-
   if (quant) quant.addEventListener('input', () => { genMulti(); onDefM(); });
   if (quantTiro) quantTiro.addEventListener('input', genTiro);
-
-  if (atkTypeSimp) atkTypeSimp.addEventListener('change', manageDeflexaoSimple);
-  if (selAlvoSi)  selAlvoSi.addEventListener('change', manageDeflexaoSimple);
-  if (atkTypeMult) atkTypeMulti.addEventListener('change', manageDeflexaoMulti);
-  if (selAlvoMu)  selAlvoMu.addEventListener('change', manageDeflexaoMulti);
-  if (selAlvoTi)  selAlvoTi.addEventListener('change', manageDeflexaoTiro);
-
-  if (magicSelect) { magicSelect.addEventListener('change', onMagicSelect); onMagicSelect(); }
-
-  //Inicialização
-  atualizaReacao(selAlvoSi, esqSi);
-  atualizaReacao(selAlvoMu, esqMu);
-  atualizaReacao(selAlvoTi, esqTi);
+  if (magicSelect) { magicSelect.addEventListener('change', onMagicSelect); }
   
-  manageDeflexaoTiro();
-  manageDeflexaoMulti();
-  manageDeflexaoSimple();
+  if (faInput) faInput.addEventListener('input', checkVorpalCondition);
+  if (dCont) dCont.addEventListener('input', (event) => {
+    if (event.target.name === 'dadosMulti[]') {
+        checkVorpalCondition();
+    }
+  });
+  if (dContTiro) dContTiro.addEventListener('input', (event) => {
+    if (event.target.name === 'dadosTiroMulti[]') {
+        checkVorpalCondition();
+    }
+  });
 
   onAct();
+  if (magicSelect) onMagicSelect();
 });
 </script>
 JS;
@@ -1325,6 +1460,15 @@ JS;
                 }
             }
 
+            if (isset($_SESSION['battle']['sustained_effects'][$pl]['ataqueVorpal'])){
+                foreach($_SESSION['battle']['sustained_effects'][$pl]['ataqueVorpal'] as $tgt){
+                    if (strpos($_SESSION['battle']['notes'][$pl]['sustained_spells'],"Ataque Vorpal(".$tgt.")") === false ){
+                        unset($_SESSION['battle']['sustained_effects'][$pl]['ataqueVorpal'][$tgt]);
+                        $_SESSION['battle']['notes'][$tgt]['efeito'] = removeEffect($_SESSION['battle']['notes'][$tgt]['efeito'], ['Sob efeito da magia Ataque Vorpal;']);
+                    }
+                }
+            }
+
             if (isset($_SESSION['battle']['sustained_effects'][$pl]['solcruoris']) && strpos($_SESSION['battle']['notes'][$pl]['sustained_spells'] ?? '', 'Solcruoris') === false) {
                 setPlayerStat($pl, 'A', getPlayerStat($pl, 'A') - $_SESSION['battle']['sustained_effects'][$pl]['solcruoris']['extraA']);
                 unset($_SESSION['battle']['sustained_effects'][$pl]['solcruoris']);
@@ -1347,6 +1491,20 @@ JS;
             if ($origInitIndex != $b['init_index'] && !empty($b['notes'][$pl]['aceleracao_ii_active'])) {
                 $b['init_index']--;
                 unset($b['notes'][$pl]['aceleracao_ii_active']);
+            }
+
+            if (isset($_POST['vorpalTest'])){
+                $tgt = $_POST['target'] ?? $_POST['targetMulti'] ?? $_POST['targetTiroMulti'] ?? null;
+                if (!empty($tgt) && $_SESSION['battle']['tookDmg'][$tgt]){
+                    if (!statTest($tgt, 'A', 0, $_POST['vorpalTest'])){
+                        setPlayerStat($tgt, 'PV', 0);
+                        $out .= "<br><strong>ATAQUE VORPAL!</strong> {$tgt} falhou no teste de Armadura e foi executado por <strong>{$pl}</strong>!";
+                    } else {
+                        $out .= "<br><strong>{$tgt}</strong> resistiu ao efeito Vorpal (passou no teste de Armadura) e não foi executado!";
+                    }
+                } else {
+                    $out .= "<br><strong>{$pl}</strong> atacou <strong>{$tgt}</strong> com um ataque vorpal, mas não deu dano algum para testar a armadura do inimigo!";
+                }
             }
 
             $b['needs_reload'] = true;

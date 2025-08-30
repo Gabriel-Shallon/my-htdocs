@@ -7,33 +7,12 @@ $catalogoMagiasSustentadas = [
         'funcao_aplicar' => 'applySustainSpeculusanguis',
         'custo_texto' => '2 PVs'
     ],
-    'protecao_magica_superior' => [
-        'nome' => 'Proteção Mágica Superior',
-        'parametros' => ['custo_pms'],
-        'precisa_input' => false,
-        'funcao_aplicar' => 'applySustainProtecaoMagica',
-        'custo_texto' => '1 a 5 PMs'
-    ],
-    'criar_vento' => [
-        'nome' => 'Criar Vento',
-        'parametros' => ['custo_pms'],
-        'precisa_input' => false,
-        'funcao_aplicar' => 'applySustainCriarVento',
-        'custo_texto' => '1 a 5 PMs'
-    ],
     'excruentio' => [
         'nome' => 'Excruentio',
         'parametros' => ['alvo'],
         'precisa_input' => false,
         'funcao_aplicar' => 'applySustainExcruentio',
         'custo_texto' => '1 PV'
-    ],
-    'oracao_de_combate' => [
-        'nome' => 'Oração de Combate',
-        'parametros' => ['bonus_max'],
-        'precisa_input' => true,
-        'funcao_gerar_form' => 'getFormOracaoCombate',
-        'funcao_aplicar' => 'applySustainOracaoCombate'
     ],
     'vis_ex_vulnere' => [
         'nome' => 'Vis Ex Vulnere',
@@ -72,6 +51,13 @@ $catalogoMagiasSustentadas = [
         'funcao_aplicar' => 'applySustainHemeopsia',
         'custo_texto' => 'Custo único'
     ],
+    'ataque_vorpal' => [
+        'nome' => 'Ataque Vorpal',
+        'parametros' => ['alvo'],
+        'precisa_input' => false,
+        'funcao_aplicar' => 'applySustainAtaqueVorpal',
+        'custo_texto' => '1 PM'
+    ]
 ];
 
 
@@ -198,10 +184,10 @@ function applySustainSpeculusanguis($caster, $params, &$b, $inputs = []){
         }
         applyDamage($caster, $target, $dmg, 'Magia');
         $_SESSION['battle']['sustained_effects'][$caster]['speculusanguis']['dmg'] = 0;
-        return "<strong>{$caster}</strong> sustenta Speculusanguis em <strong>{$target}</strong> (-2 PV). Dano Refletido = {$dmg}.";
+        return "<strong>{$caster}</strong> sustenta S" . getMagicSpecialName($caster, 'speculusanguis') . " (Speculusanguis) em <strong>{$target}</strong> (-2 PV). Dano Refletido = {$dmg}.";
     } else {
         removeSustainedSpell($caster, 'Speculusanguis', $params, $b);
-        return "<strong>{$caster}</strong> não tem PVs para sustentar Speculusanguis.";
+        return "<strong>{$caster}</strong> não tem PVs para sustentar " . getMagicSpecialName($caster, 'speculusanguis') . " (Speculusanguis).";
     }
 }
 
@@ -215,10 +201,10 @@ function applySustainVisExVulnere($caster, $params, &$b, $inputs = []){
         $_SESSION['battle']['sustained_effects'][$caster]['visExVulnere']['dmg'] = 0;
         $_SESSION['battle']['sustained_effects'][$caster]['visExVulnere']['flag'] = $b['init_index'] % count(value: $b['order']);
         $extra_pms = $_SESSION['battle']['sustained_effects'][$caster]['visExVulnere']['pms'];
-        return "<strong>{$caster}</strong> sustenta Vis Ex Vulnere (-2 PV). PMs temporários disponíveis neste turno: {$extra_pms}.";
+        return "<strong>{$caster}</strong> sustenta " . getMagicSpecialName($caster, 'vis_ex_vulnere') . " (Vis Ex Vulnere) (-2 PV). PMs temporários disponíveis neste turno: {$extra_pms}.";
     } else {
         removeSustainedSpell($caster, 'Vis Ex Vulnere', [], $b);
-        return "<strong>{$caster}</strong> não tem PVs para sustentar Speculusanguis.";
+        return "<strong>{$caster}</strong> não tem PVs para sustentar " . getMagicSpecialName($caster, 'vis_ex_vulnere') . " (Vis Ex Vulnere).";
     }
 }
 
@@ -234,14 +220,14 @@ function applySustainInhaerescorpus($caster, $params, &$b, $inputs = []){
             }
             applyDamage($caster, $target, $dmg, 'Magia');
             $_SESSION['battle']['sustained_effects'][$caster]['inhaerescorpus']['dmg'] = 0;
-            return "<strong>{$caster}</strong> sustenta Inhaerescorpus em <strong>{$target}</strong>. Dano Refletido = {$dmg}.";
+            return "<strong>{$caster}</strong> sustenta " . getMagicSpecialName($caster, 'inhaerescorpus') . " (Inhaerescorpus) em <strong>{$target}</strong>. Dano Refletido = {$dmg}.";
         } else {
             removeSustainedSpell($caster, 'Inhaerescorpus', $params, $b);
-            return "<strong>{$target}</strong> passou no teste de resistência e saiu da magia Inhaerescorpus de <strong>{$caster}</strong>.";
+            return "<strong>{$target}</strong> passou no teste de resistência e saiu da magia " . getMagicSpecialName($caster, 'inhaerescorpus') . " (Inhaerescorpus) de <strong>{$caster}</strong>.";
         }
     } else {
         removeSustainedSpell($caster, 'Inhaerescorpus', $params, $b);
-        return "<strong>{$caster}</strong> não tem PVs para sustentar Inhaerescorpus.";
+        return "<strong>{$caster}</strong> não tem PVs para sustentar " . getMagicSpecialName($caster, 'inhaerescorpus') . " (Inhaerescorpus).";
     }
 }
 function getFormInhaerescorpus($caster, $params, $instanceIndex){
@@ -265,7 +251,7 @@ function applySustainExcruentio($caster, $params, &$b, $inputs = []){
         return "<strong>{$caster}</strong> sustenta Excruentio em <strong>{$target}</strong> (-1 PV)(2 de dano).";
     } else {
         removeSustainedSpell($caster, 'Excruentio', $params, $b);
-        return "<strong>{$caster}</strong> não tem PVs para sustentar Excruentio.";
+        return "<strong>{$caster}</strong> não tem PVs para sustentar " . getMagicSpecialName($caster, 'excruentio') . " (Excruentio).";
     }
 }
 
@@ -274,7 +260,7 @@ function applySustainSolcruoris($caster, $params, &$b, $inputs = []){
     $custo = $params['custo'];
     $extraA = floor($custo / 3);
     $_SESSION['battle']['sustained_effects'][$caster]['solcruoris']['extraA'] = $extraA;
-    return "<strong>{$caster}</strong> sustenta armadura de sangue Solcruoris. A +{$extraA}";
+    return "<strong>{$caster}</strong> sustenta armadura de sangue " . getMagicSpecialName($caster, 'solcruoris') . " (Solcruoris). A +{$extraA}";
 }
 
 function applySustainSpectraematum($caster, $params, &$b, $inputs = []){
@@ -284,10 +270,10 @@ function applySustainSpectraematum($caster, $params, &$b, $inputs = []){
         $debuff = floor($debuffCost / 2);
         setPlayerStat($target, 'H', $_SESSION['battle']['sustained_effects'][$caster]['spectraematum'][$target]['origH'] - $debuff);
         applyDamage($caster, $target, 1, 'Magia');
-        return "<strong>{$caster}</strong> sustenta Spectraematum em <strong>{$target}</strong>. Custo: " . (2 + $debuffCost) . "; Dano: 1; Debuff H: " . $debuff;
+        return "<strong>{$caster}</strong> sustenta " . getMagicSpecialName($caster, 'spectraematum') . " (Spectraematum) em <strong>{$target}</strong>. Custo: " . (2 + $debuffCost) . "; Dano: 1; Debuff H: " . $debuff;
     } else {
         removeSustainedSpell($caster, 'Spectraematum', $params, $b);
-        return "<strong>{$caster}</strong> não tem PVs para sustentar Spectraematum.";
+        return "<strong>{$caster}</strong> não tem PVs para sustentar " . getMagicSpecialName($caster, 'spectraematum') . " (Spectraematum).";
     }
 }
 function getFormSpectraematum($caster, $params, $instanceIndex){
@@ -302,55 +288,16 @@ function getFormSpectraematum($caster, $params, $instanceIndex){
 }
 
 function applySustainHemeopsia($caster, $params, &$b, $inputs = []){
-    return "<strong>{$caster}</strong> sustenta Hemeópsia.";
+    return "<strong>{$caster}</strong> sustenta " . getMagicSpecialName($caster, 'hemeopsia') . " (Hemeópsia).";
 }
 
-function applySustainProtecaoMagica($caster, $params, &$b, $inputs = []){
-    $cost = (int)$params['custo_pms'];
-    if (spendPM($caster, $cost)) {
-        $b['notes'][$caster]['efeito'] .= "\nProteção Mágica Superior: A+{$cost} (-{$cost} PM).";
-        $_SESSION['battle']['sustained_effects'][$caster]['bonus_A'] = ($_SESSION['battle']['sustained_effects'][$caster]['bonus_A'] ?? 0) + $cost;
-        return "<strong>{$caster}</strong> sustenta Proteção Mágica Superior (+{$cost} A) por {$cost} PMs.";
+function applySustainAtaqueVorpal($caster, $params, &$b, $inputs = []){
+    $target = $params['alvo'];
+    if (spendPM($caster, 1)) {
+        return "<strong>{$caster}</strong> sustenta " . getMagicSpecialName($caster, 'ataque_vorpal') . " (Ataque Vorpal) em <strong>{$target}</strong>.";
     } else {
-        return "<strong>{$caster}</strong> não tem PMs para sustentar Proteção Mágica Superior.";
-    }
-}
-
-function applySustainCriarVento($caster, $params, &$b, $inputs = []){
-    $cost = (int)$params['custo_pms'];
-    if (spendPM($caster, $cost)) {
-        $b['notes'][$caster]['efeito'] .= "\nCriar Vento: FD+{$cost} (-{$cost} PM).";
-        $_SESSION['battle']['sustained_effects'][$caster]['bonus_FD'] = ($_SESSION['battle']['sustained_effects'][$caster]['bonus_FD'] ?? 0) + $cost;
-        return "<strong>{$caster}</strong> sustenta Criar Vento (+{$cost} FD) por {$cost} PMs.";
-    } else {
-        return "<strong>{$caster}</strong> não tem PMs para sustentar Criar Vento.";
-    }
-}
-
-function getFormOracaoCombate($caster, $params, $instanceIndex){
-    $slug = 'oracao_de_combate';
-    $bonusMax = $params['bonus_max'];
-    $html = "<fieldset><legend>Oração de Combate (Bônus Máx: +{$bonusMax})</legend>";
-    $html .= "<label>Custo em PMs (1-{$bonusMax}): <input type='number' name='inputs[{$slug}][{$instanceIndex}][pm_cost]' min='1' max='{$bonusMax}' value='1' required></label><br>";
-    $html .= "<label>Rolagem de Teste de Fé (1d6): <input type='number' name='inputs[{$slug}][{$instanceIndex}][roll]' min='1' max='6' required></label>";
-    $html .= "</fieldset>";
-    return $html;
-}
-
-function applySustainOracaoCombate($caster, $params, &$b, $inputs = []){
-    $cost = (int)($inputs['pm_cost'] ?? 1);
-    $roll = (int)($inputs['roll'] ?? 0);
-
-    if (spendPM($caster, $cost)) {
-        if (statTest($caster, 'H', 3, $roll)) {
-            $bonus = $cost;
-            $b['notes'][$caster]['efeito'] .= "\nOração de Combate bem-sucedida: +{$bonus} na FA (-{$cost} PM).";
-            return "<strong>{$caster}</strong> passa no teste de fé e sustenta Oração de Combate (+{$bonus} FA) por {$cost} PMs.";
-        } else {
-            $b['notes'][$caster]['efeito'] .= "\nOração de Combate falhou (-{$cost} PM).";
-            return "<strong>{$caster}</strong> falha no teste de fé para Oração de Combate, gastando {$cost} PMs à toa.";
-        }
-    } else {
-        return "<strong>{$caster}</strong> não tem PMs para sustentar Oração de Combate.";
+        removeSustainedSpell($caster, 'Ataque Vorpal', $params, $b);
+        $_SESSION['battle']['notes'][$target]['efeito'] = removeEffect($_SESSION['battle']['notes'][$target]['efeito'], ['Sob efeito da magia Ataque Vorpal;']);
+        return "<strong>{$caster}</strong> não tem PVs para sustentar " . getMagicSpecialName($caster, 'ataque_vorpal') . " (Ataque Vorpal).";
     }
 }
