@@ -56,11 +56,11 @@ function getValidTargets($pl, &$b, $type = 'enemies', $isIncorp = false){
     }
     $allies = getAllAllies();
     foreach ($allies as $ally) {
-        if ($ally === $pl || !in_array(getAlliePlayer($ally), $b['order'])) continue;
-        $targetNotes  = $b['notes'][$ally] ?? [];
-        $targetIncorp = !empty($targetNotes['incorp_active']);
-        if ($isIncorp === $targetIncorp) {
-            $validTargets[] = $ally;
+        if (($ally === $pl && $type === 'enemies') || !in_array(getAlliePlayer($ally), $targets)) continue;
+        if ($type === 'enemies' && $ally !== $pl && $ally !== getAlliePlayer($ally)) {
+            $targets[] = $ally;
+        } elseif ($type === 'allies' && $ally !== $pl) {
+            $targets[] = $ally;
         }
     }
     return array_unique($targets);
@@ -90,6 +90,19 @@ function statTest($player, $stat, $diff, $dado){
     if ($dado <= $meta) {
         return true;
     }
+}
+
+function isAlive($pl){
+    foreach ([
+        'construto', 'mecha', 'golem', 'androide', 'nanomorfo', 'robo-positronico',
+        'esqueleto', 'fantasma', 'mumia', 'zumbi',
+        'elemental' 
+        ] as $bloodlessTrait){
+        if (in_array($bloodlessTrait, listPlayerTraits($pl))) {
+            return false;
+        }
+    }
+    return true;
 }
 
 function movimentBuff($pl){
@@ -245,6 +258,9 @@ function syncEquipBuffs($pl){
 
 function monitorPVChange($pl, $dano){
     $_SESSION['battle']['tookDmg'][$pl] = false;
+    if ($dano > 0){
+        $_SESSION['battle']['tookDmg'][$pl] = true;
+    }
     if (isset($_SESSION['battle']['sustained_effects'][$pl]['visExVulnere']['dmg'])) {
         $_SESSION['battle']['sustained_effects'][$pl]['visExVulnere']['dmg'] += $dano;
     }
@@ -258,9 +274,12 @@ function monitorPVChange($pl, $dano){
         $_SESSION['battle']['notes'][$pl]['efeito'] = removeEffect($_SESSION['battle']['notes'][$pl]['efeito'], ['Apaixonado por '.$_SESSION['battle']['apaixonado'][$pl]['love'].';']);
         unset($_SESSION['battle']['apaixonado'][$pl]);
     }
-    if ($dano > 0){
-        $_SESSION['battle']['tookDmg'][$pl] = true;
+    if (isset($_SESSION['battle']['notes'][$pl]['desmaio'])){
+        if ($_SESSION['battle']['tookDmg'][$pl]){
+           unset($_SESSION['battle']['notes'][$pl]['desmaio']); 
+        }
     }
+
 }
 
 
@@ -268,7 +287,7 @@ function monitorPVChange($pl, $dano){
 
 function selectTarget($cur, $validTargets, $includeCur = false){
     foreach ($validTargets as $tgt) if ($tgt !== $cur || $includeCur) {
-        if ($tgt != $_SESSION['battle']['apaixonado'][$cur]['love'] || $includeCur){
+        if (($tgt != $_SESSION['battle']['apaixonado'][$cur]['love'] && $tgt != $_SESSION['battle']['amizade'][$cur]['amigo'] ) || $includeCur){
             $isFuria    = ! empty($_SESSION['battle']['notes'][$tgt]['furia']);
             $isAgarrado = ! empty($_SESSION['battle']['agarrao'][$tgt]['agarrado']);
             $hasDeflexao = in_array('deflexao', listPlayerTraits($tgt), true);

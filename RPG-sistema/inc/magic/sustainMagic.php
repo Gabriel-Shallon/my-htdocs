@@ -57,6 +57,13 @@ $catalogoMagiasSustentadas = [
         'precisa_input' => false,
         'funcao_aplicar' => 'applySustainAtaqueVorpal',
         'custo_texto' => '1 PM'
+    ],
+    'fada_servil' => [
+        'nome' => 'Fada Servil',
+        'parametros' => [],
+        'precisa_input' => false,
+        'funcao_aplicar' => 'applySustainFadaServil',
+        'custo_texto' => 'Custo Único'
     ]
 ];
 
@@ -301,3 +308,8 @@ function applySustainAtaqueVorpal($caster, $params, &$b, $inputs = []){
         return "<strong>{$caster}</strong> não tem PVs para sustentar " . getMagicSpecialName($caster, 'ataque_vorpal') . " (Ataque Vorpal).";
     }
 }
+
+function applySustainFadaServil($caster, $params, &$b, $inputs = []){
+    return "<strong>{$caster}</strong> sustenta " . getMagicSpecialName($caster, 'fada_servil') . " (Fada Servil).";
+}
+?>

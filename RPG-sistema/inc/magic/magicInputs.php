@@ -123,6 +123,34 @@ function renderMagicInputs($slug, $caster, &$battle){
             inputAtaqueVorpal($caster, $battle);
             break; 
 
+        case 'cura_para_o_mal':
+            inputCuraParaOMal($caster, $battle);
+            break;
+
+        case 'desmaio':
+            inputDesmaio($caster, $battle);
+            break;
+
+        case 'destrancar':
+            inputDestrancar($caster, $battle);
+            break;
+
+        case 'escapatoria_de_valkaria':
+            inputAEscapatoriaDeValkaria($caster, $battle);
+            break;
+
+        case 'fada_servil':
+            inputFadaServil($caster, $battle);
+            break;
+
+        case 'farejar_tesouro':
+            inputFarejarTesouro($caster, $battle);
+            break;
+
+        case 'flor_perene_de_milady_a':
+            inputFlorPereneDeMiladyA($caster, $battle);
+            break;
+
         default:
             echo 'Essa magia ainda não foi implementada';
             break;
@@ -729,6 +757,85 @@ function inputCegueira($caster, $b){
     selectTarget($caster, $validTargets);
     echo '</select></label>';
     echo '<br><label>Dado para o Teste de Resistência: <input type="number" name="testR" min="1" max="6" required></label>';
+}
+
+function inputCuraParaOMal($caster, $b){
+    $targets = getValidTargets($caster, $b, 'enemies');
+    $validTargets = [];
+    foreach ($targets as $tgt){
+        if (getPlayerStat($tgt, 'R') < getPlayerStat($caster, 'H')){
+            $validTargets[] = $tgt;
+        }
+    }
+    echo '<label>Selecionar Alvo: <select id="magic_target" name="magic_target" class="magic-target-select" required>';
+    selectTarget($caster, $validTargets);
+    echo '</select></label><br>';
+    echo '<label>Criatura: <select name="evil_cure_mode" required><option value="amiga">Deixar de ser Inimiga</option><option value="aliada">Tornar-se Aliada</option></select></label>';
+    echo '<br><label>>A Criatura precisa estar INDEFESA<</label>';
+}
+
+function inputDesmaio($caster, $b){
+    $targets = getValidTargets($caster, $b, 'enemies');
+    $validTargets = [];
+    foreach ($targets as $tgt){
+        if (getPlayerStat($tgt, 'R') < getPlayerStat($caster, 'H')){
+            $validTargets[] = $tgt;
+        }
+    }
+    echo '<label>Selecionar Alvo: <select id="magic_target" name="magic_target" class="magic-target-select" required>';
+    selectTarget($caster, $validTargets);
+    echo '</select></label>';
+    echo '<br><label>Custo: <input type="number" name="cost" min="2" value="2" required></label>';
+    echo '<br><label>Dado para o Teste de Resistência +1: <input type="number" name="testR" min="1" max="6" required></label>';
+}
+
+function inputDestrancar($caster, $b){
+    echo "Essa magia não precisa de inputs.";
+}
+
+function inputAEscapatoriaDeValkaria($caster, $b){
+    echo '<label>Quantidade de aliados: <input type="number" name="qtdAlly" min="1" required></label>';
+}
+
+function inputFadaServil($caster, $b){
+    echo "Essa magia não precisa de inputs.";
+}
+
+function inputFarejarTesouro($caster, $b){
+    echo "Essa magia não precisa de inputs.";
+}
+
+function inputFlorPereneDeMiladyA($caster, $b){
+    $validTargets = getValidTargets($caster, $b, 'allies');
+    echo '<label>Selecionar Alvo: <select id="flor_perene_target" name="magic_target" required>';
+    echo '<option value="inanimado">Algo Inanimado</option>';
+    selectTarget($caster, $validTargets, true);
+    echo '</select></label>';
+    echo '<div id="flor_perene_r_test_container" style="display:none; margin-top: 10px;">';
+    echo '<label>Dado para o Teste de Resistência: <input type="number" name="testR" min="1" max="6"></label>';
+    echo '</div>';
+    echo <<<JS
+    <script>
+    (function() {
+        const targetSelect = document.getElementById('flor_perene_target');
+        if (!targetSelect) return;
+        const rTestContainer = document.getElementById('flor_perene_r_test_container');
+        const rTestInput = rTestContainer ? rTestContainer.querySelector('input[name="testR"]') : null;
+        if (!rTestContainer || !rTestInput) return;
+        function toggleRTest() {
+            if (targetSelect.value === 'inanimado') {
+                rTestContainer.style.display = 'none';
+                rTestInput.required = false;
+            } else {
+                rTestContainer.style.display = 'block';
+                rTestInput.required = true;
+            }
+        }
+        targetSelect.addEventListener('change', toggleRTest);
+        toggleRTest();
+    })();
+    </script>
+JS;
 }
 
 function inputCancelamento($caster, &$b){

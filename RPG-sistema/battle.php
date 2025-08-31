@@ -581,7 +581,7 @@ switch ($step) {
         echo '<option value="pass">Passar Iniciativa</option>';
         echo '<option value="fim">Terminar Batalha</option>';
 
-        $isDefeated = isDefeated($cur);
+        $isDefeated = isDefeated($cur) || !empty($_SESSION['battle']['notes'][$cur]['desmaio']);
         if (!$isDefeated) {
 
             $concentrando = false;
@@ -982,7 +982,18 @@ switch ($step) {
         $lutadores = $b['players'];
         foreach ($b['players'] as $hasAlly) {
             if (getPlayerAllies($hasAlly)) {
-                $lutadores = array_merge($lutadores, getPlayerAllies($hasAlly));
+                foreach(getPlayerAllies($hasAlly) as $ally) {
+                    foreach($lutadores as $pl){
+                        if ($ally == $pl){
+                            $allyIsPlayer = true;
+                        }
+                    }
+                    if (!isset($allyIsPlayer)){
+                        $lutadores[] = $ally;
+                    } else {
+                        unset($allyIsPlayer);
+                    }
+                }
             }
         }
         foreach ($lutadores as $pl) {
@@ -1457,6 +1468,15 @@ JS;
                 if (!empty($b['notes'][$pl]['sustained_spells']) && empty($b['sustained_processed_this_turn'][$pl]) && $b['started_turn_with_sustained_spells']) {
                     $b['notes'][$pl]['sustained_spells'] = '';
                     $out = "<strong>{$pl}</strong> não sustentou suas magias e elas se dissiparam.<br>" . $out;
+                }
+            }
+
+            if (isset($_SESSION['battle']['notes'][$pl]['desmaio'])){
+                if ($_SESSION['battle']['notes'][$pl]['desmaio'] == 0){
+                    unset($_SESSION['battle']['notes'][$pl]['desmaio']);
+                }
+                if (isset($_SESSION['battle']['notes'][$pl]['desmaio'])){
+                    $_SESSION['battle']['notes'][$pl]['desmaio'] -= 1;
                 }
             }
 

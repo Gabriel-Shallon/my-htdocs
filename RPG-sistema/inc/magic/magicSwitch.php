@@ -304,6 +304,64 @@ function magicSwitch($postData, &$b, $pl, $magic_slug, $target){
             unset($b['playingAlly']);
             $b['init_index']++;
             break;
+        
+        case 'cura_para_o_mal':
+            $tgt = $postData['magic_target'] ?? [''];
+            $evilCureMode = $postData['evil_cure_mode'] ?? [''];
+
+            $out = curaParaOMal($pl, $tgt, $evilCureMode);
+
+            unset($b['playingAlly']);
+            $b['init_index']++;
+            break;
+
+        case 'desmaio':
+            $tgt = $postData['magic_target'] ?? [''];
+            $cost = $postData['cost'] ?? [''];
+            $testR = $postData['testR'] ?? [''];
+
+            $out = desmaio($pl, $tgt, $cost, $testR);
+
+            unset($b['playingAlly']);
+            $b['init_index']++;
+            break;
+
+        case 'destrancar':
+            $out = destrancar($pl);
+            unset($b['playingAlly']);
+            $b['init_index']++;
+            break;
+
+        case 'escapatoria_de_valkaria':
+            $qtd = $postData['qtdAlly'] ?? [''];
+
+            $out = aEscapatoriaDeValkaria($pl, $qtd);
+
+            unset($b['playingAlly']);
+            $b['init_index']++;
+            break;
+
+        case 'fada_servil':
+            $out = fadaServil($pl);
+            unset($b['playingAlly']);
+            $b['init_index']++;
+            break;
+
+        case 'farejar_tesouro':
+            $out = farejarTesouro($pl);
+            unset($b['playingAlly']);
+            $b['init_index']++;
+            break;
+
+        case 'flor_perene_de_milady_a':
+            $tgt = $postData['magic_target'] ?? [''];
+            $testR = $postData['testR'] ?? [''];
+
+            $out = florPereneDeMiladyA($pl, $tgt, $testR);
+
+            unset($b['playingAlly']);
+            $b['init_index']++;
+            break;
 
         default:
             $out = "A magia '{$magic_slug}' foi selecionada, mas sua lógica ainda não foi implementada.";
