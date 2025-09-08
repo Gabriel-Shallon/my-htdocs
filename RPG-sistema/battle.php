@@ -156,7 +156,7 @@ switch ($step) {
         if (empty($magic_slug) || empty($cur)) {
             exit;
         }
-        renderMagicInputs($magic_slug, $cur, $b);
+        renderMagicInputs($magic_slug, $cur);
         exit;
 
 
@@ -472,6 +472,15 @@ switch ($step) {
             $b['notes'][$cur]['efeito'] = removeEffect($b['notes'][$cur]['efeito'], ["Teleporte: H+3 para esquiva. Alcance do teleporte = " . getPlayerStat($cur, 'H') * 10]);
         }
 
+        if (in_array('teleportacao_planar', listPlayerTraits($cur))) {
+            $efeitoTelepPlan = "\nTeleportação Planar: H+3 para esquiva. Alcance do teleporte = " . getPlayerStat($cur, 'H') * 10 . ". Pode se teleportar para outros planos.";
+            if (strpos($b['notes'][$cur]['efeito'], trim($efeitoTelepPlan)) === false) {
+                $b['notes'][$cur]['efeito'] .= $efeitoTelepPlan;
+            }
+        } else {
+            $b['notes'][$cur]['efeito'] = removeEffect($b['notes'][$cur]['efeito'], ["Teleportação Planar: H+3 para esquiva. Alcance do teleporte = " . getPlayerStat($cur, 'H') * 10 . ". Pode se teleportar para outros planos."]);
+        }
+
         if (in_array('armadura_extra_fogo', listPlayerTraits($cur), true)) {
             $efeitoPontoFraco = "\nArmadura Extra (Fogo): A x2 contra ataques de fogo.";
             if (strpos($b['notes'][$cur]['efeito'], trim($efeitoPontoFraco)) === false) {
@@ -581,7 +590,7 @@ switch ($step) {
         echo '<option value="pass">Passar Iniciativa</option>';
         echo '<option value="fim">Terminar Batalha</option>';
 
-        $isDefeated = isDefeated($cur) || !empty($_SESSION['battle']['notes'][$cur]['desmaio']);
+        $isDefeated = isDefeated($cur) || !empty($_SESSION['battle']['notes'][$cur]['desmaio']) || !empty($_SESSION['battle']['notes'][$cur]['atordoado']);
         if (!$isDefeated) {
 
             $concentrando = false;
@@ -726,7 +735,7 @@ switch ($step) {
             echo '</select>';
 
 
-            $validTargets = getValidTargets($cur, $b, 'enemies', $b['order']);
+            $validTargets = getValidTargets($cur, 'enemies');
             $hasTargets = count($validTargets) > 0;
 
             // Ataque simples
@@ -738,7 +747,7 @@ switch ($step) {
                 echo '</select><br>'
                     . 'Roll FA: <input id="dadoFA" type="number" name="dadoFA" min="1" max="6" required><br>'
                     . 'Alvo: <select name="target">';
-                selectTarget($cur, $validTargets);
+                echo selectTarget($cur, $validTargets);
                 echo '</select><br>'
                     . 'Reação: <select id="def" name="defesa">'
                     . '<option value="defender">Defender</option>'
@@ -769,7 +778,7 @@ switch ($step) {
                         . 'Quantidade (2-' . $maxMulti . '): <input id="quant" type="number" name="quant" '
                         . 'min="2" max="' . $maxMulti . '" value="2"><br>'
                         . 'Alvo: <select name="targetMulti">';
-                    selectTarget($cur, $validTargets);
+                    echo selectTarget($cur, $validTargets);
                     echo '</select><br>'
                         . 'Reação: <select id="defM" name="defesaMulti">'
                         . '<option value="defender">Defender</option>'
@@ -794,7 +803,7 @@ switch ($step) {
                         . 'Quantidade (1-' . $stats['H'] . '): <input id="quantTiro" type="number" name="quantTiro" '
                         . 'min="1" max="' . $stats['H'] . '" value="1"><br>'
                         . 'Alvo: <select name="targetTiroMulti">';
-                    selectTarget($cur, $validTargets);
+                    echo selectTarget($cur, $validTargets);
                     echo '</select><br>'
                         . 'Reação: <select id="defTiro" name="defesaTiroMulti">'
                         . '<option value="defender">Defender</option>'
@@ -819,7 +828,7 @@ switch ($step) {
                     . 'Roll FA1: <input id="luxDadoFA1" type="number" name="luxDadoFA1" min="1" max="6" required><br>'
                     . 'Roll FA2: <input id="luxDadoFA2" type="number" name="luxDadoFA2" min="1" max="6" required><br>'
                     . 'Alvo: <select name="luxTarget" id="luxTargetSelect">';
-                selectTarget($cur, $validTargets);
+                echo selectTarget($cur, $validTargets);
                 echo '</select><br>'
                     . 'Reação do Alvo: <select name="luxDefesa" id="luxDefesaSelect">'
                     . '<option value="defender">Defender</option>'
@@ -1464,21 +1473,35 @@ JS;
 
             $out = actSwitch($_POST, $b, $pl); // Todas as ações são processadas aqui (action folder)
 
+            if ($origInitIndex != $b['init_index'] && !empty($b['notes'][$pl]['aceleracao_ii_active'])) {
+                $b['init_index']--;
+                unset($b['notes'][$pl]['aceleracao_ii_active']);
+            }
+
             if ($origInitIndex != $b['init_index']) {
                 if (!empty($b['notes'][$pl]['sustained_spells']) && empty($b['sustained_processed_this_turn'][$pl]) && $b['started_turn_with_sustained_spells']) {
                     $b['notes'][$pl]['sustained_spells'] = '';
                     $out = "<strong>{$pl}</strong> não sustentou suas magias e elas se dissiparam.<br>" . $out;
                 }
-            }
-
-            if (isset($_SESSION['battle']['notes'][$pl]['desmaio'])){
-                if ($_SESSION['battle']['notes'][$pl]['desmaio'] == 0){
-                    unset($_SESSION['battle']['notes'][$pl]['desmaio']);
-                }
+                
                 if (isset($_SESSION['battle']['notes'][$pl]['desmaio'])){
                     $_SESSION['battle']['notes'][$pl]['desmaio'] -= 1;
+                    if ($_SESSION['battle']['notes'][$pl]['desmaio'] == 0){
+                        unset($_SESSION['battle']['notes'][$pl]['desmaio']);
+                    }
+                }
+
+                if (isset($_SESSION['battle']['notes'][$pl]['atordoado'])){
+                    unset($_SESSION['battle']['notes'][$pl]['atordoado']);
+                    setPlayerStat($pl, 'A', getPlayerStat($pl, 'A')+1);    
+                    $_SESSION['battle']['notes'][$pl]['efeito'] = removeEffect($_SESSION['battle']['notes'][$pl]['efeito'], ['Atordoado: sem ações até o próximo turno.']);
+                }
+
+                if (strpos($_SESSION['battle']['notes'][$pl]['efeito'], 'Cegueira: cego até o próximo turno.')){
+                    $_SESSION['battle']['notes'][$pl]['efeito'] = removeEffect($_SESSION['battle']['notes'][$pl]['efeito'], ['Cegueira: cego até o próximo turno.']);
                 }
             }
+
 
             if (isset($_SESSION['battle']['sustained_effects'][$pl]['ataqueVorpal'])){
                 foreach($_SESSION['battle']['sustained_effects'][$pl]['ataqueVorpal'] as $tgt){
@@ -1487,6 +1510,52 @@ JS;
                         $_SESSION['battle']['notes'][$tgt]['efeito'] = removeEffect($_SESSION['battle']['notes'][$tgt]['efeito'], ['Sob efeito da magia Ataque Vorpal;']);
                     }
                 }
+            }
+
+            if (isset($_SESSION['battle']['sustained_effects'][$pl]['furtividadeDeHyninn'])){
+                foreach($_SESSION['battle']['sustained_effects'][$pl]['furtividadeDeHyninn'] as $tgt){
+                    if (strpos($_SESSION['battle']['notes'][$pl]['sustained_spells'], "Furtividade de Hyninn(".$tgt.")") === false){
+                        unset($_SESSION['battle']['sustained_effects'][$pl]['furtividadeDeHyninn'][$tgt]);
+                        $_SESSION['battle']['notes'][$tgt]['efeito'] = removeEffect($_SESSION['battle']['notes'][$tgt]['efeito'], ['Sob efeito da magia Furtividade de Hyninn.']);
+                    }
+                }
+            }
+
+            if (isset($_SESSION['battle']['sustained_effects'][$pl]['sentidoEspecial'])){
+                $sentidoEspecial = $_SESSION['battle']['sustained_effects'][$pl]['sentidoEspecial']['name'];
+                $id = $_SESSION['battle']['sustained_effects'][$pl]['sentidoEspecial']['id'];
+                if (strpos($_SESSION['battle']['notes'][$pl]['sustained_spells'], "Sentidos Especiais(".$sentidoEspecial.")") === false){
+                    unset($_SESSION['battle']['sustained_effects'][$pl]['sentidoEspecial']);
+                    removePlayerTrait($pl, $id, 'advantage');
+                }
+            }
+
+            if (isset($_SESSION['battle']['sustained_effects'][$pl]['protecaoMagicaSuperior'])){
+                foreach($_SESSION['battle']['sustained_effects'][$pl]['protecaoMagicaSuperior'] as $tgtInfo){
+                    $tgtName = $tgtInfo['tgtName'];
+                    $buffA = $tgtInfo['buffA'];
+                    if (strpos($_SESSION['battle']['notes'][$pl]['sustained_spells'], "Protecao Magica Superior(".$tgtName.")") === false){
+                        setPlayerStat($tgtName, 'A', getPlayerStat($tgtName, 'A')-$buffA);
+                        unset($_SESSION['battle']['sustained_effects'][$pl]['protecaoMagicaSuperior'][$tgtName]);
+                        $_SESSION['battle']['notes'][$tgtName]['efeito'] = removeEffect($_SESSION['battle']['notes'][$tgtName]['efeito'], ['Sob efeito da magia Proteção Mágica Superior.']);
+                    }
+                }
+            }
+
+            if (isset($_SESSION['battle']['sustained_effects'][$pl]['protecaoMagica'])){
+                foreach($_SESSION['battle']['sustained_effects'][$pl]['protecaoMagica'] as $tgtInfo){
+                    $tgtName = $tgtInfo['tgtName'];
+                    $buffA = $tgtInfo['buffA'];
+                    if (strpos($_SESSION['battle']['notes'][$pl]['sustained_spells'], "Protecao Magica(".$tgtName.")") === false){
+                        setPlayerStat($tgtName, 'A', getPlayerStat($tgtName, 'A')-$buffA);
+                        unset($_SESSION['battle']['sustained_effects'][$pl]['protecaoMagica'][$tgtName]);
+                        $_SESSION['battle']['notes'][$tgtName]['efeito'] = removeEffect($_SESSION['battle']['notes'][$tgtName]['efeito'], ['Sob efeito da magia Proteção Mágica.']);
+                    }
+                }
+            }
+
+            if (isset($_SESSION['battle']['sustained_effects'][$pl]['reflexos']) && strpos($_SESSION['battle']['notes'][$pl]['sustained_spells'] ?? '', 'Reflexos') === false) {
+                unset($_SESSION['battle']['sustained_effects'][$pl]['reflexos']);
             }
 
             if (isset($_SESSION['battle']['sustained_effects'][$pl]['solcruoris']) && strpos($_SESSION['battle']['notes'][$pl]['sustained_spells'] ?? '', 'Solcruoris') === false) {
@@ -1504,13 +1573,9 @@ JS;
             if ($b['notes'][$pl]['draco_active'] && empty($b['notes'][$pl]['draco_flag'])) {
                 $b['notes'][$pl]['draco_flag'] = true;
             }
+
             if (!empty($b['notes'][$pl]['invisivel']) && empty($b['notes'][$pl]['invisivel_flag'])) {
                 $b['notes'][$pl]['invisivel_flag'] = true;
-            }
-
-            if ($origInitIndex != $b['init_index'] && !empty($b['notes'][$pl]['aceleracao_ii_active'])) {
-                $b['init_index']--;
-                unset($b['notes'][$pl]['aceleracao_ii_active']);
             }
 
             if (isset($_POST['vorpalTest'])){

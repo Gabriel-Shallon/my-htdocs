@@ -63,8 +63,67 @@ $catalogoMagiasSustentadas = [
         'parametros' => [],
         'precisa_input' => false,
         'funcao_aplicar' => 'applySustainFadaServil',
-        'custo_texto' => 'Custo Único'
+        'custo_texto' => 'Custo único'
+    ],
+    'furtividade_de_hyninn' => [
+        'nome' => 'Furtividade de Hyninn',
+        'parametros' => ['alvo'],
+        'precisa_input' => false,
+        'funcao_aplicar' => 'applySustainFurtividadeDeHyninn',
+        'custo_texto' => 'Custo único'
+    ],
+    'protecao_magica_superior' => [
+        'nome' => 'Protecao Magica Superior',
+        'parametros' => ['alvo'],
+        'precisa_input' => true,
+        'funcao_gerar_form' => 'getFormProtecaoMagicaSuperior',
+        'funcao_aplicar' => 'applySustainProtecaoMagicaSuperior',
+        'custo_texto' => 'Váriavel'
+    ],
+    'protecao_magica' => [
+        'nome' => 'Protecao Magica',
+        'parametros' => ['alvo'],
+        'precisa_input' => true,
+        'funcao_gerar_form' => 'getFormProtecaoMagica',
+        'funcao_aplicar' => 'applySustainProtecaoMagica',
+        'custo_texto' => 'Váriavel'
+    ],
+    'recuperacao_natural' => [
+        'nome' => 'Recuperacao Natural',
+        'parametros' => ['alvo'],
+        'precisa_input' => false,
+        'funcao_aplicar' => 'applySustainRecuperacaoNatural',
+        'custo_texto' => 'Custo único; Um turno'
+    ],
+    'reflexos' => [
+        'nome' => 'Reflexos',
+        'parametros' => [],
+        'precisa_input' => false,
+        'funcao_aplicar' => 'applySustainReflexos',
+        'custo_texto' => 'Custo único'
+    ],
+    'retribuicao_de_wynna' => [
+        'nome' => 'Retribuicao de Wynna',
+        'parametros' => [],
+        'precisa_input' => false,
+        'funcao_aplicar' => 'applySustainRetribuicaoDeWynna',
+        'custo_texto' => '4 PMs'
+    ],
+    'sentidos_especiais_magia' => [
+        'nome' => 'Sentidos Especiais',
+        'parametros' => ['sentido_especial'],
+        'precisa_input' => false,
+        'funcao_aplicar' => 'applySustainSentidosEspeciais',
+        'custo_texto' => 'Custo único'
+    ],
+    'deteccao_de_magia' => [
+        'nome' => 'Deteccao de Magia',
+        'parametros' => [],
+        'precisa_input' => false,
+        'funcao_aplicar' => 'applySustainDeteccaoDeMagia',
+        'custo_texto' => 'Custo único'
     ]
+    
 ];
 
 
@@ -311,5 +370,86 @@ function applySustainAtaqueVorpal($caster, $params, &$b, $inputs = []){
 
 function applySustainFadaServil($caster, $params, &$b, $inputs = []){
     return "<strong>{$caster}</strong> sustenta " . getMagicSpecialName($caster, 'fada_servil') . " (Fada Servil).";
+}
+
+function applySustainFurtividadeDeHyninn($caster, $params, &$b, $inputs = []){
+    $target = $params['alvo'];
+    return "<strong>{$caster}</strong> sustenta " . getMagicSpecialName($caster, 'furtividade_de_hyninn') . " (Furtividade de Hyninn) em <strong>{$target}</strong>.";
+}
+
+function applySustainProtecaoMagicaSuperior($caster, $params, &$b, $inputs = []){
+    $target = $params['alvo'];
+    $cost = (int)($inputs['cost'] ?? 0);
+    setPlayerStat($target, 'A', getPlayerStat($target, 'A')-$_SESSION['battle']['sustained_effects'][$caster]['protecaoMagicaSuperior'][$target]['buffA']);
+    if (spendPM($caster, $cost)) {
+        $_SESSION['battle']['sustained_effects'][$caster]['protecaoMagicaSuperior'][$target]['buffA'] = $cost;
+        setPlayerStat($target, 'A', getPlayerStat($target, 'A')+$cost);
+        return "<strong>{$caster}</strong> sustenta " . getMagicSpecialName($caster, 'protecao_magica_superior') . " (Proteção Mágica Superior) em <strong>{$target}</strong>.";
+    } else {
+        removeSustainedSpell($caster, 'Proteção Mágica Superior', $params, $b);
+        return "<strong>{$caster}</strong> não tem PMs para sustentar " . getMagicSpecialName($caster, 'protecao_magica_superior') . " (Proteção Mágica Superior).";
+    }
+}
+function getFormProtecaoMagicaSuperior($caster, $params, $instanceIndex){
+    $slug = 'protecao_magica_superior';
+    $target = htmlspecialchars($params['alvo'], ENT_QUOTES);
+    $html = "<fieldset><legend>Proteção Mágica Superior em {$target}</legend>";
+    $html .= "<label>Custo:
+            <input type='number' name='inputs[{$slug}][{$instanceIndex}][cost]' min='1' max='5' required>
+            </label></fieldset>";
+    return $html;
+}
+
+function applySustainProtecaoMagica($caster, $params, &$b, $inputs = []){
+    $target = $params['alvo'];
+    $cost = (int)($inputs['cost'] ?? 0);
+    setPlayerStat($target, 'A', getPlayerStat($target, 'A')-$_SESSION['battle']['sustained_effects'][$caster]['protecaoMagica'][$target]['buffA']);
+    if (spendPM($caster, $cost)) {
+        $buffA = floor($cost/2);
+        $_SESSION['battle']['sustained_effects'][$caster]['protecaoMagica'][$target]['buffA'] = $buffA;
+        setPlayerStat($target, 'A', getPlayerStat($target, 'A')+$buffA);
+        return "<strong>{$caster}</strong> sustenta " . getMagicSpecialName($caster, 'protecao_magica') . " (Proteção Mágica) em <strong>{$target}</strong>.";
+    } else {
+        removeSustainedSpell($caster, 'Proteção Mágica', $params, $b);
+        return "<strong>{$caster}</strong> não tem PMs para sustentar " . getMagicSpecialName($caster, 'protecao_magica') . " (Proteção Mágica).";
+    }
+}
+function getFormProtecaoMagica($caster, $params, $instanceIndex){
+    $slug = 'protecao_magica';
+    $target = htmlspecialchars($params['alvo'], ENT_QUOTES);
+    $html = "<fieldset><legend>Proteção Mágica em {$target}</legend>";
+    $html .= "<label>Custo:
+            <input type='number' name='inputs[{$slug}][{$instanceIndex}][cost]' min='2' max='10' required>
+            </label></fieldset>";
+    return $html;
+}
+
+function applySustainRecuperacaoNatural($caster, $params, &$b, $inputs = []){
+    $target = $params['alvo'];
+    setPlayerStat($target, 'PV', getPlayerStat($target, 'PV')+1);
+    unset($_SESSION['battle']['playingAlly']);
+    $_SESSION['battle']['init_index']++;
+    return "<strong>{$caster}</strong> sustenta " . getMagicSpecialName($caster, 'recuperacao_natural') . " (Recuperação Natural) em <strong>{$target}</strong>. PV+1";
+}
+
+function applySustainReflexos($caster, $params, &$b, $inputs = []){
+    return "<strong>{$caster}</strong> sustenta " . getMagicSpecialName($caster, 'reflexos') . " (Reflexos).";
+}
+
+function applySustainRetribuicaoDeWynna($caster, $params, &$b, $inputs = []){
+    if (spendPM($caster, 4)) {
+        return "<strong>{$caster}</strong> sustenta " . getMagicSpecialName($caster, 'retribuicao_de_wynna') . " (Retribuição de Wynna).";
+    } else {
+        removeSustainedSpell($caster, 'Retribuicao de Wynna', $params, $b);
+        return "<strong>{$caster}</strong> não tem PMs para sustentar " . getMagicSpecialName($caster, 'retribuicao_de_wynna') . " (Retribuição de Wynna).";
+    }
+}
+
+function applySustainSentidosEspeciais($caster, $params, &$b, $inputs = []){
+    return "<strong>{$caster}</strong> sustenta " . getMagicSpecialName($caster, 'sentidos_especiais_magia') . " (Sentidos Especiais).";
+}
+
+function applySustainDeteccaoDeMagia($caster, $params, &$b, $inputs = []){
+    return "<strong>{$caster}</strong> sustenta " . getMagicSpecialName($caster, 'deteccao_de_magia') . " (Detecção De Magia).";
 }
 ?>

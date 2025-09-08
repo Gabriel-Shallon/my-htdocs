@@ -2,22 +2,31 @@
 include_once 'magicActFuncs.php';
 
 function magicSwitch($postData, &$b, $pl, $magic_slug, $target){
+    $out = '';
+    if ($target != $pl){
+        if (strpos($_SESSION['battle']['notes'][$target]['sustained_spells'], 'Retribuicao de Wynna') !== false){
+            $out .= $target.' está sob efeito da magia Retribuição de Wynna!<br>';
+            $target = $pl;
+        }
+    }
+    if ($magic_slug == 'ataque_magico' || $magic_slug == 'lanca_infalivel_de_talude'){
+        foreach ($postData['magic_targets'] as &$tgtInfo){
+            if (strpos($_SESSION['battle']['notes'][$tgtInfo['name']]['sustained_spells'], 'Retribuicao de Wynna') !== false){
+                $out .= $tgtInfo['name'].' está sob efeito da magia Retribuição de Wynna!<br>';
+                $tgtInfo['name'] = $pl;
+            }
+        }
+    }
     switch ($magic_slug) {
         case 'bola_de_fogo':
             $tgts = $postData['magic_targets'] ?? ['']; // Info do alvo: name + dFD
             $PMs = $postData['magic_pm_cost'] ?? [''];
             $dadoFA = $postData['dadoFA'] ?? [''];
 
-            $out = bolaDeFogo($pl, $tgts, $PMs, $dadoFA);
+            $out .= bolaDeFogo($pl, $tgts, $PMs, $dadoFA);
 
             unset($b['playingAlly']);
             $b['init_index']++;
-            break;
-
-        case 'cura_magica':
-            $heal_type = $postData['magic_heal_type'] ?? 'heal_pv';
-            $cost = ($heal_type === 'heal_pv') ? 2 : 4;
-            $out = "<strong>{$pl}</strong> usou Cura Mágica em <strong>{$target}</strong> (custo: {$cost} PMs).";
             break;
 
         case 'ataque_magico':
@@ -25,7 +34,7 @@ function magicSwitch($postData, &$b, $pl, $magic_slug, $target){
             $atkType = $postData['magic_attack_type'] ?? 'F';
             $tgtsInfo = $postData['magic_targets'] ?? ['']; //alvos [name] + reação [reaction] + dado de defesa [rollFD] + dado de ataque [rollFA]
 
-            $out = ataqueMagico($b, $pl, $tgtsInfo, $pmCost, $atkType);
+            $out .= ataqueMagico($b, $pl, $tgtsInfo, $pmCost, $atkType);
 
             unset($b['playingAlly']);
             $b['init_index']++;
@@ -35,14 +44,22 @@ function magicSwitch($postData, &$b, $pl, $magic_slug, $target){
             $pmCost = $postData['magic_pm_cost'] ?? 1;
             $tgtsInfo = $postData['magic_targets'] ?? ['']; //alvos [name] + lancas atacando ele [qtdAtk]
 
-            $out = lancaInfalivelDeTalude($pl, $tgtsInfo, $pmCost);
+            $out .= lancaInfalivelDeTalude($pl, $tgtsInfo, $pmCost);
+
+            unset($b['playingAlly']);
+            $b['init_index']++;
+            break;
+
+        case 'sacrificio_de_marah':
+            $tgtsInfo = $postData['magic_targets'] ?? ['']; //alvos [name]
+
+            $out .= sacrificioDeMarah($pl, $tgtsInfo);
 
             unset($b['playingAlly']);
             $b['init_index']++;
             break;
 
         case 'brilho_explosivo':
-            $tgt = $postData['magic_target'] ?? [''];
             $dadoFD = $postData['dadoFD'] ?? [''];
             $def = $postData['magic_def'];
 
@@ -51,39 +68,34 @@ function magicSwitch($postData, &$b, $pl, $magic_slug, $target){
                 $somaDosDadosFA += $postData['dado' . $i] ?? [0];
             }
 
-            $out = brilhoExplosivo($pl, $tgt, $somaDosDadosFA, $dadoFD, $def);
+            $out .= brilhoExplosivo($pl, $target, $somaDosDadosFA, $dadoFD, $def);
 
             unset($b['playingAlly']);
             $b['init_index']++;
             break;
 
         case 'morte_estelar':
-            $tgt = $postData['magic_target'] ?? [''];
-
-            $out = morteEstelar($pl, $tgt);
-
+            $out .= morteEstelar($pl, $target);
             unset($b['playingAlly']);
             $b['init_index']++;
             break;
 
         case 'enxame_de_trovoes':
-            $tgt = $postData['magic_target'] ?? [''];
             $dFA1 = $postData['dadoFA1'] ?? [''];
             $dFA2 = $postData['dadoFA2'] ?? [''];
             $dFD = $postData['dadoFD'] ?? [''];
             $def = $postData['magic_def'];
 
-            $out = enxameDeTrovoes($b, $pl, $tgt, $dFA1, $dFA2, $dFD, $def);
+            $out .= enxameDeTrovoes($b, $pl, $target, $dFA1, $dFA2, $dFD, $def);
 
             unset($b['playingAlly']);
             $b['init_index']++;
             break;
 
         case 'nulificacao_total_de_talude':
-            $tgt = $postData['magic_target'] ?? [''];
             $RTest = $postData['RTest'] ?? [''];
 
-            $out = nulificacaoTotalDeTalude($pl, $tgt, $RTest);
+            $out .= nulificacaoTotalDeTalude($pl, $target, $RTest);
 
             unset($b['playingAlly']);
             $b['init_index']++;
@@ -94,19 +106,18 @@ function magicSwitch($postData, &$b, $pl, $magic_slug, $target){
             $PMs = $postData['magic_pm_cost'] ?? [''];
             $dadosFA = $postData['dados'] ?? [''];
 
-            $out = bolaDeFogoInstavel($pl, $tgts, $PMs, $dadosFA);
+            $out .= bolaDeFogoInstavel($pl, $tgts, $PMs, $dadosFA);
 
             unset($b['playingAlly']);
             $b['init_index']++;
             break;
 
         case 'bola_de_lama':
-            $tgt = $postData['magic_target'] ?? [''];
             $dadosFA = $postData['dadosFA'] ?? [''];
             $dadoFD = $postData['dadoFD'] ?? [''];
             $def = $postData['magic_def'] ?? [''];
 
-            $out = bolaDeLama($pl, $tgt, $dadosFA, $dadoFD, $def);
+            $out .= bolaDeLama($pl, $target, $dadosFA, $dadoFD, $def);
 
             unset($b['playingAlly']);
             $b['init_index']++;
@@ -116,44 +127,41 @@ function magicSwitch($postData, &$b, $pl, $magic_slug, $target){
             $tgts = $postData['magic_targets'] ?? [''];  // Info do alvo: name + dFD + def
             $PMs = $postData['magic_pm_cost'] ?? [''];
 
-            $out = bombaDeLuz($pl, $tgts, $PMs);
+            $out .= bombaDeLuz($pl, $tgts, $PMs);
 
             unset($b['playingAlly']);
             $b['init_index']++;
             break;
 
         case 'bomba_de_terra':
-            $tgt = $postData['magic_target'] ?? [''];
             $dadoFD = $postData['dadoFD'] ?? [''];
             $def = $postData['magic_def'] ?? [''];
 
-            $out = bombaDeTerra($pl, $tgt, $dadoFD, $def);
+            $out .= bombaDeTerra($pl, $target, $dadoFD, $def);
 
             unset($b['playingAlly']);
             $b['init_index']++;
             break;
 
         case 'solisanguis':
-            $tgt = $postData['magic_target'] ?? [''];
             $dadoCusto = $postData['dadoCusto'] ?? [''];
             $dadoFA1 = $postData['dadoFA1'] ?? [''];
             $dadoFA2 = $postData['dadoFA2'] ?? [''];
 
-            $out = solisanguis($pl, $tgt, $dadoCusto, $dadoFA1, $dadoFA2);
+            $out .= solisanguis($pl, $target, $dadoCusto, $dadoFA1, $dadoFA2);
 
             unset($b['playingAlly']);
             $b['init_index']++;
             break;
 
         case 'solisanguis_ruptura':
-            $tgt = $postData['magic_target'] ?? [''];
             $dadoCusto = $postData['dadoCusto'] ?? [''];
             $dadoFA1 = $postData['dadoFA1'] ?? [''];
             $dadoFA2 = $postData['dadoFA2'] ?? [''];
             $dadoFA3 = $postData['dadoFA3'] ?? [''];
             $dadoFA4 = $postData['dadoFA4'] ?? [''];
 
-            $out = solisanguisRuptura($pl, $tgt, $dadoCusto, $dadoFA1, $dadoFA2, $dadoFA3, $dadoFA4);
+            $out .= solisanguisRuptura($pl, $target, $dadoCusto, $dadoFA1, $dadoFA2, $dadoFA3, $dadoFA4);
 
             unset($b['playingAlly']);
             $b['init_index']++;
@@ -161,56 +169,52 @@ function magicSwitch($postData, &$b, $pl, $magic_slug, $target){
 
 
         case 'solisanguis_evisceratio':
-            $tgt = $postData['magic_target'] ?? [''];
             $dado = $postData['dado'] ?? [''];
 
-            $out = solisanguisEvisceratio($pl, $tgt, $dado);
+            $out .= solisanguisEvisceratio($pl, $target, $dado);
 
             unset($b['playingAlly']);
             $b['init_index']++;
             break;
 
         case 'sortilegium':
-            $tgt = $postData['magic_target'] ?? [''];
             $dadoCusto = $postData['dadoCusto'] ?? [''];
             $dadoPV1 = $postData['dadoPV1'] ?? [''];
             $dadoPV2 = $postData['dadoPV2'] ?? [''];
 
-            $out = sortilegium($pl, $tgt, $dadoCusto, $dadoPV1, $dadoPV2);
+            $out .= sortilegium($pl, $target, $dadoCusto, $dadoPV1, $dadoPV2);
 
             unset($b['playingAlly']);
             $b['init_index']++;
             break;
 
         case 'sancti_sanguis':
-            $tgt = $postData['magic_target'] ?? [''];
             $qtd = $postData['qtd'] ?? [''];
 
-            $out = sanctiSanguis($pl, $tgt, $qtd);
+            $out .= sanctiSanguis($pl, $target, $qtd);
 
             unset($b['playingAlly']);
             $b['init_index']++;
             break;
 
         case 'luxcruentha':
-            $out = luxcruentha($pl);
+            $out .= luxcruentha($pl);
             break;
 
         case 'artifanguis':
             $obj = $postData['obj'] ?? [''];
             $cost = $postData['cost'] ?? [''];
 
-            $out = artifanguis($pl, $obj, $cost);
+            $out .= artifanguis($pl, $obj, $cost);
             break;
 
         case 'excruentio':
-            $tgt = $postData['magic_target'] ?? [''];
             $dFD = $postData['dadoFD'] ?? [''];
             $dFA1 = $postData['dadoFA1'] ?? [''];
             $dFA2 = $postData['dadoFA2'] ?? [''];
             $def = $postData['magic_def'] ?? [''];
 
-            $out = excruentio($pl, $tgt, $dFD, $dFA1, $dFA2, $def);
+            $out .= excruentio($pl, $target, $dFD, $dFA1, $dFA2, $def);
 
             unset($b['playingAlly']);
             $b['init_index']++;
@@ -218,17 +222,14 @@ function magicSwitch($postData, &$b, $pl, $magic_slug, $target){
 
 
         case 'speculusanguis':
-            $tgt = $postData['magic_target'] ?? [''];
-
-            $out = speculusanguis($pl, $tgt);
-
+            $out .= speculusanguis($pl, $target);
             unset($b['playingAlly']);
             $b['init_index']++;
             break;
 
 
         case 'vis_ex_vulnere':
-            $out = visExVulnere($pl);
+            $out .= visExVulnere($pl);
             unset($b['playingAlly']);
             $b['init_index']++;
             break;
@@ -236,7 +237,7 @@ function magicSwitch($postData, &$b, $pl, $magic_slug, $target){
         case 'solcruoris':
             $cost = $postData['cost'] ?? [''];
 
-            $out = solcruoris($pl, $cost);
+            $out .= solcruoris($pl, $cost);
 
             unset($b['playingAlly']);
             $b['init_index']++;
@@ -244,90 +245,78 @@ function magicSwitch($postData, &$b, $pl, $magic_slug, $target){
 
         case 'spectraematum':
             $debuff = $postData['debuff'] ?? [''];
-            $tgt = $postData['magic_target'] ?? [''];
 
-            $out = spectraematum($pl, $debuff, $tgt);
+            $out .= spectraematum($pl, $debuff, $target);
 
             unset($b['playingAlly']);
             $b['init_index']++;
             break;
 
         case 'aeternum_tribuo':
-            $tgt = $postData['magic_target'] ?? [''];
-
-            $out = aeternumTribuo($pl, $tgt);
-
+            $out .= aeternumTribuo($pl, $target);
             unset($b['playingAlly']);
             $b['init_index']++;
             break;
 
         case 'inhaerescorpus':
-            $tgt = $postData['magic_target'] ?? [''];
             $testR = $postData['testR'] ?? [''];
 
-            $out = inhaerescorpus($pl, $tgt, $testR);
+            $out .= inhaerescorpus($pl, $target, $testR);
 
             unset($b['playingAlly']);
             $b['init_index']++;
             break;
 
         case 'hemeopsia':
-            $out = hemeopsia($pl);
+            $out .= hemeopsia($pl);
             break;
 
         case 'cegueira':
-            $tgt = $postData['magic_target'] ?? [''];
             $testR = $postData['testR'] ?? [''];
 
-            $out = cegueira($pl, $tgt, $testR);
+            $out .= cegueira($pl, $target, $testR);
 
             unset($b['playingAlly']);
             $b['init_index']++;
             break;
 
         case 'amor_incontestavel':
-            $tgt = $postData['magic_target'] ?? [''];
             $tgtLove = $postData['magic_love'] ?? [''];
             $testR = $postData['testR'] ?? [''];
 
-            $out = amorIncontestavel($pl, $tgt, $tgtLove, $testR);
+            $out .= amorIncontestavel($pl, $target, $tgtLove, $testR);
 
             unset($b['playingAlly']);
             $b['init_index']++;
             break;
 
         case 'ataque_vorpal':
-            $tgt = $postData['magic_target'] ?? [''];
-
-            $out = ataqueVorpal($pl, $tgt);
-
+            $out .= ataqueVorpal($pl, $target);
             unset($b['playingAlly']);
             $b['init_index']++;
             break;
         
         case 'cura_para_o_mal':
-            $tgt = $postData['magic_target'] ?? [''];
             $evilCureMode = $postData['evil_cure_mode'] ?? [''];
 
-            $out = curaParaOMal($pl, $tgt, $evilCureMode);
+            $out .= curaParaOMal($pl, $target, $evilCureMode);
 
             unset($b['playingAlly']);
             $b['init_index']++;
             break;
 
         case 'desmaio':
-            $tgt = $postData['magic_target'] ?? [''];
             $cost = $postData['cost'] ?? [''];
             $testR = $postData['testR'] ?? [''];
 
-            $out = desmaio($pl, $tgt, $cost, $testR);
+            $out .= desmaio($pl, $target, $cost, $testR);
 
             unset($b['playingAlly']);
             $b['init_index']++;
             break;
 
         case 'destrancar':
-            $out = destrancar($pl);
+            $out .= destrancar($pl);
             unset($b['playingAlly']);
             $b['init_index']++;
             break;
@@ -335,36 +324,155 @@ function magicSwitch($postData, &$b, $pl, $magic_slug, $target){
         case 'escapatoria_de_valkaria':
             $qtd = $postData['qtdAlly'] ?? [''];
 
-            $out = aEscapatoriaDeValkaria($pl, $qtd);
+            $out .= aEscapatoriaDeValkaria($pl, $qtd);
 
             unset($b['playingAlly']);
             $b['init_index']++;
             break;
 
         case 'fada_servil':
-            $out = fadaServil($pl);
+            $out .= fadaServil($pl);
             unset($b['playingAlly']);
             $b['init_index']++;
             break;
 
         case 'farejar_tesouro':
-            $out = farejarTesouro($pl);
+            $out .= farejarTesouro($pl);
             unset($b['playingAlly']);
             $b['init_index']++;
             break;
 
         case 'flor_perene_de_milady_a':
-            $tgt = $postData['magic_target'] ?? [''];
             $testR = $postData['testR'] ?? [''];
 
-            $out = florPereneDeMiladyA($pl, $tgt, $testR);
+            $out .= florPereneDeMiladyA($pl, $target, $testR);
+
+            unset($b['playingAlly']);
+            $b['init_index']++;
+            break;
+
+        case 'furtividade_de_hyninn':
+            $out .= furtividadeDeHyninn($pl, $target);
+            unset($b['playingAlly']);
+            $b['init_index']++;
+            break;
+
+        case 'luz':
+            $out .= luz($pl);
+            break;
+
+        case 'protecao_magica_superior':
+            $custo = $postData['custo'] ?? [''];
+
+            $out .= protecaoMagicaSuperior($pl, $target, $custo);
+
+            unset($b['playingAlly']);
+            $b['init_index']++;
+            break;
+
+        case 'protecao_magica':
+            $custo = $postData['custo'] ?? [''];
+
+            $out .= protecaoMagica($pl, $target, $custo);
+
+            unset($b['playingAlly']);
+            $b['init_index']++;
+            break;
+
+        case 'recuperacao_natural':
+            $out .= recuperacaoNatural($pl, $target);
+            unset($b['playingAlly']);
+            $b['init_index']++;
+            break;
+
+        case 'reflexos':
+            $dado = $postData['dado'] ?? [''];
+
+            $out .= reflexos($pl, $dado);
+
+            unset($b['playingAlly']);
+            $b['init_index']++;
+            break;
+
+        case 'retribuicao_de_wynna':
+            $out .= retribuicaoDeWynna($pl);
+            unset($b['playingAlly']);
+            $b['init_index']++;
+            break;
+
+        case 'sentidos_especiais_magia':
+            $magicSense = $postData['magic_sense'] ?? [''];
+
+            $out .= sentidosEspeciais($pl, $magicSense);
+
+            unset($b['playingAlly']);
+            $b['init_index']++;
+            break;
+
+        case 'teleportacao_aprimorada':
+            $cost = $postData['cost'] ?? [''];
+
+            $out .= teleportacaoAprimorada($pl, $cost);
+
+            unset($b['playingAlly']);
+            $b['init_index']++;
+            break; 
+
+        case 'teleportacao':
+            $cost = $postData['cost'] ?? [''];
+
+            $out .= teleportacao($pl, $cost);
+            
+            unset($b['playingAlly']);
+            $b['init_index']++;
+            break; 
+
+        case 'teleportacao_planar':
+            $cost = $postData['cost'] ?? [''];
+
+            $out .= teleportacaoPlanar($pl, $cost);
+
+            unset($b['playingAlly']);
+            $b['init_index']++;
+            break; 
+
+        case 'transporte':
+            $cost = $postData['cost'] ?? [''];
+
+            $out .= transporte($pl, $cost);
+            
+            unset($b['playingAlly']);
+            $b['init_index']++;
+            break; 
+
+        case 'deteccao_de_magia':
+            $out .= deteccaoDeMagia($pl);
+            unset($b['playingAlly']);
+            $b['init_index']++;
+            break; 
+
+        case 'raio_desintegrador':
+            $cost = $postData['cost'] ?? [1];
+            $testR = $postData['testR'] ?? [0];
+
+            $out .= raioDesintegrador($pl, $target, $cost, $testR);
+
+            unset($b['playingAlly']);
+            $b['init_index']++;
+            break;
+
+        case 'excidium_stellae':
+            $tgts = $postData['magic_targets'] ?? ['']; // Info do alvo: name + dFD + def
+            $dadosFA = $postData['dados'] ?? [''];
+
+            $out .= excidiumStellae($pl, $tgts, $dadosFA);
 
             unset($b['playingAlly']);
             $b['init_index']++;
             break;
 
         default:
-            $out = "A magia '{$magic_slug}' foi selecionada, mas sua lógica ainda não foi implementada.";
+            $out .= "A magia '{$magic_slug}' foi selecionada, mas sua lógica ainda não foi implementada.";
             unset($b['playingAlly']);
             $b['init_index']++;
             break;

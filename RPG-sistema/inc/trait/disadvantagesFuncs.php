@@ -36,7 +36,7 @@ function assombrado(string $player, array $input){
 
 function cegoDebuff($pl, $tgt, $tipo){
     if ((!in_array('cego', listPlayerTraits($pl)) && strpos($_SESSION['battle']['notes'][$pl]['efeito'] ?? '', 'Cegueira') == false) || 
-    visibleWithHemeopsia($pl, $tgt)) {
+    visibleWithHemeopsia($pl, $tgt) || visibleWithInfravision($pl, $tgt)) {
         return 0;
     }
     if (in_array('radar', listPlayerTraits($pl))){
@@ -45,7 +45,7 @@ function cegoDebuff($pl, $tgt, $tipo){
     if ((in_array('faro_augucado', listPlayerTraits($pl)) || in_array('audicao_agucada', listPlayerTraits($pl))) && $tipo == 'PdF'){
         return 2;
     }
-    if ($tipo == 'F'){
+    if ($tipo == 'F' || in_array('radar', listPlayerTraits($pl))){
         return 1;
     }
     if ($tipo == 'PdF'){

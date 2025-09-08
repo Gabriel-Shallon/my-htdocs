@@ -45,12 +45,16 @@ function fusaoEterna(string $player, int $PdFOriginal, bool $active){
         addPlayerVulnerability($player, 'Sônico');
         setPlayerStat($player, 'F', getPlayerStat($player, 'PdF') * 2);
         setPlayerStat($player, 'PdF', 0);
+        addPlayerTrait($player, 81, 'advantage');
+        addPlayerTrait($player, 30, 'disadvantage');
     } else {
         removePlayerInvulnerability($player, 'Fogo');
         removePlayerVulnerability($player, 'Sônico');
         removePlayerVulnerability($player, 'Elétrico');
         setPlayerStat($player, 'F', (getPlayerStat($player, 'F') - $PdFOriginal * 2));
         setPlayerStat($player, 'PdF', $PdFOriginal);
+        removePlayerTrait($player, 81, 'advantage');
+        removePlayerTrait($player, 30, 'disadvantage');
     }
 }
 
@@ -118,6 +122,19 @@ function verOInvisivel($pl){
     return in_array('ver_o_invisivel', listPlayerTraits($pl)) || in_array('xama', listPlayerTraits($pl));
 }
 
+function visibleWithInfravision($mago, $alvo){
+    if (!in_array('infravisao', listPlayerTraits($mago))){
+        return false;
+    }
+    if (!isHot($alvo)){
+        return false;
+    }
+    if (isset($_SESSION['battle']['notes'][$alvo]['incorp_active']) && $_SESSION['battle']['notes'][$alvo]['incorp_active'] == true){
+        return false;
+    }
+    return true;
+}
+
 
 //'return value' advantages
 
@@ -127,8 +144,8 @@ function invisivelDebuff($pl, $tgt, $tipo){
     }
     if ((in_array('faro_augucado', listPlayerTraits($pl)) || in_array('audicao_agucada', listPlayerTraits($pl))) && $tipo == 'PdF'){
         return 2;
-    } 
-    if ($tipo == 'F'){
+    }
+    if ($tipo == 'F' || in_array('radar', listPlayerTraits($pl))){
         return 1;
     }
     if ($tipo == 'PdF'){
@@ -136,7 +153,23 @@ function invisivelDebuff($pl, $tgt, $tipo){
     }
     return 0;
 }
-
+// QUANDO HOUVER DETECÇÃO DE MAGIA, ADICIONAR NAS FUNÇÕES ABAIXO E ACIMA, E NA DE CEGO
+function reflexosQtd($pl, $tgt){
+    $reflexQtd = 0;
+    if (!empty($_SESSION['battle']['sustained_effects'][$tgt]['reflexos'])){
+        $reflexQtd = $_SESSION['battle']['sustained_effects'][$tgt]['reflexos'];
+        if (in_array('faro_augucado', listPlayerTraits($pl))){
+            $reflexQtd -= 2;
+        }
+        if (visibleWithHemeopsia($pl, $tgt) || 
+            in_array('radar', listPlayerTraits($pl)) || 
+            verOInvisivel($pl) ||
+            strpos($_SESSION['battle']['notes'][$pl]['sustained_spells'], "Deteccao De Magia") !== false){
+            $reflexQtd = 0;
+        }
+    }
+    return max($reflexQtd, 0);
+}
 
 function FAtiroMultiplo(string $atacante, int $quant, array $dados, string $tgt, string $defesa, int $dadoFD, $dmgType): int{
     $H = hDebuff($_SESSION['battle'], $atacante, $tgt, 'PdF');

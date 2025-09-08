@@ -10,6 +10,10 @@ include_once './inc/trait/traitFuncs.php';
 function defaultReactionTreatment($b, $tgt, $pl, $def, $dFA, $dFD, $atkType, $dmgType, $bonusDmg = 0, $FA = 0){
     if ($FA == 0){
         $FA = FA($pl, $tgt, $atkType, $dmgType, $dFA, $bonusDmg);
+    }   
+    if (strpos($tgt, 'reflexo de ') !== false){
+        $realName = str_replace("reflexo de ", "", $tgt);
+        return max($FA - getPlayerStat($realName, 'H'), 0);
     }
     if (!empty($b['agarrao'][$tgt]['agarrado'])) {
         $def = 'indefeso';

@@ -575,4 +575,236 @@ function florPereneDeMiladyA($mago, $tgt, $testR){
     $_SESSION['battle']['notes'][$tgt]['efeito'] = "Possui uma flor perene em seu corpo!\n";
     return "<strong>{$mago}</strong> usou a magia ". getMagicSpecialName($mago, 'flor_perene_de_milady_a') . " (A Flor Perene De Milady A) em <strong>{$tgt}</strong>, que agora tem uma linda florzinha em si!<br>";
 }
+
+function furtividadeDeHyninn($mago, $tgt){
+    if (spendPM($mago, 1)) {
+        if (empty($_SESSION['battle']['notes'][$mago]['sustained_spells'])) {
+            $_SESSION['battle']['notes'][$mago]['sustained_spells'] = "Furtividade de Hyninn(".$tgt.");\n";
+        } elseif (!empty($_SESSION['battle']['notes'][$mago]['sustained_spells'])) {
+            $_SESSION['battle']['notes'][$mago]['sustained_spells'] .= "Furtividade de Hyninn(".$tgt.");\n";
+        }
+        $_SESSION['battle']['notes'][$tgt]['efeito'] = "Sob efeito da magia Furtividade de Hyninn.";
+        $_SESSION['battle']['sustained_effects'][$mago]['furtividadeDeHyninn'][$tgt] = $tgt;
+        return "<strong>{$mago}</strong> usou a magia ". getMagicSpecialName($mago, 'furtividade_de_hyninn') . " (Furtividade de Hyninn) em <strong>{$tgt}</strong>!<br>";
+    } else {
+        return "<strong>{$mago}</strong> não tem PMs o suficiente para lançar " . getMagicSpecialName($mago, 'furtividade_de_hyninn') . " (Furtividade de Hyninn).<br>";
+    }
+}
+
+function luz($mago){
+    if (spendPM($mago, 1)) {
+        return "<strong>{$mago}</strong> usou a magia ". getMagicSpecialName($mago, 'luz') . " (Luz)!<br>Um objeto da escolha do mago deve receber 'Sob efeito da magia Luz'.<br>";
+    } else {
+        return "<strong>{$mago}</strong> não tem PMs o suficiente para lançar " . getMagicSpecialName($mago, 'luz') . " (Luz).<br>";
+    }
+}
+
+function protecaoMagicaSuperior($mago, $tgt, $cost){
+    if (spendPM($mago, $cost)) {
+        if (empty($_SESSION['battle']['notes'][$mago]['sustained_spells'])) {
+            $_SESSION['battle']['notes'][$mago]['sustained_spells'] = "Protecao Magica Superior(".$tgt.");\n";
+        } elseif (!empty($_SESSION['battle']['notes'][$mago]['sustained_spells'])) {
+            $_SESSION['battle']['notes'][$mago]['sustained_spells'] .= "Protecao Magica Superior(".$tgt.");\n";
+        }
+        $_SESSION['battle']['notes'][$tgt]['efeito'] = "Sob efeito da magia Proteção Mágica Superior.";
+        $_SESSION['battle']['sustained_effects'][$mago]['protecaoMagicaSuperior'][$tgt]['tgtName'] = $tgt;
+        $_SESSION['battle']['sustained_effects'][$mago]['protecaoMagicaSuperior'][$tgt]['buffA'] = $cost;
+        setPlayerStat($tgt, 'A', getPlayerStat($tgt, 'A')+$cost);
+        return "<strong>{$mago}</strong> usou a magia ". getMagicSpecialName($mago, 'protecao_magica_superior') . " (Proteção Mágica Superior) em <strong>{$tgt}</strong>! A+ ".$cost."<br>";
+    } else {
+        return "<strong>{$mago}</strong> não tem PMs o suficiente para lançar " . getMagicSpecialName($mago, 'protecao_magica_superior') . " (Proteção Mágica Superior).<br>";
+    }
+}
+
+function protecaoMagica($mago, $tgt, $cost){
+    if (spendPM($mago, $cost)) {
+        if (empty($_SESSION['battle']['notes'][$mago]['sustained_spells'])) {
+            $_SESSION['battle']['notes'][$mago]['sustained_spells'] = "\nProtecao Magica(".$tgt.");";
+        } elseif (!empty($_SESSION['battle']['notes'][$mago]['sustained_spells'])) {
+            $_SESSION['battle']['notes'][$mago]['sustained_spells'] .= "\nProtecao Magica(".$tgt.");";
+        }
+        $buffA = floor($cost/2);
+        $_SESSION['battle']['notes'][$tgt]['efeito'] = "Sob efeito da magia Proteção Mágica.";
+        $_SESSION['battle']['sustained_effects'][$mago]['protecaoMagica'][$tgt]['tgtName'] = $tgt;
+        $_SESSION['battle']['sustained_effects'][$mago]['protecaoMagica'][$tgt]['buffA'] = $buffA;
+        setPlayerStat($tgt, 'A', getPlayerStat($tgt, 'A')+$buffA);
+        return "<strong>{$mago}</strong> usou a magia ". getMagicSpecialName($mago, 'protecao_magica') . " (Proteção Mágica) em <strong>{$tgt}</strong>! A+ ".$buffA."<br>";
+    } else {
+        return "<strong>{$mago}</strong> não tem PMs o suficiente para lançar " . getMagicSpecialName($mago, 'protecao_magica') . " (Proteção Mágica).<br>";
+    }
+}
+
+function recuperacaoNatural($mago, $tgt){
+    if (spendPM($mago, 5)) {
+        if (empty($_SESSION['battle']['notes'][$mago]['sustained_spells'])) {
+            $_SESSION['battle']['notes'][$mago]['sustained_spells'] = "Recuperacao Natural(".$tgt.");\n";
+        } elseif (!empty($_SESSION['battle']['notes'][$mago]['sustained_spells'])) {
+            $_SESSION['battle']['notes'][$mago]['sustained_spells'] .= "Recuperacao Natural(".$tgt.");\n";
+        }
+        setPlayerStat($tgt, 'PV', getPlayerStat($tgt, 'PV')+1);
+        return "<strong>{$mago}</strong> usou a magia ". getMagicSpecialName($mago, 'recuperacao_natural') . " (Recuperação Natural) em <strong>{$tgt}</strong>!<br>";
+    } else {
+        return "<strong>{$mago}</strong> não tem PMs o suficiente para lançar " . getMagicSpecialName($mago, 'recuperacao_natural') . " (Recuperação Natural).<br>";
+    }
+}
+
+function reflexos($mago, $dado){
+    if (spendPM($mago, 2)) {
+        if (empty($_SESSION['battle']['notes'][$mago]['sustained_spells'])) {
+            $_SESSION['battle']['notes'][$mago]['sustained_spells'] = "Reflexos;\n";
+        } elseif (!empty($_SESSION['battle']['notes'][$mago]['sustained_spells'])) {
+            $_SESSION['battle']['notes'][$mago]['sustained_spells'] .= "Reflexos;\n";
+        }
+        if (empty($_SESSION['battle']['sustained_effects'][$mago]['reflexos'])) {
+            $_SESSION['battle']['sustained_effects'][$mago]['reflexos'] = $dado;
+        } elseif (!$_SESSION['battle']['sustained_effects'][$mago]['reflexos']) {
+            $_SESSION['battle']['sustained_effects'][$mago]['reflexos'] += $dado;
+        }
+        return "<strong>{$mago}</strong> usou a magia ". getMagicSpecialName($mago, 'reflexos') . " (Reflexos) e criou <strong>{$dado}</strong> clones!<br>";
+    } else {
+        return "<strong>{$mago}</strong> não tem PMs o suficiente para lançar " . getMagicSpecialName($mago, 'reflexos') . " (Reflexos).<br>";
+    }
+}
+
+function retribuicaoDeWynna($mago){
+    if (spendPM($mago, 4)) {
+        if (empty($_SESSION['battle']['notes'][$mago]['sustained_spells'])) {
+            $_SESSION['battle']['notes'][$mago]['sustained_spells'] = "Retribuicao de Wynna;\n";
+        } elseif (!empty($_SESSION['battle']['notes'][$mago]['sustained_spells'])) {
+            $_SESSION['battle']['notes'][$mago]['sustained_spells'] .= "Retribuicao de Wynna;\n";
+        }
+        return "<strong>{$mago}</strong> usou a magia ". getMagicSpecialName($mago, 'retribuicao_de_wynna') . " (Retribuição de Wynna)!<br>";
+    } else {
+        return "<strong>{$mago}</strong> não tem PMs o suficiente para lançar " . getMagicSpecialName($mago, 'retribuicao_de_wynna') . " (Retribuição de Wynna).<br>";
+    }
+}
+
+function sacrificioDeMarah($mago, $tgtInfo){
+    if (spendPM($mago, 10)) {
+        setPlayerStat($mago, 'PV', 0);
+        foreach ($tgtInfo as $tgt){
+            setPlayerStat($tgt['name'], 'PV', getPlayerStat($tgt['name'], 'PV_max'));
+        }
+        return "<strong>{$mago}</strong> usou a magia ". getMagicSpecialName($mago, 'sacrificio_de_marah') . " (Sacrifício de Marah)!<br>";
+    } else {
+        return "<strong>{$mago}</strong> não tem PMs o suficiente para lançar " . getMagicSpecialName($mago, 'sacrificio_de_marah') . " (Sacrifício de Marah).<br>";
+    }
+}
+
+function sentidosEspeciais($mago, $sentidoEspecial){
+    if (spendPM($mago, 2)) {
+        if ($sentidoEspecial == 'faro_agucado') $id = 41;
+        if ($sentidoEspecial == 'audicao_augucada') $id = 36;
+        if ($sentidoEspecial == 'visao_agucada') $id = 75;
+        if ($sentidoEspecial == 'radar') $id = 76;
+        if ($sentidoEspecial == 'infravisao') $id = 77;
+        if ($sentidoEspecial == 'ver_o_invisivel') $id = 79;
+        if ($sentidoEspecial == 'visao_raio_x') $id = 78;
+        addPlayerTrait($mago, $id, 'advantage');
+        if (empty($_SESSION['battle']['notes'][$mago]['sustained_spells'])) {
+            $_SESSION['battle']['notes'][$mago]['sustained_spells'] = "Sentidos Especiais(".$sentidoEspecial.");\n";
+        } elseif (!empty($_SESSION['battle']['notes'][$mago]['sustained_spells'])) {
+            $_SESSION['battle']['notes'][$mago]['sustained_spells'] .= "Sentidos Especiais(".$sentidoEspecial.");\n";
+        }
+        $_SESSION['battle']['sustained_effects'][$mago]['sentidoEspecial']['id'] = $id;
+        $_SESSION['battle']['sustained_effects'][$mago]['sentidoEspecial']['name'] = $sentidoEspecial;
+        return "<strong>{$mago}</strong> usou a magia ". getMagicSpecialName($mago, 'sentidos_especiais_magia') . " (Sentidos Especiais)!<br>";
+    } else {
+        return "<strong>{$mago}</strong> não tem PMs o suficiente para lançar " . getMagicSpecialName($mago, 'sentidos_especiais_magia') . " (Sentidos Especiais).<br>";
+    }
+}
+
+function teleportacaoAprimorada($mago, $cost){
+    if (spendPM($mago, $cost)) {
+        return "<strong>{$mago}</strong> usou a magia ". getMagicSpecialName($mago, 'teleportacao_aprimorada') . " (Teleportação Aprimorada)! O mestre deve mudar a posição do que foi teleportado!<br>";
+    } else {
+        return "<strong>{$mago}</strong> não tem PMs o suficiente para lançar " . getMagicSpecialName($mago, 'teleportacao_aprimorada') . " (Teleportação Aprimorada).<br>";
+    }
+}
+
+function teleportacao($mago, $cost){
+    if (spendPM($mago, $cost)) {
+        return "<strong>{$mago}</strong> usou a magia ". getMagicSpecialName($mago, 'teleportacao') . " (Teleportação)! O mestre deve mudar a posição do que foi teleportado!<br>";
+    } else {
+        return "<strong>{$mago}</strong> não tem PMs o suficiente para lançar " . getMagicSpecialName($mago, 'teleportacao') . " (Teleportação).<br>";
+    }
+}
+
+function teleportacaoPlanar($mago, $cost){
+    if (spendPM($mago, $cost)) {
+        return "<strong>{$mago}</strong> usou a magia ". getMagicSpecialName($mago, 'teleportacao_planar') . " (Teleportação Planar)! O mestre deve mudar a posição do que foi teleportado!<br>";
+    } else {
+        return "<strong>{$mago}</strong> não tem PMs o suficiente para lançar " . getMagicSpecialName($mago, 'teleportacao_planar') . " (Teleportação Planar).<br>";
+    }
+}
+
+function transporte($mago, $cost){
+    if (spendPM($mago, $cost)) {
+        return "<strong>{$mago}</strong> usou a magia ". getMagicSpecialName($mago, 'transporte') . " (Transporte)! O mestre deve mudar a posição do que foi transportado!<br>";
+    } else {
+        return "<strong>{$mago}</strong> não tem PMs o suficiente para lançar " . getMagicSpecialName($mago, 'transporte') . " (Transporte).<br>";
+    }
+}
+
+function deteccaoDeMagia($mago){
+    if (spendPM($mago, 4)) {
+        if (empty($_SESSION['battle']['notes'][$mago]['sustained_spells'])) {
+            $_SESSION['battle']['notes'][$mago]['sustained_spells'] = "Deteccao De Magia;\n";
+        } elseif (!empty($_SESSION['battle']['notes'][$mago]['sustained_spells'])) {
+            $_SESSION['battle']['notes'][$mago]['sustained_spells'] .= "Deteccao De Magia;\n";
+        }
+        return "<strong>{$mago}</strong> usou a magia ". getMagicSpecialName($mago, 'deteccao_de_magia') . " (Detecção de Magia)!<br>";
+    } else {
+        return "<strong>{$mago}</strong> não tem PMs o suficiente para lançar " . getMagicSpecialName($mago, 'deteccao_de_magia') . " (Detecção de Magia).<br>";
+    }
+}
+
+function raioDesintegrador($mago, $tgt, $cost, $testR){
+    if (spendPM($mago, $cost)) {
+        if ($tgt === 'objeto'){
+            return "<strong>{$mago}</strong> usou a magia ". getMagicSpecialName($mago, 'raio_desintegrador') . " (Raio Desintegrador) em um objeto!<br>";        
+        }
+        if (statTest($tgt, 'R', 0, $testR)){
+            return "<strong>{$mago}</strong> usou a magia ". getMagicSpecialName($mago, 'raio_desintegrador') . " (Raio Desintegrador) em <strong>{$tgt}</strong>, mas ele resistiu à magia!<br>";        
+        }
+        setPlayerStat($tgt, 'PV', '');
+        return "<strong>{$mago}</strong> usou a magia ". getMagicSpecialName($mago, 'raio_desintegrador') . " (Raio Desintegrador) em <strong>{$tgt}</strong>, que foi desintegrado!";
+    } else {
+        return "<strong>{$mago}</strong> não tem PMs o suficiente para lançar " . getMagicSpecialName($mago, 'transporte') . " (Transporte).<br>";
+    }
+}
+
+function excidiumStellae($mago, $tgts, $dadosFA){
+    $out = '';
+    if (spendPM($mago, 15)) {
+        $FA = getPlayerStat($mago, 'H');
+        foreach ($dadosFA as $dado){
+            $FA += $dado;
+        }
+        $playersOut = $_SESSION['battle']['order'];
+        foreach ($tgts as $tgt) {
+            $tgtName = $tgt['name'];
+            $tgtFA = invulnerabilitieTest($tgtName, 'Magia', $FA-hDebuff($_SESSION['battle'], $mago, $tgtName, 'PdF'));
+            $dano = defaultReactionTreatment($_SESSION['battle'], $tgtName, $mago, $tgt['reaction'], 0, $tgt['dFD'], 'PdF', 'Magia', 0, $tgtFA);
+            applyDamage($mago, $tgtName, $dano, 'Magia', $out);
+            $out .= "<strong>{$mago}</strong> usou " . getMagicSpecialName($mago, 'excidium_stellae') . " (Excidium Stellae) em <strong>{$tgtName}</strong>. Dano = {$dano}<br>";
+            if (!statTest($tgtName, 'R', 0, $tgt['testR'])){
+                $_SESSION['battle']['notes'][$tgtName]['atordoado'] = true;
+                setPlayerStat($tgtName, 'A', getPlayerStat($tgtName, 'A')-1);
+                $_SESSION['battle']['notes'][$tgtName]['efeito'] .= "\nAtordoado: sem ações até o próximo turno.";
+            }
+            unset($playersOut[$tgtName]);
+        }
+        $out .= "PMs = -15";
+        foreach($playersOut as $playerOut){
+            $dice = rand(1, 6);
+            if (!statTest($playerOut, 'R', 0, $dice)){
+                $_SESSION['battle']['notes'][$out]['efeito'] .= "\nCegueira: cego até o próximo turno.";
+            }
+        }
+        return $out;
+    } else {
+        return "<strong>{$mago}</strong> não tem PMs o suficiente para lançar " . getMagicSpecialName($mago, 'excidium_stellae') . " (Excidium Stellae)!";
+    }
+}
 ?>

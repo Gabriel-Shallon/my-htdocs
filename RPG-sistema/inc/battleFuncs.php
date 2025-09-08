@@ -7,7 +7,7 @@ function iniciativa(array $lutadores, array $dados): array{
     foreach ($lutadores as $idx => $nome) {
         $H = (int) getPlayerStat($nome, 'H');
         $traits = listPlayerTraits($nome);
-        if (in_array('teleporte', $traits, true)) {
+        if (in_array('teleporte', $traits, true) || in_array('teleportacao_planar', $traits)) {
             $bonus = 2;
         } elseif (in_array('aceleracao_i', $traits, true)) {
             $bonus = 1;
@@ -40,12 +40,12 @@ function iniciativa(array $lutadores, array $dados): array{
 }
 
 
-function getValidTargets($pl, &$b, $type = 'enemies', $isIncorp = false){
+function getValidTargets($pl, $type = 'enemies'){
     $targets = [];
     if ($type === 'allies') {
         $targets[] = $pl;
     }
-    foreach ($b['order'] as $p) {
+    foreach ($_SESSION['battle']['order'] as $p) {
         if ($p === $pl && $type === 'enemies') continue;
 
         if ($type === 'enemies' && $p !== $pl) {
@@ -64,20 +64,6 @@ function getValidTargets($pl, &$b, $type = 'enemies', $isIncorp = false){
         }
     }
     return array_unique($targets);
-}
-
-function getValidTargetsWithDetails($pl, &$b, $type = 'enemies') {
-    $targets = getValidTargets($pl, $b, $type);
-    $targetsWithDetails = [];
-    foreach ($targets as $tgt) {
-        $targetsWithDetails[] = [
-            'name' => $tgt,
-            'hasDeflexao' => in_array('deflexao', listPlayerTraits($tgt), true),
-            'isFuria' => !empty($_SESSION['battle']['notes'][$tgt]['furia']),
-            'isAgarrado' => !empty($_SESSION['battle']['agarrao'][$tgt]['agarrado'])
-        ];
-    }
-    return $targetsWithDetails;
 }
 
 // Tests
@@ -105,11 +91,49 @@ function isAlive($pl){
     return true;
 }
 
+function isHot($pl){
+    foreach ([
+        'golem', 'androide', 'nanomorfo', 'robo-positronico',
+        'esqueleto', 'fantasma', 'mumia', 'zumbi',
+        'elemental'
+        ] as $coldTrait){
+        if (in_array($coldTrait, listPlayerTraits($pl))) {
+            return false;
+        }
+    }
+    return true;
+}
+
+function isCorporeo($pl){
+    if (!empty($_SESSION['battle']['notes'][$pl]['incorp_active'])) if ($_SESSION['battle']['notes'][$pl]['incorp_active']){
+        return false;
+    }
+    $incorporealTraits = ['fantasma'];
+    $playerTraits = listPlayerTraits($pl);
+    foreach ($incorporealTraits as $trait) {
+        if (in_array($trait, $playerTraits, true)) {
+            return false;
+        }
+    }
+    return true;
+}
+
 function movimentBuff($pl){
     $bonus = 0;
     if (in_array('aceleracao_i', listPlayerTraits($pl), true)) $bonus = 1;
     if (in_array('aceleracao_ii', listPlayerTraits($pl), true)) $bonus = 2;
-    if (in_array('teleporte', listPlayerTraits($pl), true)) $bonus = 3;
+    if (in_array('teleporte', listPlayerTraits($pl), true) || 
+        in_array('teleportacao_planar', listPlayerTraits($pl))) $bonus = 3;
+    return $bonus;
+}
+
+function furtividadeBuff($pl){
+    $bonus = 0;
+    if (in_array('furtividade', listPlayerTraits($pl), true)) $bonus = 2;
+    if (strpos($_SESSION['battle']['notes'][$pl]['efeito'], 'Sob efeito da magia Furtividade de Hyninn.') !== false) $bonus = 2;
+    if (in_array('genialiadade', listPlayerTraits($pl), true)) $bonus += 2;
+    if (in_array('camuflagem', listPlayerTraits($pl), true)) $bonus += 2;
+    if (!empty($_SESSION['battle']['notes'][$pl]['invisivel'])) $bonus += 3;
     return $bonus;
 }
 
@@ -194,7 +218,11 @@ function spendPM(string $player, int $cost, $sangue = false, $ignoreDiscount = f
 function applyDamage(string $pl, string $tgt, int $dano, string $tipoDmg, string &$out = ''){
     if (!empty($_SESSION['battle']['notes'][$tgt]['incorp_active']) && $tipoDmg != 'Magia' && empty($_SESSION['battle']['notes'][$pl]['incorp_active'])) {
         $dano = 0;
-        $out .= " (inútil: alvo incorpóreo)";
+        return "<br>Dano negado, alvo incorpóreo!";
+    } elseif (strpos($tgt, 'reflexo de ') !== false && $dano > 0) {
+        $realName = str_replace("reflexo de ", "", $tgt);
+        $_SESSION['battle']['sustained_effects'][$realName]['reflexos'] -= 1;
+        return "<br>O alvo era um reflexo de {$realName}, que agora foi destruído!";
     } else {
         $ligacaoNatural = false;
         if (!empty(getAlliePlayer($tgt)) && in_array('ligacao_natural', listPlayerTraits(getAlliePlayer($tgt)), true)) {
@@ -286,18 +314,62 @@ function monitorPVChange($pl, $dano){
 // Selects
 
 function selectTarget($cur, $validTargets, $includeCur = false){
-    foreach ($validTargets as $tgt) if ($tgt !== $cur || $includeCur) {
-        if (($tgt != $_SESSION['battle']['apaixonado'][$cur]['love'] && $tgt != $_SESSION['battle']['amizade'][$cur]['amigo'] ) || $includeCur){
-            $isFuria    = ! empty($_SESSION['battle']['notes'][$tgt]['furia']);
-            $isAgarrado = ! empty($_SESSION['battle']['agarrao'][$tgt]['agarrado']);
+    $optionsString = '';
+    foreach ($validTargets as $tgt) {
+        if (!$includeCur) {
+            if ($tgt === $cur) {
+                continue;
+            }
+            if (isset($_SESSION['battle']['amizade'][$cur]['amigo']) && $tgt === $_SESSION['battle']['amizade'][$cur]['amigo']) {
+                continue;
+            }
+            if (isset($_SESSION['battle']['apaixonado'][$cur]['love']) && $tgt === $_SESSION['battle']['apaixonado'][$cur]['love']) {
+                continue;
+            }
+        }
+        $reflexos = reflexosQtd($cur, $tgt);
+        if ($reflexos > 0){
+            $reflexArray[] = '';
+            for ($i = 0; $i < $reflexos; $i++) {
+                $reflexArray[$tgt.$i] = '<option value="reflexo de ' . htmlspecialchars($tgt) . '">'
+                    . htmlspecialchars($tgt) . '</option>';
+            }
+            $isFuria    = !empty($_SESSION['battle']['notes'][$tgt]['furia']);
+            $isAgarrado = !empty($_SESSION['battle']['agarrao'][$tgt]['agarrado']);
             $hasDeflexao = in_array('deflexao', listPlayerTraits($tgt), true);
-            echo '<option value="' . htmlspecialchars($tgt) . '" '
+            $reflexArray[$tgt] = '<option value="' . htmlspecialchars($tgt) . '" '
+                . 'data-furia="' . ($isFuria ? '1' : '0') . '" '
+                . 'data-agarrao="' . ($isAgarrado ? '1' : '0') . '" '
+                . 'data-tem-deflexao="' . ($hasDeflexao ? '1' : '0') . '">'
+                . htmlspecialchars($tgt) . '</option>';
+
+            shuffle($reflexArray);
+        } else {
+            $isFuria    = !empty($_SESSION['battle']['notes'][$tgt]['furia']);
+            $isAgarrado = !empty($_SESSION['battle']['agarrao'][$tgt]['agarrado']);
+            $hasDeflexao = in_array('deflexao', listPlayerTraits($tgt), true);
+            $optionsArray[$tgt] = '<option value="' . htmlspecialchars($tgt) . '" '
                 . 'data-furia="' . ($isFuria ? '1' : '0') . '" '
                 . 'data-agarrao="' . ($isAgarrado ? '1' : '0') . '" '
                 . 'data-tem-deflexao="' . ($hasDeflexao ? '1' : '0') . '">'
                 . htmlspecialchars($tgt) . '</option>';
         }
     }
+    shuffle($optionsArray);
+    $setReflexString = rand(1, count($optionsArray));
+    $i = 0;
+    foreach($optionsArray as $option){
+        $i++;
+        if ($setReflexString == $i){
+            if (isset($reflexArray)){
+                foreach ($reflexArray as $reflexOption){
+                   $optionsString .= $reflexOption;
+                }
+            }
+        }
+        $optionsString .= $option;
+    }
+    return $optionsString;
 }
 
 function selectDmgType($cur){

@@ -1,74 +1,74 @@
 <?php
 include_once './inc/battleFuncs.php';
 
-function renderMagicInputs($slug, $caster, &$battle){
+function renderMagicInputs($slug, $caster){
     switch ($slug) {
         case 'bola_de_fogo':
-            inputBolaDeFogo($caster, $battle);
+            inputBolaDeFogo($caster);
             break;
 
         case 'cancelamento_de_magia':
-            inputCancelamento($caster, $battle);
+            inputCancelamento();
             break;
 
         case 'ataque_magico':
-            inputAtaqueMagico($caster, $battle);
+            inputAtaqueMagico($caster);
             break;
 
         case 'lanca_infalivel_de_talude':
-            inputLancaInfalivel($caster, $battle);
+            inputLancaInfalivel($caster);
             break;
 
         case 'brilho_explosivo':
-            inputBrilhoExplosivo($caster, $battle);
+            inputBrilhoExplosivo($caster);
             break;
 
         case 'morte_estelar':
-            inputMorteEstelar($caster, $battle);
+            inputMorteEstelar($caster);
             break;
 
         case 'enxame_de_trovoes':
-            inputEnxameDeTrovoes($caster, $battle);
+            inputEnxameDeTrovoes($caster);
             break;
 
         case 'nulificacao_total_de_talude':
-            inputNulificacaoTotalDeTalude($caster, $battle);
+            inputNulificacaoTotalDeTalude($caster);
             break;
 
         case 'bola_de_fogo_instavel':
-            inputBolaDeFogoInstavel($caster, $battle);
+            inputBolaDeFogoInstavel($caster);
             break;
 
         case 'bola_de_lama':
-            inputBolaDeLama($caster, $battle);
+            inputBolaDeLama($caster);
             break;
 
         case 'bomba_de_luz':
-            inputBombaDeLuz($caster, $battle);
+            inputBombaDeLuz($caster);
             break;
 
         case 'bomba_de_terra':
-            inputBombaDeTerra($caster, $battle);
+            inputBombaDeTerra($caster);
             break;
 
         case 'solisanguis':
-            inputSolisanguis($caster, $battle);
+            inputSolisanguis($caster);
             break;
 
         case 'solisanguis_ruptura':
-            inputSolisanguisRuptura($caster, $battle);
+            inputSolisanguisRuptura($caster);
             break;
 
         case 'solisanguis_evisceratio':
-            inputSolisanguisEvisceratio($caster, $battle);
+            inputSolisanguisEvisceratio($caster);
             break;
 
         case 'sortilegium':
-            inputSortilegium($caster, $battle);
+            inputSortilegium($caster);
             break;
 
         case 'sancti_sanguis':
-            inputSanctiSanguis($caster, $battle);
+            inputSanctiSanguis($caster);
             break;
 
         case 'luxcruentha':
@@ -80,11 +80,11 @@ function renderMagicInputs($slug, $caster, &$battle){
             break;
 
         case 'excruentio':
-            inputExcruentio($caster, $battle);
+            inputExcruentio($caster);
             break;
 
         case 'speculusanguis':
-            inputSpeculusanguis($caster, $battle);
+            inputSpeculusanguis($caster);
             break;
 
         case 'vis_ex_vulnere':
@@ -96,15 +96,15 @@ function renderMagicInputs($slug, $caster, &$battle){
             break;
 
         case 'spectraematum':
-            inputSpectraematum($caster, $battle);
+            inputSpectraematum($caster);
             break;
 
         case 'aeternum_tribuo':
-            inputAeternumTribuo($caster, $battle);
+            inputAeternumTribuo($caster);
             break;
 
         case 'inhaerescorpus':
-            inputInhaerescorpus($caster, $battle);
+            inputInhaerescorpus($caster);
             break;
 
         case 'hemeopsia':
@@ -112,53 +112,118 @@ function renderMagicInputs($slug, $caster, &$battle){
             break;
 
         case 'cegueira':
-            inputCegueira($caster, $battle);
+            inputCegueira($caster);
             break;    
 
         case 'amor_incontestavel':
-            inputAmorIncontestavel($caster, $battle);
+            inputAmorIncontestavel($caster);
             break;
 
         case 'ataque_vorpal':
-            inputAtaqueVorpal($caster, $battle);
+            inputAtaqueVorpal($caster);
             break; 
 
         case 'cura_para_o_mal':
-            inputCuraParaOMal($caster, $battle);
+            inputCuraParaOMal($caster);
             break;
 
         case 'desmaio':
-            inputDesmaio($caster, $battle);
+            inputDesmaio($caster);
             break;
 
         case 'destrancar':
-            inputDestrancar($caster, $battle);
+            inputDestrancar();
             break;
 
         case 'escapatoria_de_valkaria':
-            inputAEscapatoriaDeValkaria($caster, $battle);
+            inputAEscapatoriaDeValkaria();
             break;
 
         case 'fada_servil':
-            inputFadaServil($caster, $battle);
+            inputFadaServil();
             break;
 
         case 'farejar_tesouro':
-            inputFarejarTesouro($caster, $battle);
+            inputFarejarTesouro();
             break;
 
         case 'flor_perene_de_milady_a':
-            inputFlorPereneDeMiladyA($caster, $battle);
+            inputFlorPereneDeMiladyA($caster);
             break;
 
+        case 'furtividade_de_hyninn':
+            inputFurtividadeDeHyninn($caster);
+            break;
+
+        case 'luz':
+            inputLuz();
+            break;
+
+        case 'protecao_magica_superior':
+            inputProtecaoMagicaSuperior($caster);
+            break;
+
+        case 'protecao_magica':
+            inputProtecaoMagica($caster);
+            break;
+
+        case 'recuperacao_natural':
+            inputRecuperacaoNatural($caster);
+            break;
+
+        case 'reflexos':
+            inputReflexos();
+            break;
+
+        case 'retribuicao_de_wynna':
+            inputRetribuicaoDeWynna();
+            break;
+
+        case 'sacrificio_de_marah':
+            inputSacrificioDeMarah($caster);
+            break;
+
+        case 'sentidos_especiais_magia':
+            inputSentidosEspeciais();
+            break;
+
+        case 'teleportacao_aprimorada':
+            inputTeleportacaoAprimorada();
+            break;
+
+        case 'teleportacao':
+            inputTeleportacao();
+            break;
+
+        case 'teleportacao_planar':
+            inputTeleportacaoPlanar();
+            break;
+
+        case 'transporte':
+            inputTransporte();
+            break;
+            
+        case 'deteccao_de_magia':
+            inputDeteccaoDeMagia();
+            break;
+
+        case 'raio_desintegrador':
+            inputRaioDesintegrador($caster);
+            break;
+
+        case 'excidium_stellae':
+            inputExcidiumStellae($caster);
+            break;
+            
         default:
             echo 'Essa magia ainda não foi implementada';
             break;
     }
 }
 
-function inputBolaDeFogo($caster, &$b){
-    $targetsWithDetails = getValidTargetsWithDetails($caster, $b, 'enemies');
+function inputBolaDeFogo($caster){
+    $validTargets = getValidTargets($caster);
+    $selectTargets = selectTarget($caster, $validTargets);
     echo 'Custo em PMs (1-10): <input type="number" id="magic_pm_cost" name="magic_pm_cost" value="1" min="1" max="10" step="1" required><br>';
     echo 'Quantidade de inimigos na área: <input type="number" id="magic_num_targets" name="magic_num_targets" value="1" min="1" required><br>';
     echo 'Dado de ataque: <input type="number" name="dadoFA" value="1" min="1" max="6" required><br>';
@@ -170,17 +235,12 @@ function inputBolaDeFogo($caster, &$b){
             const pmCostInput = document.getElementById('magic_pm_cost');
             const numTargetsInput = document.getElementById('magic_num_targets');
             const targetsContainer = document.getElementById('magic_targets_container');
-            const validTargets = <?php echo json_encode($targetsWithDetails); ?>;
+            const validTargets = <?php echo json_encode($validTargets); ?>;
             function generateTargetInputs() {
                 targetsContainer.innerHTML = '';
                 const numTargets = parseInt(numTargetsInput.value, 10);
                 let optionsHTML = '';
-                validTargets.forEach(target => {
-                    optionsHTML += `<option value="${target.name}" 
-                        data-furia="${target.isFuria ? '1' : '0'}"
-                        data-agarrao="${target.isAgarrado ? '1' : '0'}"
-                        data-tem-deflexao="${target.hasDeflexao ? '1' : '0'}">${target.name}</option>`;
-                });
+                optionsHTML = <?php echo json_encode($selectTargets) ?>;
                 for (let i = 0; i < numTargets; i++) {
                     const fieldset = document.createElement('fieldset');
                     fieldset.className = 'magic-input-group';
@@ -210,8 +270,9 @@ function inputBolaDeFogo($caster, &$b){
 <?php
 }
 
-function inputAtaqueMagico($caster, &$b){
-    $targetsWithDetails = getValidTargetsWithDetails($caster, $b, 'enemies');
+function inputAtaqueMagico($caster){
+    $validTargets = getValidTargets($caster);
+    $selectTargets = selectTarget($caster, $validTargets);
     echo 'Custo em PMs (1-5): <input type="number" id="magic_pm_cost" name="magic_pm_cost" value="1" min="1" max="5" required><br>';
     echo 'Tipo de Ataque: <select class="magic-attack-type" id="magic_attack_type" name="magic_attack_type"> <option value="F">Corpo a Corpo</option><option value="PdF">A Distância</option></select><br>';
     echo 'Quantidade de Alvos: <input type="number" id="magic_num_targets" name="magic_num_targets" value="1" min="1" max="1" required><br>';
@@ -223,19 +284,13 @@ function inputAtaqueMagico($caster, &$b){
             const numTargetsInput = document.getElementById('magic_num_targets');
             const attackTypeSelect = document.getElementById('magic_attack_type');
             const targetsContainer = document.getElementById('magic_targets_container');
-            const validTargets = <?php echo json_encode($targetsWithDetails); ?>;
+            const validTargets = <?php echo json_encode($validTargets); ?>;
 
             function generateTargetInputs() {
                 targetsContainer.innerHTML = '';
                 const numTargets = parseInt(numTargetsInput.value, 10);
                 const isPdfAttack = attackTypeSelect.value === 'PdF';
-                let optionsHTML = '';
-                validTargets.forEach(target => {
-                    optionsHTML += `<option value="${target.name}" 
-                        data-furia="${target.isFuria ? '1' : '0'}"
-                        data-agarrao="${target.isAgarrado ? '1' : '0'}"
-                        data-tem-deflexao="${target.hasDeflexao ? '1' : '0'}">${target.name}</option>`;
-                });
+                optionsHTML = <?php echo json_encode($selectTargets) ?>;
                 for (let i = 0; i < numTargets; i++) {
                     const fieldset = document.createElement('fieldset');
                     fieldset.className = 'magic-input-group';
@@ -278,8 +333,9 @@ function inputAtaqueMagico($caster, &$b){
 <?php
 }
 
-function inputLancaInfalivel($caster, &$b){
-    $targetsWithDetails = getValidTargetsWithDetails($caster, $b, 'enemies');
+function inputLancaInfalivel($caster){
+    $validTargets = getValidTargets($caster);
+    $selectTargets = selectTarget($caster, $validTargets);
     echo 'Custo em PMs (1-5): <input type="number" id="magic_pm_cost" name="magic_pm_cost" value="1" min="1" max="5" required><br>';
     echo 'Quantidade de Alvos: <input type="number" id="magic_num_targets" name="magic_num_targets" value="1" min="1" max="1" required><br>';
     echo '<div id="magic_targets_container"></div>';
@@ -290,17 +346,11 @@ function inputLancaInfalivel($caster, &$b){
             const pmCostInput = document.getElementById('magic_pm_cost');
             const numTargetsInput = document.getElementById('magic_num_targets');
             const targetsContainer = document.getElementById('magic_targets_container');
-            const validTargets = <?php echo json_encode($targetsWithDetails); ?>;
+            const validTargets = <?php echo json_encode($validTargets); ?>;
             function generateTargetInputs() {
                 targetsContainer.innerHTML = '';
                 const numTargets = parseInt(numTargetsInput.value, 10);
-                let optionsHTML = '';
-                validTargets.forEach(target => {
-                    optionsHTML += `<option value="${target.name}" 
-                        data-furia="${target.isFuria ? '1' : '0'}"
-                        data-agarrao="${target.isAgarrado ? '1' : '0'}"
-                        data-tem-deflexao="${target.hasDeflexao ? '1' : '0'}">${target.name}</option>`;
-                });
+                optionsHTML = <?php echo json_encode($selectTargets) ?>;
                 for (let i = 0; i < numTargets; i++) {
                     const fieldset = document.createElement('fieldset');
                     fieldset.className = 'magic-input-group';
@@ -338,11 +388,11 @@ function inputLancaInfalivel($caster, &$b){
 <?php
 }
 
-function inputBrilhoExplosivo($caster, &$b){
-    $validTargets = getValidTargets($caster, $b);
+function inputBrilhoExplosivo($caster){
+    $validTargets = getValidTargets($caster);
     echo '<div class="magic-input-group">'; 
     echo '<label>Selecionar Alvo: <select id="magic_target" name="magic_target" class="magic-target-select" required>';
-    selectTarget($caster, $validTargets);
+    echo selectTarget($caster, $validTargets);
     echo '</select></label><br>';
     for ($i = 1; $i < 11; $i++) {
         echo '<label>' . $i . '° dado: <input type="number" name="dado' . $i . '" min="1" max="6" required></label><br>';
@@ -358,8 +408,9 @@ function inputBrilhoExplosivo($caster, &$b){
     echo '</div>';
 }
 
-function inputBolaDeFogoInstavel($caster, &$b){
-    $targetsWithDetails = getValidTargetsWithDetails($caster, $b, 'enemies');
+function inputBolaDeFogoInstavel($caster){
+    $validTargets = getValidTargets($caster);
+    $selectTargets = selectTarget($caster, $validTargets);
     echo 'Custo em PMs (2-10): <input type="number" id="magic_pm_cost_instavel" name="magic_pm_cost" value="2" min="2" max="10" step="1" required><br>';
     echo 'Quantidade de inimigos na área: <input type="number" id="magic_num_targets_instavel" name="magic_num_targets" value="1" min="1" required><br>';
     echo '<hr><h4>Dados de Ataque</h4><div id="magic_dice_container"></div><hr>';
@@ -372,7 +423,7 @@ function inputBolaDeFogoInstavel($caster, &$b){
             const numTargetsInput = document.getElementById('magic_num_targets_instavel');
             const diceContainer = document.getElementById('magic_dice_container');
             const targetsContainer = document.getElementById('magic_targets_container');
-            const validTargets = <?php echo json_encode($targetsWithDetails); ?>;
+            const validTargets = <?php echo json_encode($validTargets); ?>;
             function generateDiceInputs() {
                 diceContainer.innerHTML = '';
                 const currentPmCost = parseInt(pmCostInput.value, 10);
@@ -382,13 +433,7 @@ function inputBolaDeFogoInstavel($caster, &$b){
                     diceContainer.innerHTML += dInputHTML;
                 }
             }
-            let optionsHTML = '';
-            validTargets.forEach(target => {
-                optionsHTML += `<option value="${target.name}" 
-                    data-furia="${target.isFuria ? '1' : '0'}"
-                    data-agarrao="${target.isAgarrado ? '1' : '0'}"
-                    data-tem-deflexao="${target.hasDeflexao ? '1' : '0'}">${target.name}</option>`;
-            });
+            optionsHTML = <?php echo json_encode($selectTargets) ?>;
             function generateTargetInputs() {
                 targetsContainer.innerHTML = '';
                 const numTargets = parseInt(numTargetsInput.value, 10);
@@ -423,8 +468,60 @@ function inputBolaDeFogoInstavel($caster, &$b){
 <?php
 }
 
-function inputBombaDeLuz($caster, &$b){
-    $targetsWithDetails = getValidTargetsWithDetails($caster, $b, 'enemies');
+function inputExcidiumStellae($caster){
+    $validTargets = getValidTargets($caster);
+    $selectTargets = selectTarget($caster, $validTargets);
+    echo 'Quantidade de inimigos na área: <input type="number" id="magic_num_targets_instavel" name="magic_num_targets" value="1" min="1" required><br>';
+    echo '<label>1° dado de ataque: <input type="number" name="dados[0]" min="1" max="6" required></label><br>';
+    echo '<label>2° dado de ataque: <input type="number" name="dados[1]" min="1" max="6" required></label><br>';
+    echo '<label>3° dado de ataque: <input type="number" name="dados[2]" min="1" max="6" required></label><br>';
+    echo '<label>4° dado de ataque: <input type="number" name="dados[3]" min="1" max="6" required></label><br>';
+    echo '<label>5° dado de ataque: <input type="number" name="dados[4]" min="1" max="6" required></label><br>';
+    echo '<h4>Alvos na Área</h4><div id="magic_targets_container"></div>';
+    echo '<input type="hidden" class="magic-properties" data-attack-type="PdF">';
+?>
+    <script>
+        (function() {
+            const numTargetsInput = document.getElementById('magic_num_targets_instavel');
+            const targetsContainer = document.getElementById('magic_targets_container');
+            const validTargets = <?php echo json_encode($validTargets); ?>;
+            optionsHTML = <?php echo json_encode($selectTargets) ?>;
+            function generateTargetInputs() {
+                targetsContainer.innerHTML = '';
+                const numTargets = parseInt(numTargetsInput.value, 10);
+                for (let i = 0; i < numTargets; i++) {
+                    const fieldset = document.createElement('fieldset');
+                    fieldset.className = 'magic-input-group';
+                    fieldset.style.marginTop = '10px';
+                    const legend = document.createElement('legend');
+                    legend.textContent = `Alvo ${i + 1}`;
+                    fieldset.appendChild(legend);
+                    let targetSelectHTML = `<label>Selecionar Alvo: <select class="magic-target-select" name="magic_targets[${i}][name]" required>${optionsHTML}</select></label>`;
+                    let reactionSelectHTML = `<br><label>Reação do Alvo: <select name="magic_targets[${i}][reaction]" class="magic-reaction-select" required>`;
+                    reactionSelectHTML += `<option value="defender">Defender</option>`;
+                    reactionSelectHTML += `<option value="defender_esquiva">Esquivar</option>`;
+                    reactionSelectHTML += `<option value="defender_esquiva_deflexao" >Deflexão (2PM)</option>`;
+                    reactionSelectHTML += `<option value="indefeso">Indefeso</option>`;
+                    reactionSelectHTML += `</select></label><br>`;
+                    targetFDHTML = `<br><label>Dado de defesa: <input type="number" name="magic_targets[${i}][dFD]" min="1" max="6" required></label>`;
+                    testRHTML = `<label>Teste de Resistência: <input type="number" name="magic_targets[${i}][testR]" min="1" max="6"></label>`;
+                    fieldset.innerHTML += targetSelectHTML + targetFDHTML + reactionSelectHTML + testRHTML;
+                    targetsContainer.appendChild(fieldset);
+                }
+            }
+            function updateAllInputs() {
+                generateTargetInputs();
+            }
+            numTargetsInput.addEventListener('input', updateAllInputs);
+            updateAllInputs();
+        })();
+    </script>
+<?php
+}
+
+function inputBombaDeLuz($caster){
+    $validTargets = getValidTargets($caster);
+    $selectTargets = selectTarget($caster, $validTargets);
     echo 'Custo em PMs (1-5): <input type="number" id="magic_pm_cost" name="magic_pm_cost" value="1" min="1" max="5" step="1" required><br>';
     echo 'Quantidade de inimigos na área: <input type="number" id="magic_num_targets" name="magic_num_targets" value="1" min="1" required><br>';
     echo '<h4>Alvos na Área</h4><div id="magic_targets_container"></div>';
@@ -435,17 +532,11 @@ function inputBombaDeLuz($caster, &$b){
             const pmCostInput = document.getElementById('magic_pm_cost');
             const numTargetsInput = document.getElementById('magic_num_targets');
             const targetsContainer = document.getElementById('magic_targets_container');
-            const validTargets = <?php echo json_encode($targetsWithDetails); ?>;
+            const validTargets = <?php echo json_encode($validTargets); ?>;
             function generateTargetInputs() {
                 targetsContainer.innerHTML = '';
                 const numTargets = parseInt(numTargetsInput.value, 10);
-                let optionsHTML = '';
-                validTargets.forEach(target => {
-                    optionsHTML += `<option value="${target.name}" 
-                        data-furia="${target.isFuria ? '1' : '0'}"
-                        data-agarrao="${target.isAgarrado ? '1' : '0'}"
-                        data-tem-deflexao="${target.hasDeflexao ? '1' : '0'}">${target.name}</option>`;
-                });
+                optionsHTML = <?php echo json_encode($selectTargets) ?>;
                 for (let i = 0; i < numTargets; i++) {
                     const fieldset = document.createElement('fieldset');
                     fieldset.className = 'magic-input-group';
@@ -475,12 +566,93 @@ function inputBombaDeLuz($caster, &$b){
 <?php
 }
 
-function inputMorteEstelar($caster, &$b){
-    $validTargets = getValidTargets($caster, $b);
+function inputSacrificioDeMarah($caster){
+    $validTargets = getValidTargets($caster);
+    $selectTargets = selectTarget($caster, $validTargets);
+    echo 'Quantidade de aliados na área: <input type="number" id="magic_num_targets" name="magic_num_targets" value="1" min="1" required><br>';
+    echo '<h4>Alvos na Área</h4><div id="magic_targets_container"></div>';
+    echo '<input type="hidden" class="magic-properties" data-attack-type="PdF">';
+?>
+    <script>
+        (function() {
+            const pmCostInput = document.getElementById('magic_pm_cost');
+            const numTargetsInput = document.getElementById('magic_num_targets');
+            const targetsContainer = document.getElementById('magic_targets_container');
+            const validTargets = <?php echo json_encode($validTargets); ?>;
+            function generateTargetInputs() {
+                targetsContainer.innerHTML = '';
+                const numTargets = parseInt(numTargetsInput.value, 10);
+                optionsHTML = <?php echo json_encode($selectTargets) ?>;
+                for (let i = 0; i < numTargets; i++) {
+                    const fieldset = document.createElement('fieldset');
+                    fieldset.className = 'magic-input-group';
+                    fieldset.style.marginTop = '10px';
+                    const legend = document.createElement('legend');
+                    legend.textContent = `Alvo ${i + 1}`;
+                    fieldset.appendChild(legend);
+                    let targetSelectHTML = `<label>Selecionar Alvo: <select class="magic-target-select" name="magic_targets[${i}][name]" required>${optionsHTML}</select></label>`;
+                    fieldset.innerHTML += targetSelectHTML;
+                    targetsContainer.appendChild(fieldset);
+                }
+            }
+            function updateAllInputs() {
+                generateTargetInputs();
+            }
+            numTargetsInput.addEventListener('input', updateAllInputs);
+            updateAllInputs();
+        })();
+    </script>
+<?php 
+}
+
+function inputRaioDesintegrador($caster){
+    $allTargets = getValidTargets($caster, 'enemies');
+    $casterH = getPlayerStat($caster, 'H');
+    $validTargets = [];
+    foreach ($allTargets as $target) {
+        $isImmune = getPlayerStat($target, 'R') > $casterH;
+        if (isCorporeo($target) && !$isImmune) {
+            $validTargets[] = $target;
+        }
+    }
+    echo '<label>Selecionar Alvo: <select id="raio_desintegrador_target" name="magic_target" required>';
+    echo '<option value="objeto">Objeto</option>';
+    echo selectTarget($caster, $validTargets);
+    echo '</select></label><br>';
+    echo '<label>Custo em PMs: <input type="number" name="magic_pm_cost" min="1" step="5" value="5" required></label><br>';
+    echo '<div id="raio_desintegrador_r_test_container" style="display:none; margin-top: 10px;">';
+    echo '<label>Teste de Resistência: <input type="number" name="testR" min="1" max="6"></label>';
+    echo '</div>';
+?>
+    <script>
+        (function() {
+            const targetSelect = document.getElementById('raio_desintegrador_target');
+            if (!targetSelect) return;
+            const rTestContainer = document.getElementById('raio_desintegrador_r_test_container');
+            const rTestInput = rTestContainer ? rTestContainer.querySelector('input[name="testR"]') : null;
+            if (!rTestContainer || !rTestInput) return;
+            function toggleRTest() {
+                if (targetSelect.value === 'objeto') {
+                    rTestContainer.style.display = 'none';
+                    rTestInput.required = false;
+                } else {
+                    rTestContainer.style.display = 'block';
+                    rTestInput.required = true;
+                }
+            }
+            targetSelect.addEventListener('change', toggleRTest);
+            toggleRTest();
+        })();
+    </script>
+<?php
+}
+
+function inputMorteEstelar($caster){
+    $validTargets = getValidTargets($caster);
     echo '<div class="magic-input-group">'; 
-    echo '<label>Selecionar Alvo: <select id="morte_estelar_select" name="target" class="magic-target-select" required>';
+    echo '<label>Selecionar Alvo: <select id="morte_estelar_select" name="magic_target" class="magic-target-select" required>';
     echo '<option value="" selected>Prossiga com Cuidado</option>';
-    selectTarget($caster, $validTargets);
+    echo selectTarget($caster, $validTargets);
     echo '</select></label><br>';
     echo '<div id="morte_estelar_confirm_container" style="margin-top:8px; display:none;"></div>';
 ?>
@@ -514,11 +686,11 @@ function inputMorteEstelar($caster, &$b){
 <?php
 }
 
-function inputNulificacaoTotalDeTalude($caster, &$b){
-    $validTargets = getValidTargets($caster, $b);
-    echo '<label>Selecionar Alvo: <select id="nulificacao_select" name="target" class="magic-target-select" required>';
+function inputNulificacaoTotalDeTalude($caster){
+    $validTargets = getValidTargets($caster);
+    echo '<label>Selecionar Alvo: <select id="nulificacao_select" name="magic_target" class="magic-target-select" required>';
     echo '<option value="" selected>Prossiga com Cuidado</option>';
-    selectTarget($caster, $validTargets);
+    echo selectTarget($caster, $validTargets);
     echo '</select></label><br>';
     echo '<div id="nulificacao_confirm_container" style="margin-top:8px; display:none;"></div>';
 ?>
@@ -553,13 +725,12 @@ function inputNulificacaoTotalDeTalude($caster, &$b){
 <?php
 }
 
-function inputBolaDeLama($caster, &$b){
-    $validTargets = getValidTargets($caster, $b, 'enemies');
+function inputBolaDeLama($caster){
+    $validTargets = getValidTargets($caster);
     echo '<div class="magic-input-group">';
     echo '<label>Selecionar Alvo: <select id="magic_target" name="magic_target" class="magic-target-select" required>';
-    selectTarget($caster, $validTargets);
-    echo '</select></label>';
-    echo '<h4>Dados de Ataque</h4>';
+    echo selectTarget($caster, $validTargets);
+    echo '</select></label><br>';
     for ($i = 0; $i < getPlayerStat($caster, 'H'); $i++) {
         echo '<label>' . ($i + 1) . '° dado de ataque: <input type="number" name="dadosFA[' . $i . ']" min="1" max="6" required></label><br>';
     }
@@ -574,11 +745,11 @@ function inputBolaDeLama($caster, &$b){
     echo '</div>';
 }
 
-function inputEnxameDeTrovoes($caster, &$b){
-    $validTargets = getValidTargets($caster, $b);
+function inputEnxameDeTrovoes($caster){
+    $validTargets = getValidTargets($caster);
     echo '<div class="magic-input-group">';
-    echo '<label>Selecionar Alvo: <select name="target" class="magic-target-select" required>';
-    selectTarget($caster, $validTargets);
+    echo '<label>Selecionar Alvo: <select name="magic_target" class="magic-target-select" required>';
+    echo selectTarget($caster, $validTargets);
     echo '</select></label><br>';
     echo '<br><label>1° dado de ataque: <input type="number" name="dadoFA1" min="1" max="6" required></label>';
     echo '<br><label>2° dado de ataque: <input type="number" name="dadoFA2" min="1" max="6" required></label><br>';
@@ -593,11 +764,11 @@ function inputEnxameDeTrovoes($caster, &$b){
     echo '</div>';
 }
 
-function inputBombaDeTerra($caster, &$b){
-    $validTargets = getValidTargets($caster, $b, 'enemies');
+function inputBombaDeTerra($caster){
+    $validTargets = getValidTargets($caster);
     echo '<div class="magic-input-group">';
     echo '<label>Selecionar Alvo: <select id="magic_target" name="magic_target" class="magic-target-select" required>';
-    selectTarget($caster, $validTargets);
+    echo selectTarget($caster, $validTargets);
     echo '</select></label><br>';
     echo 'Reação: <select id="def" name="magic_def" class="magic-reaction-select">'
         . '<option value="defender">Defender</option>'
@@ -610,20 +781,20 @@ function inputBombaDeTerra($caster, &$b){
     echo '</div>';
 }
 
-function inputSolisanguis($caster, &$b){
-    $validTargets = getValidTargets($caster, $b, 'enemies');
+function inputSolisanguis($caster){
+    $validTargets = getValidTargets($caster);
     echo '<label>Selecionar Alvo: <select id="magic_target" name="magic_target" class="magic-target-select" required>';
-    selectTarget($caster, $validTargets);
+    echo selectTarget($caster, $validTargets);
     echo '</select></label>';
     echo '<br><label>Dado do custo: <input type="number" name="dadoCusto" min="1" max="6" required></label>';
     echo '<br><label>1° dado de ataque: <input type="number" name="dadoFA1" min="1" max="6" required></label>';
     echo '<br><label>2° dado de ataque: <input type="number" name="dadoFA2" min="1" max="6" required></label>';
 }
 
-function inputSolisanguisRuptura($caster, &$b){
-    $validTargets = getValidTargets($caster, $b, 'enemies');
+function inputSolisanguisRuptura($caster){
+    $validTargets = getValidTargets($caster);
     echo '<label>Selecionar Alvo: <select id="magic_target" name="magic_target" class="magic-target-select" required>';
-    selectTarget($caster, $validTargets);
+    echo selectTarget($caster, $validTargets);
     echo '</select></label>';
     echo '<br><label>Dado do custo: <input type="number" name="dadoCusto" min="1" max="6" required></label>';
     echo '<br><label>1° dado de ataque: <input type="number" name="dadoFA1" min="1" max="6" required></label>';
@@ -633,28 +804,28 @@ function inputSolisanguisRuptura($caster, &$b){
 }
 
 
-function inputSolisanguisEvisceratio($caster, &$b){
-    $validTargets = getValidTargets($caster, $b, 'enemies');
+function inputSolisanguisEvisceratio($caster){
+    $validTargets = getValidTargets($caster);
     echo '<label>Selecionar Alvo: <select id="magic_target" name="magic_target" class="magic-target-select" required>';
-    selectTarget($caster, $validTargets);
+    echo selectTarget($caster, $validTargets);
     echo '</select></label>';
     echo '<br><label>Dado de Custo & Ataque: <input type="number" name="dado" min="1" max="6" required></label>';
 }
 
-function inputSortilegium($caster, &$b){
-    $validTargets = getValidTargets($caster, $b, 'allies');
+function inputSortilegium($caster){
+    $validTargets = getValidTargets($caster, 'allies');
     echo '<label>Selecionar Alvo: <select id="magic_target" name="magic_target" class="magic-target-select" required>';
-    selectTarget($caster, $validTargets, true);
+    echo selectTarget($caster, $validTargets, true);
     echo '</select></label>';
     echo '<br><label>Dado de Custo: <input type="number" name="dadoCusto" min="1" max="6" required></label>';
     echo '<br><label>1° dado de recuperação: <input type="number" name="dadoPV1" min="1" max="6" required></label>';
     echo '<br><label>2° dado de recuperação: <input type="number" name="dadoPV2" min="1" max="6" required></label>';
 }
 
-function inputSanctiSanguis($caster, &$b){
-    $validTargets = getValidTargets($caster, $b, 'allies');
+function inputSanctiSanguis($caster){
+    $validTargets = getValidTargets($caster, 'allies');
     echo '<label>Selecionar Alvo: <select id="magic_target" name="magic_target" class="magic-target-select" required>';
-    selectTarget($caster, $validTargets, true);
+    echo selectTarget($caster, $validTargets, true);
     echo '</select></label>';
     echo '<br><label>Trânsferencia: <input type="number" name="qtd" min="1"required></label>';
 }
@@ -668,11 +839,11 @@ function inputArtifanguis(){
     echo '<br><label>Custo (0 ou 2): <input type="text" name="cost" min="0" max="2" required></label>';
 }
 
-function inputExcruentio($caster, &$b){
-    $validTargets = getValidTargets($caster, $b, 'enemies');
+function inputExcruentio($caster){
+    $validTargets = getValidTargets($caster);
     echo '<div class="magic-input-group">';
     echo '<label>Selecionar Alvo: <select id="magic_target" name="magic_target" class="magic-target-select" required>';
-    selectTarget($caster, $validTargets);
+    echo selectTarget($caster, $validTargets);
     echo '</select></label>';
     echo '<br><label>1° dado de Ataque: <input type="number" name="dadoFA1" min="1" max="6" required></label>';
     echo '<br><label>2° dado de Ataque: <input type="number" name="dadoFA2" min="1" max="6" required></label><br>';
@@ -687,10 +858,10 @@ function inputExcruentio($caster, &$b){
     echo '</div>';
 }
 
-function inputSpeculusanguis($caster, &$b){
-    $validTargets = getValidTargets($caster, $b, 'enemies');
+function inputSpeculusanguis($caster){
+    $validTargets = getValidTargets($caster);
     echo '<label>Selecionar Alvo: <select id="magic_target" name="magic_target" class="magic-target-select" required>';
-    selectTarget($caster, $validTargets);
+    echo selectTarget($caster, $validTargets);
     echo '</select></label>';
 }
 
@@ -702,16 +873,16 @@ function inputSolcruoris(){
     echo '<label>Custo: <input type="number" name="cost" min="3" required></label>';
 }
 
-function inputSpectraematum($caster, $b){
-    $validTargets = getValidTargets($caster, $b, 'enemies');
+function inputSpectraematum($caster){
+    $validTargets = getValidTargets($caster);
     echo '<label>Selecionar Alvo: <select id="magic_target" name="magic_target" class="magic-target-select" required>';
-    selectTarget($caster, $validTargets);
+    echo selectTarget($caster, $validTargets);
     echo '</select></label>';
     echo '<br><label>Custo do debuff H: <input type="number" name="debuff" min="2" value="0" required></label>';
 }
 
-function inputAeternumTribuo($caster, $b){
-    $validTargets = getValidTargets($caster, $b, 'enemies');
+function inputAeternumTribuo($caster){
+    $validTargets = getValidTargets($caster);
     echo '<label>Selecionar Alvo: <select id="magic_target" name="magic_target" class="magic-target-select" required>';
     foreach ($validTargets as $target) {
         if (getPlayerStat($target, 'PV') <= 0) {
@@ -721,21 +892,21 @@ function inputAeternumTribuo($caster, $b){
     echo '</select></label><br>Apenas mortos são alvos válidos.';
 }
 
-function inputInhaerescorpus($caster, $b){
-    $validTargets = getValidTargets($caster, $b, 'enemies');
+function inputInhaerescorpus($caster){
+    $validTargets = getValidTargets($caster);
     echo '<label>Selecionar Alvo: <select id="magic_target" name="magic_target" class="magic-target-select" required>';
-    selectTarget($caster, $validTargets);
+    echo selectTarget($caster, $validTargets);
     echo '</select></label>';
     echo '<br><label>Dado para o Teste de Resistência: <input type="number" name="testR" min="1" max="6" required></label>';
 }
 
-function inputAmorIncontestavel($caster, $b){
-    $validTargets = getValidTargets($caster, $b, 'allies');
+function inputAmorIncontestavel($caster){
+    $validTargets = getValidTargets($caster, 'allies');
     echo '<label>Selecionar Alvo: <select id="magic_target" name="magic_target" class="magic-target-select" required>';
-    selectTarget($caster, $validTargets, true);
+    echo selectTarget($caster, $validTargets, true);
     echo '</select></label><br>';
     echo '<label>Paixão do alvo: <select id="magic_target" name="magic_love" class="magic-target-select" required>';
-    selectTarget($caster, $validTargets, true);
+    echo selectTarget($caster, $validTargets, true);
     echo '</select></label>';
     echo '<br><label>Dado para o Teste de Resistência: <input type="number" name="testR" min="1" max="6" required></label>';
 }
@@ -744,23 +915,23 @@ function inputHemeopsia(){
     echo 'Essa magia não precisa de inputs.';
 }
 
-function inputAtaqueVorpal($caster, $b){
-    $validTargets = getValidTargets($caster, $b, 'allies');
+function inputAtaqueVorpal($caster){
+    $validTargets = getValidTargets($caster, 'allies');
     echo '<label>Selecionar Alvo: <select id="magic_target" name="magic_target" class="magic-target-select" required>';
-    selectTarget($caster, $validTargets, true);
+    echo selectTarget($caster, $validTargets, true);
     echo '</select></label>';
 }
 
-function inputCegueira($caster, $b){
-    $validTargets = getValidTargets($caster, $b, 'enemies');
+function inputCegueira($caster){
+    $validTargets = getValidTargets($caster);
     echo '<label>Selecionar Alvo: <select id="magic_target" name="magic_target" class="magic-target-select" required>';
-    selectTarget($caster, $validTargets);
+    echo selectTarget($caster, $validTargets);
     echo '</select></label>';
     echo '<br><label>Dado para o Teste de Resistência: <input type="number" name="testR" min="1" max="6" required></label>';
 }
 
-function inputCuraParaOMal($caster, $b){
-    $targets = getValidTargets($caster, $b, 'enemies');
+function inputCuraParaOMal($caster){
+    $targets = getValidTargets($caster);
     $validTargets = [];
     foreach ($targets as $tgt){
         if (getPlayerStat($tgt, 'R') < getPlayerStat($caster, 'H')){
@@ -768,14 +939,14 @@ function inputCuraParaOMal($caster, $b){
         }
     }
     echo '<label>Selecionar Alvo: <select id="magic_target" name="magic_target" class="magic-target-select" required>';
-    selectTarget($caster, $validTargets);
+    echo selectTarget($caster, $validTargets);
     echo '</select></label><br>';
     echo '<label>Criatura: <select name="evil_cure_mode" required><option value="amiga">Deixar de ser Inimiga</option><option value="aliada">Tornar-se Aliada</option></select></label>';
     echo '<br><label>>A Criatura precisa estar INDEFESA<</label>';
 }
 
-function inputDesmaio($caster, $b){
-    $targets = getValidTargets($caster, $b, 'enemies');
+function inputDesmaio($caster){
+    $targets = getValidTargets($caster);
     $validTargets = [];
     foreach ($targets as $tgt){
         if (getPlayerStat($tgt, 'R') < getPlayerStat($caster, 'H')){
@@ -783,33 +954,37 @@ function inputDesmaio($caster, $b){
         }
     }
     echo '<label>Selecionar Alvo: <select id="magic_target" name="magic_target" class="magic-target-select" required>';
-    selectTarget($caster, $validTargets);
+    echo selectTarget($caster, $validTargets);
     echo '</select></label>';
     echo '<br><label>Custo: <input type="number" name="cost" min="2" value="2" required></label>';
     echo '<br><label>Dado para o Teste de Resistência +1: <input type="number" name="testR" min="1" max="6" required></label>';
 }
 
-function inputDestrancar($caster, $b){
+function inputDestrancar(){
     echo "Essa magia não precisa de inputs.";
 }
 
-function inputAEscapatoriaDeValkaria($caster, $b){
+function inputAEscapatoriaDeValkaria(){
     echo '<label>Quantidade de aliados: <input type="number" name="qtdAlly" min="1" required></label>';
 }
 
-function inputFadaServil($caster, $b){
+function inputFadaServil(){
     echo "Essa magia não precisa de inputs.";
 }
 
-function inputFarejarTesouro($caster, $b){
+function inputFarejarTesouro(){
     echo "Essa magia não precisa de inputs.";
 }
 
-function inputFlorPereneDeMiladyA($caster, $b){
-    $validTargets = getValidTargets($caster, $b, 'allies');
+function inputLuz(){
+    echo "Essa magia não precisa de inputs.";
+}
+
+function inputFlorPereneDeMiladyA($caster){
+    $validTargets = getValidTargets($caster, 'allies');
     echo '<label>Selecionar Alvo: <select id="flor_perene_target" name="magic_target" required>';
     echo '<option value="inanimado">Algo Inanimado</option>';
-    selectTarget($caster, $validTargets, true);
+    echo selectTarget($caster, $validTargets, true);
     echo '</select></label>';
     echo '<div id="flor_perene_r_test_container" style="display:none; margin-top: 10px;">';
     echo '<label>Dado para o Teste de Resistência: <input type="number" name="testR" min="1" max="6"></label>';
@@ -838,12 +1013,81 @@ function inputFlorPereneDeMiladyA($caster, $b){
 JS;
 }
 
-function inputCancelamento($caster, &$b){
+function inputFurtividadeDeHyninn($caster){
+    $validTargets = getValidTargets($caster, 'allies');
+    echo '<label>Selecionar Alvo: <select id="magic_target" name="magic_target" class="magic-target-select" required>';
+    echo selectTarget($caster, $validTargets);
+    echo '</select></label>';
+}
+
+function inputProtecaoMagicaSuperior($caster){
+    $validTargets = getValidTargets($caster, 'allies');
+    echo '<label>Selecionar Alvo: <select id="magic_target" name="magic_target" class="magic-target-select" required>';
+    echo selectTarget($caster, $validTargets);
+    echo '</select></label><br>';
+    echo '<label>Custo: <input type="number" name="custo" min="1" max="5"></label>';
+}
+
+function inputProtecaoMagica($caster){
+    $validTargets = getValidTargets($caster, 'allies');
+    echo '<label>Selecionar Alvo: <select id="magic_target" name="magic_target" class="magic-target-select" required>';
+    echo selectTarget($caster, $validTargets);
+    echo '</select></label><br>';
+    echo '<label>Custo: <input type="number" name="custo" min="2" max="10"></label>';
+}
+
+function inputRecuperacaoNatural($caster){
+    $validTargets = getValidTargets($caster, 'allies');
+    echo '<label>Selecionar Alvo: <select id="magic_target" name="magic_target" class="magic-target-select" required>';
+    echo selectTarget($caster, $validTargets);
+    echo '</select></label><br>';
+}
+
+function inputReflexos(){
+    echo '<label>Dado: <input type="number" name="dado" min="1" max="6"></label>';
+}
+
+function inputRetribuicaoDeWynna(){
+    echo 'Essa magia não precisa de input.';
+}
+
+function inputSentidosEspeciais(){
+    echo '<label>Selecionar Alvo: <select id="magic_sense" name="magic_sense" required>';
+    echo '<option value="faro_agucado">Faro Aguçado</option>';
+    echo '<option value="audicao_augucada">Audição Aguçada</option>';
+    echo '<option value="visao_agucada">Visão Aguçada</option>';
+    echo '<option value="radar">Radar</option>';
+    echo '<option value="infravisao">Infravisão</option>';
+    echo '<option value="ver_o_invisivel">Ver o Invisível</option>';
+    echo '<option value="visao_raio_x">Visão Raio X</option>';
+    echo '</select></label><br>';
+}
+
+function inputTeleportacaoAprimorada(){
+    echo '<label>Custo do teleporte: <input type="number" name="cost" min="1"></label>';
+}
+
+function inputTeleportacao(){
+    echo '<label>Custo do teleporte: <input type="number" name="cost" min="1"></label>';
+}
+
+function inputTeleportacaoPlanar(){
+    echo '<label>Custo do teleporte: <input type="number" name="cost" min="1"></label>';
+}
+
+function inputTransporte(){
+    echo '<label>Custo do transporte: <input type="number" name="cost" min="1"></label>';
+}
+
+function inputDeteccaoDeMagia(){
+    echo 'Essa magia não precisa de input.';
+}
+
+function inputCancelamento(){
     echo '<p>Selecione a magia a ser cancelada:</p>';
     echo '<select name="magic_to_cancel">';
 
     echo '<option value="invisibilidade_no_inimigo_X">Invisibilidade (Inimigo X)</option>';
     echo '</select>';
 }
-
 ?>
