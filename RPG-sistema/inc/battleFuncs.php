@@ -226,16 +226,16 @@ function applyDamage(string $pl, string $tgt, int $dano, string $tipoDmg, string
     } else {
         $ligacaoNatural = false;
         if (!empty(getAlliePlayer($tgt)) && in_array('ligacao_natural', listPlayerTraits(getAlliePlayer($tgt)), true)) {
-            setPlayerStat($tgt, 'PV', max(getPlayerStat($tgt, 'PV') - $dano, 0));
-            setPlayerStat(getAlliePlayer($tgt), 'PV', max(getPlayerStat(getAlliePlayer($tgt), 'PV') - $dano, 0));
+            setPlayerStat($tgt, 'PV', getPlayerStat($tgt, 'PV') - $dano);
+            setPlayerStat(getAlliePlayer($tgt), 'PV', getPlayerStat(getAlliePlayer($tgt), 'PV') - $dano);
             $ligacaoNatural = true;
         }
         if (!empty($_SESSION['battle']['playingPartner'][$tgt]) && $ligacaoNatural == false) {
             $distriDano = ceil($dano / 2);
-            setPlayerStat($_SESSION['battle']['playingPartner'][$tgt]['owner'], 'PV', max(getPlayerStat($_SESSION['battle']['playingPartner'][$tgt]['owner'], 'PV') - $distriDano, 0));
-            setPlayerStat($_SESSION['battle']['playingPartner'][$tgt]['name'], 'PV', max(getPlayerStat($_SESSION['battle']['playingPartner'][$tgt]['name'], 'PV') - $distriDano, 0));
+            setPlayerStat($_SESSION['battle']['playingPartner'][$tgt]['owner'], 'PV',getPlayerStat($_SESSION['battle']['playingPartner'][$tgt]['owner'], 'PV') - $distriDano);
+            setPlayerStat($_SESSION['battle']['playingPartner'][$tgt]['name'], 'PV', getPlayerStat($_SESSION['battle']['playingPartner'][$tgt]['name'], 'PV') - $distriDano);
         } else {
-            setPlayerStat($tgt, 'PV', max(getPlayerStat($tgt, 'PV') - $dano, 0));
+            setPlayerStat($tgt, 'PV', getPlayerStat($tgt, 'PV') - $dano);
         }
         $ligacaoNatural = false;
         monitorPVChange($tgt, $dano);

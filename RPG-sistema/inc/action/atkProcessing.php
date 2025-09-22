@@ -46,6 +46,9 @@ function atkMultiReactionTreatment($b, $q, $tgt, $pl, $dados, $dFD, $def, $tipo,
         } else {
             return max($faTot - FDindefeso($tgt, $dmgType), 0);
         }
+        if ($def === 'defender_sem_armadura') {
+            return max($faTot - FDarmorless($tgt, $dFD, $dmgType), 0);
+        }
     } else {
         return max( $faTot - FD($tgt, $dFD, $dmgType), 0);
     }

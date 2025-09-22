@@ -182,10 +182,12 @@ function FAtiroMultiplo(string $atacante, int $quant, array $dados, string $tgt,
         $FA     = $PdF + $H + $rollFA;
         if ($defesa === 'indefeso') {
             $FDval = FDindefeso($tgt, $dmgType);
+        } if ($defesa === 'defender_sem_armadura') {
+            $FDval = FDarmorless($tgt, $dadoFD, $dmgType);
         } else {
             $FDval = FD($tgt, $dadoFD, $dmgType);
         }
-        $danoTotal += max(invulnerabilitieTest($tgt, $dmgType, $FA) - $FDval, 0);
+        $danoTotal +=max(invulnerabilitieTest($tgt, $dmgType, $FA) - $FDval, 0);
     }
     return $danoTotal;
 }

@@ -36,7 +36,8 @@ function assombrado(string $player, array $input){
 
 function cegoDebuff($pl, $tgt, $tipo){
     if ((!in_array('cego', listPlayerTraits($pl)) && strpos($_SESSION['battle']['notes'][$pl]['efeito'] ?? '', 'Cegueira') == false) || 
-    visibleWithHemeopsia($pl, $tgt) || visibleWithInfravision($pl, $tgt)) {
+        visibleWithHemeopsia($pl, $tgt) || 
+        visibleWithInfravision($pl, $tgt)) {
         return 0;
     }
     if (in_array('radar', listPlayerTraits($pl))){

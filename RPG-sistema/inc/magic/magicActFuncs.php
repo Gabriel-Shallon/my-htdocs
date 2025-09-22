@@ -8,7 +8,7 @@ function ataqueMagico($b, $mago, $alvosInfo, $PMs, $atkType){
     if (spendPM($mago, $PMs)) {
         foreach ($alvosInfo as $tgt) {
             $tgtName = $tgt['name'];
-            $dano = max(defaultReactionTreatment($b, $tgtName, $mago, $tgt['reaction'], $tgt['rollFA'], $tgt['rollFD'], $atkType, 'Magia', $costPerTgt), 0);
+            $dano = defaultReactionTreatment($b, $tgtName, $mago, $tgt['reaction'], $tgt['rollFA'], $tgt['rollFD'], $atkType, 'Magia', $costPerTgt);
             $out .= applyDamage($mago, $tgtName, $dano, 'Magia', $out);
             $out .= "<strong>{$mago}</strong> usou " . getMagicSpecialName($mago, 'ataque_magico') . " Ataque Mágico ({$atkType}) em <strong>{$tgtName}</strong>. PMs = {$PMs}; Dano = {$dano}<br>";
         }
@@ -302,6 +302,10 @@ function atkLuxcruentha($b, $mago, $tgt, $def, $dFD, $dFA1, $dFA2){
     $out = '';
     $FA = invulnerabilitieTest($tgt, 'Magia', 
     getPlayerStat($mago, 'H')-hDebuff($_SESSION['battle'], $mago, $tgt, 'F') + $dFA1 + $dFA2);
+    if (strpos($tgt, 'reflexo de ') !== false){
+        $realName = str_replace("reflexo de ", "", $tgt);
+        return max($FA - getPlayerStat($realName, 'H'), 0);
+    }
     if (!empty($b['agarrao'][$tgt]['agarrado'])) {
         $def = 'indefeso';
     }
@@ -312,6 +316,8 @@ function atkLuxcruentha($b, $mago, $tgt, $def, $dFD, $dFA1, $dFA2){
         {$FD = FDesquiva($mago, $tgt, $dFD, 'F', 'Magia', $FA);}
     if ($def === 'defender_esquiva_deflexao') 
         {$FD = FDesquiva($mago, $tgt, $dFD, 'F', 'Magia', $FA, true);}
+    if ($def === 'defender_sem_armadura') 
+        {return max($FA - FDarmorless($tgt, $dFD, 'Magia'), 0);}
     $dano = max($FA - floor($FD / 2), 0);
     $out .= " Dano = " . $dano;
     applyDamage($mago, $tgt, $dano, 'Magia', $out);
